@@ -7,4 +7,5 @@
 
     <include file="../../internal/realm/player/database/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/room/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/navigator/database/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
