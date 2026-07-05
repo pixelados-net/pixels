@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/niflaot/pixels/internal/auth/sso"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	inmachine "github.com/niflaot/pixels/networking/inbound/security/machine"
@@ -17,12 +17,13 @@ import (
 	outidentity "github.com/niflaot/pixels/networking/outbound/handshake/identity"
 	outmachine "github.com/niflaot/pixels/networking/outbound/security/machine"
 	outstatus "github.com/niflaot/pixels/networking/outbound/session/hotel/availability/status"
+	outuserinfo "github.com/niflaot/pixels/networking/outbound/user/info"
 )
 
 // Register adds security handlers to a registry.
-func Register(registry *netconn.HandlerRegistry, service *sso.Service) {
+func Register(registry *netconn.HandlerRegistry, authenticator *Authenticator) {
 	_ = registry.Register(inmachine.Header, Machine, netconn.AllowStates(netconn.StateHandshaking, netconn.StateSecuring), netconn.AllowUnauthenticated())
-	_ = registry.Register(inticket.Header, Ticket(service), netconn.AllowStates(netconn.StateHandshaking), netconn.AllowUnauthenticated())
+	_ = registry.Register(inticket.Header, Ticket(authenticator), netconn.AllowStates(netconn.StateHandshaking), netconn.AllowUnauthenticated())
 }
 
 // Machine handles machine identity packets.
@@ -40,19 +41,19 @@ func Machine(handler netconn.Context, packet codec.Packet) error {
 }
 
 // Ticket handles SSO authentication packets.
-func Ticket(service *sso.Service) netconn.Handler {
+func Ticket(authenticator *Authenticator) netconn.Handler {
 	return func(handler netconn.Context, packet codec.Packet) error {
 		payload, err := inticket.Decode(packet)
 		if err != nil {
 			return err
 		}
 
-		return authenticate(handler, service, payload.Ticket)
+		return authenticate(handler, authenticator, payload.Ticket)
 	}
 }
 
 // authenticate consumes SSO and sends the initial bootstrap.
-func authenticate(handler netconn.Context, service *sso.Service, ticket string) error {
+func authenticate(handler netconn.Context, authenticator *Authenticator, ticket string) error {
 	ctx := context.Background()
 	if err := handler.ValidateAuthenticationSecurity(ctx); err != nil {
 		return err
@@ -62,21 +63,28 @@ func authenticate(handler netconn.Context, service *sso.Service, ticket string) 
 		return err
 	}
 
-	if _, err := service.Consume(ctx, sso.ConsumeRequest{Ticket: ticket, IP: handler.RemoteAddr}); err != nil {
+	record, err := authenticator.Resolve(ctx, handler, ticket)
+	if err != nil {
 		_ = handler.Transition(netconn.EventAuthenticationRejected)
 		return handler.Disconnect(ctx, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: err.Error()})
 	}
 
-	if err := handler.Authenticate(time.Now()); err != nil {
+	authenticatedAt := time.Now()
+	if err := handler.Authenticate(authenticatedAt); err != nil {
 		return err
 	}
 
-	return sendBootstrap(handler)
+	if err := authenticator.Bind(ctx, handler, record, authenticatedAt); err != nil {
+		_ = handler.Transition(netconn.EventAuthenticationRejected)
+		return handler.Disconnect(ctx, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: err.Error()})
+	}
+
+	return sendBootstrap(handler, record)
 }
 
 // sendBootstrap sends the minimal connection bootstrap.
-func sendBootstrap(handler netconn.Context) error {
-	for _, packet := range bootstrapPackets() {
+func sendBootstrap(handler netconn.Context, record playerservice.Record) error {
+	for _, packet := range bootstrapPackets(record) {
 		if err := handler.Send(context.Background(), packet); err != nil {
 			return err
 		}
@@ -101,13 +109,21 @@ func sendMachineReplacement(handler netconn.Context) error {
 }
 
 // bootstrapPackets returns the first authenticated packets.
-func bootstrapPackets() []codec.Packet {
+func bootstrapPackets(record playerservice.Record) []codec.Packet {
 	auth, _ := outauth.Encode()
+	userInfo, _ := outuserinfo.Encode(outuserinfo.Params{
+		UserID:        int32(record.Player.ID),
+		Username:      record.Player.Username,
+		Figure:        record.Profile.Look,
+		Gender:        string(record.Profile.Gender),
+		Motto:         record.Profile.Motto,
+		CanChangeName: record.Profile.AllowNameChange,
+	})
 	identity, _ := outidentity.Encode(0)
 	status, _ := outstatus.Encode(true, false, outstatus.WithIsAuthentic(true))
 	ping, _ := outping.Encode()
 
-	return []codec.Packet{auth, identity, status, ping}
+	return []codec.Packet{auth, userInfo, identity, status, ping}
 }
 
 // validMachine reports whether a machine id is acceptable.

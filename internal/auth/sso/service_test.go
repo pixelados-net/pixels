@@ -15,7 +15,7 @@ func TestServiceCreateConsumeOnce(t *testing.T) {
 	service, server := testService(t)
 	ctx := context.Background()
 
-	ticket, err := service.Create(ctx, CreateRequest{UserID: "todo-user", IP: "127.0.0.1", TTL: time.Minute})
+	ticket, err := service.Create(ctx, CreateRequest{PlayerID: 2, IP: "127.0.0.1", TTL: time.Minute})
 	if err != nil {
 		t.Fatalf("create ticket: %v", err)
 	}
@@ -25,8 +25,8 @@ func TestServiceCreateConsumeOnce(t *testing.T) {
 		t.Fatalf("consume ticket: %v", err)
 	}
 
-	if consumed.UserID != "todo-user" {
-		t.Fatalf("expected user id, got %s", consumed.UserID)
+	if consumed.PlayerID != 2 {
+		t.Fatalf("expected player id, got %d", consumed.PlayerID)
 	}
 
 	_, err = service.Consume(ctx, ConsumeRequest{Ticket: ticket.Value, IP: "127.0.0.1"})
@@ -44,7 +44,7 @@ func TestServiceConsumeRejectsIPMismatch(t *testing.T) {
 	service, _ := testService(t)
 	ctx := context.Background()
 
-	ticket, err := service.Create(ctx, CreateRequest{UserID: "todo-user", IP: "127.0.0.1"})
+	ticket, err := service.Create(ctx, CreateRequest{PlayerID: 2, IP: "127.0.0.1"})
 	if err != nil {
 		t.Fatalf("create ticket: %v", err)
 	}

@@ -7,23 +7,31 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	"github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	inrelease "github.com/niflaot/pixels/networking/inbound/handshake/release"
 	inticket "github.com/niflaot/pixels/networking/inbound/security/ticket"
 	outauth "github.com/niflaot/pixels/networking/outbound/authentication/ok"
+	"github.com/niflaot/pixels/pkg/bus"
+	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"github.com/niflaot/pixels/pkg/redis"
 )
 
 // TestHandlersAuthenticateWithSSO verifies the development authentication path.
 func TestHandlersAuthenticateWithSSO(t *testing.T) {
 	service := testSSO(t)
-	ticket, err := service.Create(context.Background(), sso.CreateRequest{UserID: "todo-user", TTL: time.Minute})
+	ticket, err := service.Create(context.Background(), sso.CreateRequest{PlayerID: 2, TTL: time.Minute})
 	if err != nil {
 		t.Fatalf("create ticket: %v", err)
 	}
 
-	handlers := NewHandlers(service)
+	players := live.NewRegistry()
+	bindings := binding.NewRegistry()
+	handlers := NewHandlers(service, testFinder{}, players, bindings, bus.New())
 	sent := make([]codec.Packet, 0)
 	session, err := netconn.NewSession(netconn.SessionConfig{
 		ID:       "one",
@@ -56,6 +64,15 @@ func TestHandlersAuthenticateWithSSO(t *testing.T) {
 
 	if len(sent) == 0 || sent[0].Header != outauth.Header {
 		t.Fatalf("expected authenticated packet, got %#v", sent)
+	}
+
+	if players.Count() != 1 || bindings.Count() != 1 {
+		t.Fatalf("expected runtime state to be registered")
+	}
+
+	handlers.Disconnected(context.Background(), "websocket", "one")
+	if players.Count() != 0 || bindings.Count() != 0 {
+		t.Fatalf("expected runtime state to be removed")
 	}
 }
 
@@ -139,5 +156,39 @@ func mustConnected(t *testing.T, session *netconn.Session) {
 	}
 	if err := session.Transition(netconn.EventSessionReady); err != nil {
 		t.Fatalf("ready transition: %v", err)
+	}
+}
+
+// testFinder returns persistent test player records.
+type testFinder struct{}
+
+// FindByID finds a test player by id.
+func (finder testFinder) FindByID(ctx context.Context, id int64) (playerservice.Record, bool, error) {
+	if id != 2 {
+		return playerservice.Record{}, false, nil
+	}
+
+	return testRecord(id), true, nil
+}
+
+// FindByUsername finds a test player by username.
+func (finder testFinder) FindByUsername(context.Context, string) (playerservice.Record, bool, error) {
+	return testRecord(2), true, nil
+}
+
+// testRecord returns a persistent test player record.
+func testRecord(id int64) playerservice.Record {
+	return playerservice.Record{
+		Player: playermodel.Player{
+			Base:     sharedmodel.Base{Identity: sharedmodel.Identity{ID: id}},
+			Username: "test_player",
+		},
+		Profile: playermodel.Profile{
+			PlayerID:        id,
+			Look:            "hd-180-1",
+			Gender:          playermodel.GenderMale,
+			Motto:           "Test fixture.",
+			AllowNameChange: true,
+		},
 	}
 }

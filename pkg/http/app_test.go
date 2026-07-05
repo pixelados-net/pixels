@@ -11,8 +11,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	"github.com/niflaot/pixels/internal/realm/player/live"
+	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
+	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/config"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/http/openapi"
@@ -115,7 +118,7 @@ func TestPrivateRoutesAllowAccessKey(t *testing.T) {
 // TestCreateSSOTicketRoute verifies private SSO ticket creation.
 func TestCreateSSOTicketRoute(t *testing.T) {
 	app := testApp(t, "development")
-	request, err := stdhttp.NewRequest(stdhttp.MethodPost, "/api/sso/tickets", strings.NewReader(`{"userId":"todo-user","ip":"127.0.0.1","ttlSeconds":60}`))
+	request, err := stdhttp.NewRequest(stdhttp.MethodPost, "/api/sso/tickets", strings.NewReader(`{"playerId":2,"ip":"127.0.0.1","ttlSeconds":60}`))
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}
@@ -154,7 +157,7 @@ func testApp(t *testing.T, environment string) *fiber.App {
 
 	service := testSSO(t)
 	registry := netconn.NewRegistry()
-	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, realmconn.NewHandlers(service), zap.NewNop())
+	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()), zap.NewNop())
 
 	return New(zap.NewNop(), testConfig(environment), testInfo(), service, adapter, registry)
 }

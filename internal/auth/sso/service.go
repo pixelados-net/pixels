@@ -47,7 +47,7 @@ func New(config Config, redis *redis.Client) *Service {
 
 // Create creates and stores a one-time SSO ticket.
 func (service *Service) Create(ctx context.Context, request CreateRequest) (Ticket, error) {
-	if strings.TrimSpace(request.UserID) == "" {
+	if request.PlayerID <= 0 {
 		return Ticket{}, ErrInvalidTicket
 	}
 
@@ -59,11 +59,11 @@ func (service *Service) Create(ctx context.Context, request CreateRequest) (Tick
 
 	ticket := Ticket{
 		Value:     value,
-		UserID:    request.UserID,
+		PlayerID:  request.PlayerID,
 		IP:        request.IP,
 		ExpiresAt: service.now().Add(ttl),
 	}
-	payload, err := json.Marshal(record{UserID: ticket.UserID, IP: ticket.IP, ExpiresAt: ticket.ExpiresAt})
+	payload, err := json.Marshal(record{PlayerID: ticket.PlayerID, IP: ticket.IP, ExpiresAt: ticket.ExpiresAt})
 	if err != nil {
 		return Ticket{}, err
 	}
@@ -99,7 +99,7 @@ func (service *Service) Consume(ctx context.Context, request ConsumeRequest) (Ti
 		return Ticket{}, ErrTicketIPMismatch
 	}
 
-	return Ticket{Value: request.Ticket, UserID: data.UserID, IP: data.IP, ExpiresAt: data.ExpiresAt}, nil
+	return Ticket{Value: request.Ticket, PlayerID: data.PlayerID, IP: data.IP, ExpiresAt: data.ExpiresAt}, nil
 }
 
 // ttl returns the request TTL or default TTL.

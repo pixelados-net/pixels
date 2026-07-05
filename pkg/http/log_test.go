@@ -7,7 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/realm/connection"
+	"github.com/niflaot/pixels/internal/realm/player/live"
+	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	"github.com/niflaot/pixels/pkg/bus"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
@@ -44,7 +47,7 @@ func testAppWithLogger(t *testing.T, environment string, log *zap.Logger) *fiber
 
 	service := testSSO(t)
 	registry := netconn.NewRegistry()
-	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, connection.NewHandlers(service), zap.NewNop())
+	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, connection.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()), zap.NewNop())
 
 	return New(log, testConfig(environment), testInfo(), service, adapter, registry)
 }

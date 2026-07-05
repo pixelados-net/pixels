@@ -25,6 +25,9 @@ func TestEncode(t *testing.T) {
 	if len(values) != 1 {
 		t.Fatalf("expected %d fields, got %d", 1, len(values))
 	}
+	if values[0].Int32 != 7 {
+		t.Fatalf("unexpected identity values: %#v", values)
+	}
 }
 
 // TestDefinitionNames verifies declarative field names.

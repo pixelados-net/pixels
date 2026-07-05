@@ -6,8 +6,8 @@ import "time"
 type Ticket struct {
 	// Value is the opaque ticket sent to the client.
 	Value string
-	// UserID is the TODO user identifier bound to the ticket.
-	UserID string
+	// PlayerID is the player identifier bound to the ticket.
+	PlayerID int64
 	// IP is the optional client IP address bound to the ticket.
 	IP string
 	// ExpiresAt is the time when Redis expires the ticket.
@@ -16,8 +16,8 @@ type Ticket struct {
 
 // CreateRequest contains ticket creation input.
 type CreateRequest struct {
-	// UserID is the TODO user identifier to bind.
-	UserID string
+	// PlayerID is the player identifier to bind.
+	PlayerID int64
 	// IP is the optional client IP address to bind.
 	IP string
 	// TTL overrides the configured default ticket lifetime.
@@ -34,8 +34,8 @@ type ConsumeRequest struct {
 
 // record is the Redis payload for a ticket.
 type record struct {
-	// UserID stores the user bound to the ticket.
-	UserID string `json:"userId"`
+	// PlayerID stores the player bound to the ticket.
+	PlayerID int64 `json:"playerId"`
 	// IP stores the optional address bound to the ticket.
 	IP string `json:"ip,omitempty"`
 	// ExpiresAt stores the Redis expiration timestamp.

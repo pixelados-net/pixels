@@ -102,9 +102,9 @@ func createSSOTicketHandler(service *sso.Service) fiber.Handler {
 // ssoRequest converts an HTTP request into an SSO request.
 func ssoRequest(request CreateSSOTicketRequest) sso.CreateRequest {
 	return sso.CreateRequest{
-		UserID: request.UserID,
-		IP:     request.IP,
-		TTL:    time.Duration(request.TTLSeconds) * time.Second,
+		PlayerID: request.PlayerID,
+		IP:       request.IP,
+		TTL:      time.Duration(request.TTLSeconds) * time.Second,
 	}
 }
 

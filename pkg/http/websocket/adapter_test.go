@@ -12,12 +12,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	"github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	inrelease "github.com/niflaot/pixels/networking/inbound/handshake/release"
 	inticket "github.com/niflaot/pixels/networking/inbound/security/ticket"
 	outauth "github.com/niflaot/pixels/networking/outbound/authentication/ok"
+	"github.com/niflaot/pixels/pkg/bus"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
+	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/zap"
 )
@@ -25,7 +31,7 @@ import (
 // TestAdapterAuthenticatesWebSocket verifies release and SSO over a real socket.
 func TestAdapterAuthenticatesWebSocket(t *testing.T) {
 	service := testService(t)
-	ticket, err := service.Create(context.Background(), sso.CreateRequest{UserID: "todo-user", TTL: time.Minute})
+	ticket, err := service.Create(context.Background(), sso.CreateRequest{PlayerID: 2, TTL: time.Minute})
 	if err != nil {
 		t.Fatalf("create ticket: %v", err)
 	}
@@ -65,7 +71,7 @@ func testServer(t *testing.T, service *sso.Service) (string, func()) {
 		Config{PingInterval: time.Hour, PongTimeout: time.Hour},
 		appconfig.Config{Environment: "development"},
 		netconn.NewRegistry(),
-		realmconn.NewHandlers(service),
+		realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()),
 		zap.NewNop(),
 	)
 	app.Get("/ws", websocket.New(adapter.Handle))
@@ -81,6 +87,40 @@ func testServer(t *testing.T, service *sso.Service) (string, func()) {
 
 	return "ws://" + listener.Addr().String() + "/ws", func() {
 		_ = app.Shutdown()
+	}
+}
+
+// testFinder returns persistent test player records.
+type testFinder struct{}
+
+// FindByID finds a test player by id.
+func (finder testFinder) FindByID(ctx context.Context, id int64) (playerservice.Record, bool, error) {
+	if id != 2 {
+		return playerservice.Record{}, false, nil
+	}
+
+	return testRecord(id), true, nil
+}
+
+// FindByUsername finds a test player by username.
+func (finder testFinder) FindByUsername(context.Context, string) (playerservice.Record, bool, error) {
+	return testRecord(2), true, nil
+}
+
+// testRecord returns a persistent test player record.
+func testRecord(id int64) playerservice.Record {
+	return playerservice.Record{
+		Player: playermodel.Player{
+			Base:     sharedmodel.Base{Identity: sharedmodel.Identity{ID: id}},
+			Username: "test_player",
+		},
+		Profile: playermodel.Profile{
+			PlayerID:        id,
+			Look:            "hd-180-1",
+			Gender:          playermodel.GenderMale,
+			Motto:           "Test fixture.",
+			AllowNameChange: true,
+		},
 	}
 }
 

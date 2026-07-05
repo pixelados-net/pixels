@@ -7,6 +7,9 @@ var (
 	// ErrInvalidPlayerID reports a missing or invalid player identifier.
 	ErrInvalidPlayerID = errors.New("invalid player id")
 
+	// ErrPlayerNotFound reports a missing persistent player.
+	ErrPlayerNotFound = errors.New("player not found")
+
 	// ErrInvalidUsername reports a missing or invalid username.
 	ErrInvalidUsername = errors.New("invalid player username")
 

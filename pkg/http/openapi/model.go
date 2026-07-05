@@ -33,8 +33,8 @@ type StatusResponse struct {
 // CreateSSOTicketRequest is the private SSO ticket creation body.
 type CreateSSOTicketRequest struct {
 	APIKeyRequest
-	// UserID stores the user bound to the ticket.
-	UserID string `json:"userId" required:"true" description:"Temporary TODO user id bound to the SSO ticket."`
+	// PlayerID stores the player bound to the ticket.
+	PlayerID int64 `json:"playerId" required:"true" minimum:"1" description:"Existing player id bound to the SSO ticket."`
 	// IP stores the optional client address bound to the ticket.
 	IP string `json:"ip,omitempty" description:"Optional IP address allowed to consume the ticket."`
 	// TTLSeconds stores the optional ticket lifetime override.

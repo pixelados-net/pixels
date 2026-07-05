@@ -50,6 +50,7 @@ func (adapter *Adapter) Handle(conn *fiberws.Conn) {
 	adapter.log.Debug("websocket connected", zap.String("id", string(socket.id)))
 	socket.run(context.Background())
 	adapter.registry.Remove(kind, socket.id)
+	adapter.handlers.Disconnected(context.Background(), kind, socket.id)
 	adapter.log.Debug("websocket disconnected", zap.String("id", string(socket.id)))
 }
 
