@@ -12,7 +12,9 @@ const FrameOverhead = LengthSize + HeaderSize
 
 // Packet is a decoded pixel-protocol packet.
 type Packet struct {
-	Header  uint16
+	// Header stores the packet identifier.
+	Header uint16
+	// Payload stores the encoded packet body.
 	Payload []byte
 }
 

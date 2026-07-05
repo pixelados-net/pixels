@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/niflaot/pixels/networking/codec"
 )
 
 // TestDisconnectCodeString verifies stable disconnection code labels.
@@ -128,8 +130,53 @@ func TestSessionProductionAuthenticationAllowsReadySecurity(t *testing.T) {
 	}
 }
 
+// TestSessionCompleteSecurityUsesActivator verifies queued security activation.
+func TestSessionCompleteSecurityUsesActivator(t *testing.T) {
+	fixture := sessionFixture(t)
+	activated := false
+	fixture.SecurityActivator = func(ctx context.Context, channel SecureChannel) error {
+		activated = channel.State() == SecurityReady
+		return nil
+	}
+	session := mustSession(t, fixture)
+	packet := codecPacket(2)
+
+	if err := session.CompleteSecurity(context.Background(), packet, &fakeSecureChannel{state: SecurityReady}); err != nil {
+		t.Fatalf("complete security: %v", err)
+	}
+
+	if !activated {
+		t.Fatal("expected activation hook")
+	}
+}
+
+// TestContextOperationsRequireSession verifies detached context protection.
+func TestContextOperationsRequireSession(t *testing.T) {
+	context := Context{}
+	if err := context.Send(contextBackground(), codecPacket(1)); !errors.Is(err, ErrInvalidConnection) {
+		t.Fatalf("expected invalid send context, got %v", err)
+	}
+	if err := context.Disconnect(contextBackground(), UnknownReason()); !errors.Is(err, ErrInvalidConnection) {
+		t.Fatalf("expected invalid disconnect context, got %v", err)
+	}
+	if err := context.Transition(EventSessionReady); !errors.Is(err, ErrInvalidConnection) {
+		t.Fatalf("expected invalid transition context, got %v", err)
+	}
+}
+
+// codecPacket creates a test packet.
+func codecPacket(header uint16) codec.Packet {
+	return codec.Packet{Header: header}
+}
+
+// contextBackground returns a context for tests.
+func contextBackground() context.Context {
+	return context.Background()
+}
+
 // fakeSecureChannel records byte wrapping calls.
 type fakeSecureChannel struct {
+	// state stores the fake security phase.
 	state SecurityState
 }
 

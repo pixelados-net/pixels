@@ -4,20 +4,21 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gofiber/contrib/websocket"
+	fiberws "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	"github.com/niflaot/pixels/pkg/http/openapi"
+	ws "github.com/niflaot/pixels/pkg/http/websocket"
 )
 
 const development = "development"
 
 // registerPublic registers routes that do not require authentication.
-func registerPublic(app *fiber.App, config config.AppConfig, info build.Info) {
+func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, websocket *ws.Adapter) {
 	app.Get("/status", statusHandler(config, info))
-	app.Get("/ws", websocketGate, websocket.New(wsHandler))
+	app.Get("/ws", websocketGate, fiberws.New(websocket.Handle))
 	app.Get("/docs", docsHandler(config))
 }
 
@@ -40,16 +41,11 @@ func statusHandler(config config.AppConfig, info build.Info) fiber.Handler {
 
 // websocketGate requires websocket upgrade requests.
 func websocketGate(ctx *fiber.Ctx) error {
-	if websocket.IsWebSocketUpgrade(ctx) {
+	if fiberws.IsWebSocketUpgrade(ctx) {
 		return ctx.Next()
 	}
 
 	return fiber.ErrUpgradeRequired
-}
-
-// wsHandler handles websocket sessions.
-func wsHandler(conn *websocket.Conn) {
-	_ = conn.Close()
 }
 
 // docsHandler returns the Scalar documentation page.

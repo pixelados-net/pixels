@@ -39,8 +39,11 @@ var (
 
 // Field describes one payload field in declaration order.
 type Field struct {
-	Name     string
-	Kind     Kind
+	// Name stores the protocol field name.
+	Name string
+	// Kind stores the primitive wire type.
+	Kind Kind
+	// Optional reports whether the field may be omitted.
 	Optional bool
 }
 
@@ -49,11 +52,16 @@ type Definition []Field
 
 // Value contains one decoded or encodable payload value.
 type Value struct {
+	// Boolean stores a boolean payload value.
 	Boolean bool
-	Int32   int32
-	Uint16  uint16
-	Uint32  uint32
-	String  string
+	// Int32 stores a signed 32-bit payload value.
+	Int32 int32
+	// Uint16 stores an unsigned 16-bit payload value.
+	Uint16 uint16
+	// Uint32 stores an unsigned 32-bit payload value.
+	Uint32 uint32
+	// String stores a UTF-8 payload value.
+	String string
 }
 
 // Bool returns a boolean payload value.

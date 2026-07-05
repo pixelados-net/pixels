@@ -44,7 +44,7 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 ## Go Style
 
 - Write Go the Go way: clear data flow, small functions, explicit errors, goroutines where concurrency is natural, and channels only where they clarify ownership.
-- Document every package, function, method, struct, interface, type, const, var, and test helper in Go doc style.
+- Document every package, function, method, struct, interface, type, const, var, field, private field, and test helper in Go doc style.
 - Do not add comments inside function bodies.
 - Avoid unnecessary interfaces. Introduce an interface only when it decouples a real boundary, supports multiple implementations, or enables focused tests.
 - Prefer composition over inheritance-like hierarchies.

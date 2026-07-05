@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -20,6 +19,8 @@ type Context struct {
 	State State
 	// StartedAt is the connection start time.
 	StartedAt time.Time
+	// RemoteAddr is the transport peer address.
+	RemoteAddr string
 	// AuthenticatedAt is the authentication time when authenticated.
 	AuthenticatedAt time.Time
 	// Authenticated reports whether authentication completed.
@@ -28,25 +29,53 @@ type Context struct {
 	Disconnected bool
 	// DisconnectReason stores the disposal reason when disconnected.
 	DisconnectReason Reason
+	// session links handler helpers to the active session.
+	session *Session
 }
 
 // Handler executes realm-owned packet behavior.
 type Handler func(Context, codec.Packet) error
 
+// HandlerPolicy controls when a packet handler can run.
+type HandlerPolicy struct {
+	// AllowedStates contains accepted connection states.
+	AllowedStates []State
+	// RequiresAuthenticated reports whether authentication is required.
+	RequiresAuthenticated bool
+	// AllowsDisconnected reports whether disposed sessions can be handled.
+	AllowsDisconnected bool
+}
+
+// HandlerOption configures a handler policy.
+type HandlerOption func(*HandlerPolicy)
+
+// HandlerRegistration stores a handler and its policy.
+type HandlerRegistration struct {
+	// Handler executes packet behavior.
+	Handler Handler
+	// Policy controls when Handler can run.
+	Policy HandlerPolicy
+}
+
 // HandlerRegistry stores packet handlers by header.
 type HandlerRegistry struct {
-	mutex    sync.RWMutex
-	handlers map[uint16]Handler
-	fallback Handler
+	// mutex protects handler registration state.
+	mutex sync.RWMutex
+	// handlers stores exact packet handlers by header.
+	handlers map[uint16]HandlerRegistration
+	// fallback stores the handler used when no exact header matches.
+	fallback HandlerRegistration
+	// hasFallback reports whether fallback is active.
+	hasFallback bool
 }
 
 // NewHandlerRegistry creates an empty handler registry.
 func NewHandlerRegistry() *HandlerRegistry {
-	return &HandlerRegistry{handlers: make(map[uint16]Handler)}
+	return &HandlerRegistry{handlers: make(map[uint16]HandlerRegistration)}
 }
 
 // Register adds a handler for a packet header.
-func (registry *HandlerRegistry) Register(header uint16, handler Handler) error {
+func (registry *HandlerRegistry) Register(header uint16, handler Handler, opts ...HandlerOption) error {
 	if handler == nil {
 		return ErrInvalidHandler
 	}
@@ -58,7 +87,7 @@ func (registry *HandlerRegistry) Register(header uint16, handler Handler) error 
 		return ErrHandlerExists
 	}
 
-	registry.handlers[header] = handler
+	registry.handlers[header] = HandlerRegistration{Handler: handler, Policy: NewHandlerPolicy(opts...)}
 
 	return nil
 }
@@ -78,27 +107,33 @@ func (registry *HandlerRegistry) Unregister(header uint16) bool {
 }
 
 // SetFallback changes the handler used when no header handler is registered.
-func (registry *HandlerRegistry) SetFallback(handler Handler) {
+func (registry *HandlerRegistry) SetFallback(handler Handler, opts ...HandlerOption) {
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	registry.fallback = handler
+	registry.fallback = HandlerRegistration{Handler: handler, Policy: NewHandlerPolicy(opts...)}
+	registry.hasFallback = handler != nil
 }
 
 // Handle routes a packet to the matching handler.
 func (registry *HandlerRegistry) Handle(context Context, packet codec.Packet) error {
 	registry.mutex.RLock()
-	handler := registry.handlers[packet.Header]
-	if handler == nil {
-		handler = registry.fallback
+	registration, ok := registry.handlers[packet.Header]
+	if !ok && registry.hasFallback {
+		registration = registry.fallback
+		ok = true
 	}
 	registry.mutex.RUnlock()
 
-	if handler == nil {
+	if !ok || registration.Handler == nil {
 		return ErrHandlerNotFound
 	}
 
-	return handler(context, packet)
+	if !registration.Policy.Allows(context) {
+		return ErrHandlerPolicy
+	}
+
+	return registration.Handler(context, packet)
 }
 
 // Len returns the number of registered header handlers.
@@ -109,102 +144,75 @@ func (registry *HandlerRegistry) Len() int {
 	return len(registry.handlers)
 }
 
-// SecurityPolicy returns the connection security policy.
-func (session *Session) SecurityPolicy() SecurityPolicy {
+// context returns an immutable handler context snapshot.
+func (session *Session) context(direction Direction) Context {
 	session.mutex.RLock()
 	defer session.mutex.RUnlock()
 
-	return session.policy
+	return Context{
+		ConnectionID:     session.id,
+		ConnectionKind:   session.kind,
+		Direction:        direction,
+		State:            session.state,
+		StartedAt:        session.startedAt,
+		RemoteAddr:       session.remoteAddr,
+		AuthenticatedAt:  session.authenticatedAt,
+		Authenticated:    session.authenticated,
+		Disconnected:     session.disconnected,
+		DisconnectReason: session.disconnectReason,
+		session:          session,
+	}
 }
 
-// SetSecurityPolicy changes security policy before traffic starts.
-func (session *Session) SetSecurityPolicy(policy SecurityPolicy) error {
-	session.mutex.Lock()
-	defer session.mutex.Unlock()
-
-	if session.trafficStarted {
-		return ErrInvalidState
+// NewHandlerPolicy creates a handler policy from options.
+func NewHandlerPolicy(opts ...HandlerOption) HandlerPolicy {
+	policy := HandlerPolicy{AllowedStates: []State{StateConnected}, RequiresAuthenticated: true}
+	for _, opt := range opts {
+		opt(&policy)
 	}
 
-	session.policy = normalizeSecurityPolicy(policy)
-
-	return nil
+	return policy
 }
 
-// AttachSecurity attaches a secure channel to the session.
-func (session *Session) AttachSecurity(channel SecureChannel) error {
-	if channel == nil {
-		return ErrInvalidSecurity
+// AllowStates allows a handler in the given connection states.
+func AllowStates(states ...State) HandlerOption {
+	return func(policy *HandlerPolicy) {
+		policy.AllowedStates = append([]State(nil), states...)
 	}
-
-	session.mutex.Lock()
-	defer session.mutex.Unlock()
-
-	if session.disconnected {
-		return ErrDisposed
-	}
-
-	if session.security != nil {
-		return ErrInvalidSecurity
-	}
-
-	session.security = channel
-
-	return nil
 }
 
-// SecurityState returns the attached secure channel state.
-func (session *Session) SecurityState() SecurityState {
-	session.mutex.RLock()
-	defer session.mutex.RUnlock()
-
-	if session.security == nil {
-		return SecurityPlain
-	}
-
-	return session.security.State()
+// AllowAnyActiveState allows a handler in any non-terminal state.
+func AllowAnyActiveState() HandlerOption {
+	return AllowStates(StateCreated, StateHandshaking, StateSecuring, StateAuthenticating, StateAuthenticated, StateConnected)
 }
 
-// Open unwraps inbound bytes when security is ready.
-func (session *Session) Open(src []byte) ([]byte, error) {
-	channel := session.secureChannel()
-	if channel == nil || channel.State() != SecurityReady {
-		return src, nil
+// AllowUnauthenticated allows a handler before authentication.
+func AllowUnauthenticated() HandlerOption {
+	return func(policy *HandlerPolicy) {
+		policy.RequiresAuthenticated = false
 	}
-
-	return channel.Open(src)
 }
 
-// Seal wraps outbound bytes when security is ready.
-func (session *Session) Seal(src []byte) ([]byte, error) {
-	channel := session.secureChannel()
-	if channel == nil || channel.State() != SecurityReady {
-		return src, nil
+// AllowDisconnected allows a handler after disposal starts.
+func AllowDisconnected() HandlerOption {
+	return func(policy *HandlerPolicy) {
+		policy.AllowsDisconnected = true
 	}
-
-	return channel.Seal(src)
 }
 
-// ValidateAuthenticationSecurity checks security before authentication.
-func (session *Session) ValidateAuthenticationSecurity(ctx context.Context) error {
-	if session.SecurityPolicy().Mode != SecurityRequired {
-		return nil
+// Allows reports whether a context can run under the policy.
+func (policy HandlerPolicy) Allows(context Context) bool {
+	if context.Disconnected && !policy.AllowsDisconnected {
+		return false
+	}
+	if policy.RequiresAuthenticated && !context.Authenticated {
+		return false
+	}
+	for _, state := range policy.AllowedStates {
+		if context.State == state {
+			return true
+		}
 	}
 
-	if session.SecurityState() == SecurityReady {
-		return nil
-	}
-
-	_ = session.Transition(EventProtocolFailed)
-	_ = session.Disconnect(ctx, Reason{Code: DisconnectProtocolError, Message: ErrSecurityRequired.Error()})
-
-	return ErrSecurityRequired
-}
-
-// secureChannel returns the attached secure channel.
-func (session *Session) secureChannel() SecureChannel {
-	session.mutex.RLock()
-	defer session.mutex.RUnlock()
-
-	return session.security
+	return len(policy.AllowedStates) == 0
 }

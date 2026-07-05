@@ -6,11 +6,12 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
+	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"go.uber.org/zap"
 )
 
 // New creates the Fiber application.
-func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service) *fiber.App {
+func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler:          errorHandler,
@@ -21,7 +22,7 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Ser
 		Fields: []string{"latency", "status", "method", "url"},
 	}))
 
-	registerPublic(app, config, info)
+	registerPublic(app, config, info, websocket)
 	app.Use(auth(config.App.AccessKey))
 	registerPrivate(app, sso)
 

@@ -28,9 +28,12 @@ var (
 
 // Service creates and consumes one-time SSO tickets.
 type Service struct {
+	// config stores ticket behavior settings.
 	config Config
-	redis  *redis.Client
-	now    func() time.Time
+	// redis stores and consumes ticket records.
+	redis *redis.Client
+	// now returns the current time for ticket expiration.
+	now func() time.Time
 }
 
 // New creates an SSO service.

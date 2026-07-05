@@ -34,7 +34,10 @@ type ConsumeRequest struct {
 
 // record is the Redis payload for a ticket.
 type record struct {
-	UserID    string    `json:"userId"`
-	IP        string    `json:"ip,omitempty"`
+	// UserID stores the user bound to the ticket.
+	UserID string `json:"userId"`
+	// IP stores the optional address bound to the ticket.
+	IP string `json:"ip,omitempty"`
+	// ExpiresAt stores the Redis expiration timestamp.
 	ExpiresAt time.Time `json:"expiresAt"`
 }

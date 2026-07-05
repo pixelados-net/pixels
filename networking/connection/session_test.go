@@ -115,8 +115,11 @@ func TestSessionRejectsAfterDisconnect(t *testing.T) {
 
 // sessionFixtureConfig extends session config with counters.
 type sessionFixtureConfig struct {
+	// SessionConfig stores the base connection fixture.
 	SessionConfig
-	sent     *int
+	// sent counts outbound packets.
+	sent *int
+	// disposed counts disposal calls.
 	disposed *int
 }
 
@@ -163,7 +166,7 @@ func mustRegister(t *testing.T, registry *HandlerRegistry, header uint16, name s
 		return nil
 	}
 
-	if err := registry.Register(header, handler); err != nil {
+	if err := registry.Register(header, handler, AllowAnyActiveState(), AllowUnauthenticated()); err != nil {
 		t.Fatalf("register handler: %v", err)
 	}
 }

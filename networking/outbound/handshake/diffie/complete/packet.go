@@ -19,6 +19,7 @@ type Option func(*options)
 
 // options stores optional HANDSHAKE_COMPLETE_DIFFIE fields.
 type options struct {
+	// ServerClientEncryption stores the optional encryption flag.
 	ServerClientEncryption *bool
 }
 

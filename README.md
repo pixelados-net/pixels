@@ -61,6 +61,12 @@ go tool cover -func=coverage.out
 | `SSO_DEFAULT_TTL` | `5m` | Default one-time SSO ticket lifetime. |
 | `SSO_KEY` | `pixels-development-sso-key-change-me` | HMAC key used to derive Redis storage keys for SSO tickets. |
 | `SSO_PREFIX` | `pixels:sso` | Redis key prefix for SSO ticket records. |
+| `PIXELS_WS_QUEUE_SIZE` | `256` | Maximum queued outbound WebSocket packets per connection. |
+| `PIXELS_WS_WRITE_TIMEOUT` | `5s` | Maximum duration for one WebSocket write. |
+| `PIXELS_WS_READ_TIMEOUT` | `75s` | Maximum duration for one WebSocket read. |
+| `PIXELS_WS_PING_INTERVAL` | `30s` | Interval between server heartbeat pings. |
+| `PIXELS_WS_PONG_TIMEOUT` | `60s` | Maximum duration without a client pong before disconnecting. |
+| `PIXELS_WS_CLOSE_GRACE` | `2s` | Maximum graceful close flushing duration. |
 
 ## HTTP Surface
 

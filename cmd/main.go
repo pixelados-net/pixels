@@ -3,9 +3,12 @@ package main
 
 import (
 	"github.com/niflaot/pixels/internal/auth/sso"
+	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	pixelhttp "github.com/niflaot/pixels/pkg/http"
+	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"github.com/niflaot/pixels/pkg/logger"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
@@ -23,11 +26,14 @@ func newApp() *fx.App {
 
 // options returns the dependency graph options.
 func options() []fx.Option {
-	options := make([]fx.Option, 0, 7)
+	options := make([]fx.Option, 0, 10)
 	options = append(options, build.Module)
 	options = append(options, config.Module)
+	options = append(options, netconn.Module)
 	options = append(options, pixelhttp.Module)
+	options = append(options, realmconn.Module)
 	options = append(options, sso.Module)
+	options = append(options, ws.Module)
 	options = append(options, logger.Module)
 	options = append(options, redis.Module)
 	options = append(options, fx.WithLogger(logger.NewFx))

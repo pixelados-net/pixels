@@ -3,7 +3,9 @@ package plugin
 
 // Metadata describes a plugin without granting runtime capabilities.
 type Metadata struct {
-	Name    string
+	// Name identifies the plugin.
+	Name string
+	// Version identifies the plugin release.
 	Version string
 }
 

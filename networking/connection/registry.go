@@ -3,11 +3,66 @@ package connection
 import (
 	"context"
 	"sync"
+
+	"go.uber.org/fx"
 )
+
+// Module provides connection infrastructure.
+var Module = fx.Module("connection", fx.Provide(NewRegistry))
+
+// String returns a stable reason label.
+func (code DisconnectCode) String() string {
+	switch code {
+	case DisconnectLocalClose:
+		return "local_close"
+	case DisconnectRemoteClose:
+		return "remote_close"
+	case DisconnectTransportError:
+		return "transport_error"
+	case DisconnectProtocolError:
+		return "protocol_error"
+	case DisconnectAuthenticationFailed:
+		return "authentication_failed"
+	case DisconnectAuthenticationTimeout:
+		return "authentication_timeout"
+	case DisconnectDuplicateSession:
+		return "duplicate_session"
+	case DisconnectIdleTimeout:
+		return "idle_timeout"
+	case DisconnectRateLimited:
+		return "rate_limited"
+	case DisconnectPolicyViolation:
+		return "policy_violation"
+	case DisconnectKicked:
+		return "kicked"
+	case DisconnectBanned:
+		return "banned"
+	case DisconnectServerShutdown:
+		return "server_shutdown"
+	default:
+		return "unknown"
+	}
+}
+
+// UnknownReason returns an unknown disconnection reason.
+func UnknownReason() Reason {
+	return Reason{Code: DisconnectUnknown}
+}
+
+// normalizeSecurityPolicy fills missing policy values.
+func normalizeSecurityPolicy(policy SecurityPolicy) SecurityPolicy {
+	if policy.Mode == 0 {
+		return DefaultSecurityPolicy()
+	}
+
+	return policy
+}
 
 // Registry stores active connections grouped by kind.
 type Registry struct {
-	mutex       sync.RWMutex
+	// mutex protects connection buckets.
+	mutex sync.RWMutex
+	// connections stores active connections by kind and id.
 	connections map[Kind]map[ID]Connection
 }
 

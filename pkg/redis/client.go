@@ -10,6 +10,7 @@ import (
 
 // Client wraps Redis operations used by reusable components.
 type Client struct {
+	// client is the underlying Redis driver.
 	client *goredis.Client
 }
 

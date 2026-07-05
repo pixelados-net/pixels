@@ -13,6 +13,9 @@
 .continue/
 .aider*
 
+# Local planning drafts.
+plan/*.md
+
 # IDEs and editors.
 .idea/
 .vscode/
@@ -22,11 +25,11 @@
 .DS_Store
 
 # Go build and test output.
-bin/
-build/
-dist/
-out/
-tmp/
+/bin/
+/build/
+/dist/
+/out/
+/tmp/
 *.test
 *.prof
 *.cover

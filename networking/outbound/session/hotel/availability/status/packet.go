@@ -20,6 +20,7 @@ type Option func(*options)
 
 // options stores optional AVAILABILITY_STATUS fields.
 type options struct {
+	// IsAuthentic stores the optional authenticity flag.
 	IsAuthentic *bool
 }
 

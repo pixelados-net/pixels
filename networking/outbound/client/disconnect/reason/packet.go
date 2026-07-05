@@ -18,6 +18,7 @@ type Option func(*options)
 
 // options stores optional DISCONNECT_REASON fields.
 type options struct {
+	// Reason stores the optional disconnect reason code.
 	Reason *int32
 }
 

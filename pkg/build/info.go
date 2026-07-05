@@ -14,9 +14,12 @@ var CommitHash = "dev"
 
 // Info describes the current emulator build.
 type Info struct {
-	Name    string
+	// Name stores the project name.
+	Name string
+	// Version stores the project version and short commit.
 	Version string
-	Commit  string
+	// Commit stores the short commit hash.
+	Commit string
 }
 
 // DefaultInfo returns the default build metadata for local development.

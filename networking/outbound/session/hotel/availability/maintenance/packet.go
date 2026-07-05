@@ -20,6 +20,7 @@ type Option func(*options)
 
 // options stores optional HOTEL_MAINTENANCE fields.
 type options struct {
+	// Duration stores the optional maintenance duration.
 	Duration *int32
 }
 

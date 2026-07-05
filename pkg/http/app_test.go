@@ -10,9 +10,12 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
+	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"github.com/niflaot/pixels/pkg/logger"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/zap"
@@ -148,7 +151,10 @@ func TestWebsocketRouteRequiresUpgrade(t *testing.T) {
 func testApp(t *testing.T, environment string) *fiber.App {
 	t.Helper()
 
-	return New(zap.NewNop(), testConfig(environment), testInfo(), testSSO(t))
+	service := testSSO(t)
+	adapter := ws.New(ws.Config{}, testConfig(environment).App, netconn.NewRegistry(), realmconn.NewHandlers(service), zap.NewNop())
+
+	return New(zap.NewNop(), testConfig(environment), testInfo(), service, adapter)
 }
 
 // testConfig creates composed configuration for route tests.

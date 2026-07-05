@@ -16,11 +16,11 @@ func TestHandlerRegistryHandle(t *testing.T) {
 		return nil
 	}
 
-	if err := registry.Register(7, handler); err != nil {
+	if err := registry.Register(7, handler, AllowAnyActiveState(), AllowUnauthenticated()); err != nil {
 		t.Fatalf("register handler: %v", err)
 	}
 
-	if err := registry.Handle(Context{ConnectionID: "one"}, codec.Packet{Header: 7}); err != nil {
+	if err := registry.Handle(Context{ConnectionID: "one", State: StateCreated}, codec.Packet{Header: 7}); err != nil {
 		t.Fatalf("handle packet: %v", err)
 	}
 
@@ -52,9 +52,9 @@ func TestHandlerRegistryFallback(t *testing.T) {
 	registry.SetFallback(func(context Context, packet codec.Packet) error {
 		called = packet.Header == 99
 		return nil
-	})
+	}, AllowAnyActiveState(), AllowUnauthenticated())
 
-	if err := registry.Handle(Context{}, codec.Packet{Header: 99}); err != nil {
+	if err := registry.Handle(Context{State: StateCreated}, codec.Packet{Header: 99}); err != nil {
 		t.Fatalf("handle fallback: %v", err)
 	}
 
@@ -69,6 +69,24 @@ func TestHandlerRegistryMissing(t *testing.T) {
 	err := registry.Handle(Context{}, codec.Packet{Header: 99})
 	if !errors.Is(err, ErrHandlerNotFound) {
 		t.Fatalf("expected handler missing, got %v", err)
+	}
+}
+
+// TestHandlerRegistryRejectsPolicy verifies default connected authentication gates.
+func TestHandlerRegistryRejectsPolicy(t *testing.T) {
+	registry := NewHandlerRegistry()
+	if err := registry.Register(7, func(Context, codec.Packet) error { return nil }); err != nil {
+		t.Fatalf("register handler: %v", err)
+	}
+
+	err := registry.Handle(Context{State: StateHandshaking}, codec.Packet{Header: 7})
+	if !errors.Is(err, ErrHandlerPolicy) {
+		t.Fatalf("expected handler policy error, got %v", err)
+	}
+
+	err = registry.Handle(Context{State: StateConnected, Authenticated: true}, codec.Packet{Header: 7})
+	if err != nil {
+		t.Fatalf("expected connected handler, got %v", err)
 	}
 }
 

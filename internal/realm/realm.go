@@ -3,6 +3,7 @@ package realm
 
 // Realm describes a pixel-protocol realm served by the emulator.
 type Realm struct {
+	// Name identifies the realm.
 	Name string
 }
 

@@ -1,4 +1,4 @@
-// Package connection defines transport-agnostic connection sessions.
+// Package connection defines transport-agnostic protocol sessions.
 package connection
 
 import (
@@ -11,39 +11,30 @@ import (
 )
 
 var (
-	// ErrConnectionExists reports an already registered connection id for a kind.
+	// ErrConnectionExists reports a duplicate connection id.
 	ErrConnectionExists = errors.New("connection exists")
-
-	// ErrConnectionNotFound reports a missing connection id for a kind.
+	// ErrConnectionNotFound reports a missing connection id.
 	ErrConnectionNotFound = errors.New("connection not found")
-
-	// ErrDisposed reports an operation attempted after disposal.
+	// ErrDisposed reports an operation after disposal.
 	ErrDisposed = errors.New("connection disposed")
-
-	// ErrHandlerExists reports an already registered handler for a packet header.
+	// ErrHandlerExists reports a duplicate packet handler.
 	ErrHandlerExists = errors.New("handler exists")
-
-	// ErrHandlerNotFound reports a missing handler for a packet header.
+	// ErrHandlerNotFound reports a missing packet handler.
 	ErrHandlerNotFound = errors.New("handler not found")
-
-	// ErrInvalidConnection reports an invalid connection value.
+	// ErrHandlerPolicy reports a packet rejected by policy.
+	ErrHandlerPolicy = errors.New("handler policy rejected")
+	// ErrInvalidConnection reports an invalid connection.
 	ErrInvalidConnection = errors.New("invalid connection")
-
-	// ErrInvalidConnectionConfig reports an invalid session configuration.
+	// ErrInvalidConnectionConfig reports invalid session config.
 	ErrInvalidConnectionConfig = errors.New("invalid connection config")
-
 	// ErrInvalidHandler reports an invalid packet handler.
 	ErrInvalidHandler = errors.New("invalid handler")
-
 	// ErrInvalidSecurity reports an invalid secure channel.
 	ErrInvalidSecurity = errors.New("invalid security")
-
 	// ErrInvalidState reports an invalid state operation.
 	ErrInvalidState = errors.New("invalid state")
-
 	// ErrInvalidTransition reports an invalid state transition.
 	ErrInvalidTransition = errors.New("invalid transition")
-
 	// ErrSecurityRequired reports missing required security.
 	ErrSecurityRequired = errors.New("security required")
 )
@@ -59,6 +50,9 @@ type Sender func(context.Context, codec.Packet) error
 
 // Disposer releases transport resources for a connection.
 type Disposer func(context.Context, Reason) error
+
+// SecurityActivator activates security after queued transport writes.
+type SecurityActivator func(context.Context, SecureChannel) error
 
 // Direction names whether a packet is entering or leaving a connection.
 type Direction uint8
@@ -105,6 +99,48 @@ type SecurityPolicy struct {
 	Mode SecurityMode
 }
 
+// DisconnectCode names a protocol-agnostic disconnection reason.
+type DisconnectCode uint16
+
+const (
+	// DisconnectUnknown is used when no better reason is known.
+	DisconnectUnknown DisconnectCode = iota
+	// DisconnectLocalClose is used when the server closes intentionally.
+	DisconnectLocalClose
+	// DisconnectRemoteClose is used when the peer closes intentionally.
+	DisconnectRemoteClose
+	// DisconnectTransportError is used when the transport fails.
+	DisconnectTransportError
+	// DisconnectProtocolError is used when framing or payloads are invalid.
+	DisconnectProtocolError
+	// DisconnectAuthenticationFailed is used when authentication is rejected.
+	DisconnectAuthenticationFailed
+	// DisconnectAuthenticationTimeout is used when authentication takes too long.
+	DisconnectAuthenticationTimeout
+	// DisconnectDuplicateSession is used when a newer session replaces this one.
+	DisconnectDuplicateSession
+	// DisconnectIdleTimeout is used when the connection is idle too long.
+	DisconnectIdleTimeout
+	// DisconnectRateLimited is used when the peer exceeds network limits.
+	DisconnectRateLimited
+	// DisconnectPolicyViolation is used when the peer violates policy.
+	DisconnectPolicyViolation
+	// DisconnectKicked is used when moderation removes the peer.
+	DisconnectKicked
+	// DisconnectBanned is used when moderation blocks access.
+	DisconnectBanned
+	// DisconnectServerShutdown is used during controlled shutdown.
+	DisconnectServerShutdown
+)
+
+// Reason explains why a connection was disconnected.
+type Reason struct {
+	// Code is the stable disconnection category.
+	Code DisconnectCode
+	// Message adds optional operator context.
+	Message string
+}
+
 // SecureChannel opens and seals transport bytes for a session.
 type SecureChannel interface {
 	// State returns the security phase.
@@ -145,6 +181,8 @@ type Connection interface {
 	AuthenticatedAt() (time.Time, bool)
 	// Authenticate marks the connection as authenticated.
 	Authenticate(time.Time) error
+	// State returns the connection lifecycle phase.
+	State() State
 	// Receive handles an inbound packet.
 	Receive(context.Context, codec.Packet) error
 	// Send handles and writes an outbound packet.
@@ -163,6 +201,8 @@ type SessionConfig struct {
 	Kind Kind
 	// StartedAt overrides the connection start time.
 	StartedAt time.Time
+	// RemoteAddr stores the transport peer address.
+	RemoteAddr string
 	// Inbound handles packets received from the peer.
 	Inbound *HandlerRegistry
 	// Outbound handles packets sent to the peer.
@@ -173,4 +213,6 @@ type SessionConfig struct {
 	Sender Sender
 	// Disposer releases transport resources.
 	Disposer Disposer
+	// SecurityActivator activates security after queued writes.
+	SecurityActivator SecurityActivator
 }
