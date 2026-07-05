@@ -5,6 +5,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	realmplayer "github.com/niflaot/pixels/internal/realm/player"
+	realmroom "github.com/niflaot/pixels/internal/realm/room"
 	realmsession "github.com/niflaot/pixels/internal/realm/session"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
@@ -38,6 +39,7 @@ func options() []fx.Option {
 	options = append(options, pixelhttp.Module)
 	options = append(options, realmconn.Module)
 	options = append(options, realmplayer.Module)
+	options = append(options, realmroom.Module)
 	options = append(options, realmsession.Module)
 	options = append(options, sso.Module)
 	options = append(options, ws.Module)

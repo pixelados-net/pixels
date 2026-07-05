@@ -5,6 +5,6 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="../../internal/realm/player/database/changelog.xml" relativeToChangelogFile="true"/>
-    <include file="../../internal/realm/room/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="development/0001_default_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="test/0001_test_room_layouts.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>
