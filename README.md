@@ -62,6 +62,30 @@ go tool cover -func=coverage.out
 - `GET /docs` serves Scalar API docs only when `PIXELS_ENV=development`.
 - Private routes require `X-API-Key: <PIXELS_ACCESS_KEY>`.
 
+## Packet API
+
+Inbound packets are decoded from `codec.Packet` into typed payloads:
+
+```go
+payload, err := ticket.Decode(packet)
+if err != nil {
+	return err
+}
+
+_ = payload.Ticket
+```
+
+Outbound packets are encoded with typed parameters:
+
+```go
+packet, err := status.Encode(true, false, status.WithIsAuthentic(true))
+if err != nil {
+	return err
+}
+
+frame, err := codec.AppendFrame(nil, packet)
+```
+
 ## Build Metadata
 
 The registered project version lives in `pkg/build`. Release builds can inject the source commit:

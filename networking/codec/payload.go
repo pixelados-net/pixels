@@ -4,11 +4,19 @@ import "encoding/binary"
 
 // AppendPayload appends encoded payload values to dst using definition order.
 func AppendPayload(dst []byte, definition Definition, values ...Value) ([]byte, error) {
-	if len(definition) != len(values) {
+	if len(values) > len(definition) {
 		return dst, ErrInvalidField
 	}
 
 	for index, field := range definition {
+		if index >= len(values) {
+			if field.Optional {
+				continue
+			}
+
+			return dst, ErrInvalidField
+		}
+
 		value := values[index]
 		var err error
 		dst, err = appendValue(dst, field, value)
@@ -25,6 +33,10 @@ func DecodePayload(dst []Value, definition Definition, src []byte) ([]Value, []b
 	for _, field := range definition {
 		value, rest, err := decodeValue(field, src)
 		if err != nil {
+			if field.Optional && err == ErrTruncatedPayload {
+				return dst, src, nil
+			}
+
 			return dst, src, err
 		}
 
@@ -37,19 +49,19 @@ func DecodePayload(dst []Value, definition Definition, src []byte) ([]Value, []b
 
 // appendValue appends one encoded value to dst.
 func appendValue(dst []byte, field Field, value Value) ([]byte, error) {
-	switch field {
-	case BooleanField:
+	switch field.Kind {
+	case BooleanKind:
 		if value.Boolean {
 			return append(dst, 1), nil
 		}
 		return append(dst, 0), nil
-	case Int32Field:
+	case Int32Kind:
 		return binary.BigEndian.AppendUint32(dst, uint32(value.Int32)), nil
-	case Uint16Field:
+	case Uint16Kind:
 		return binary.BigEndian.AppendUint16(dst, value.Uint16), nil
-	case Uint32Field:
+	case Uint32Kind:
 		return binary.BigEndian.AppendUint32(dst, value.Uint32), nil
-	case StringField:
+	case StringKind:
 		return appendString(dst, value.String)
 	default:
 		return dst, ErrInvalidField
@@ -58,28 +70,28 @@ func appendValue(dst []byte, field Field, value Value) ([]byte, error) {
 
 // decodeValue decodes one value from src.
 func decodeValue(field Field, src []byte) (Value, []byte, error) {
-	switch field {
-	case BooleanField:
+	switch field.Kind {
+	case BooleanKind:
 		if len(src) < 1 {
 			return Value{}, src, ErrTruncatedPayload
 		}
 		return Bool(src[0] != 0), src[1:], nil
-	case Int32Field:
+	case Int32Kind:
 		if len(src) < 4 {
 			return Value{}, src, ErrTruncatedPayload
 		}
 		return Int32(int32(binary.BigEndian.Uint32(src[:4]))), src[4:], nil
-	case Uint16Field:
+	case Uint16Kind:
 		if len(src) < 2 {
 			return Value{}, src, ErrTruncatedPayload
 		}
 		return Uint16(binary.BigEndian.Uint16(src[:2])), src[2:], nil
-	case Uint32Field:
+	case Uint32Kind:
 		if len(src) < 4 {
 			return Value{}, src, ErrTruncatedPayload
 		}
 		return Uint32(binary.BigEndian.Uint32(src[:4])), src[4:], nil
-	case StringField:
+	case StringKind:
 		return decodeString(src)
 	default:
 		return Value{}, src, ErrInvalidField

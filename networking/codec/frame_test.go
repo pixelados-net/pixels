@@ -65,3 +65,34 @@ func TestDecodeFramesRejectsSmallFrame(t *testing.T) {
 		t.Fatalf("expected small frame error, got %v", err)
 	}
 }
+
+// TestNewPacketAndDecodePacket verifies packet payload helpers.
+func TestNewPacketAndDecodePacket(t *testing.T) {
+	packet, err := NewPacket(295, Definition{Int32Field}, Int32(99))
+	if err != nil {
+		t.Fatalf("new packet: %v", err)
+	}
+
+	values, rest, err := DecodePacket(packet, Definition{Int32Field})
+	if err != nil {
+		t.Fatalf("decode packet: %v", err)
+	}
+
+	if len(rest) != 0 {
+		t.Fatalf("expected no rest, got %d", len(rest))
+	}
+
+	if values[0].Int32 != 99 {
+		t.Fatalf("expected request id 99, got %d", values[0].Int32)
+	}
+}
+
+// TestDecodePacketExactRejectsRest verifies exact packet decoding rejects trailing payload.
+func TestDecodePacketExactRejectsRest(t *testing.T) {
+	packet := Packet{Header: 1, Payload: []byte{1}}
+
+	_, err := DecodePacketExact(packet, Definition{})
+	if !errors.Is(err, ErrUnexpectedPayload) {
+		t.Fatalf("expected unexpected payload error, got %v", err)
+	}
+}

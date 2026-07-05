@@ -1,24 +1,48 @@
 package codec
 
-// Field describes one payload field in declaration order.
-type Field uint8
+// Kind names a primitive payload field type.
+type Kind uint8
 
 const (
-	// BooleanField encodes a boolean as uint8.
-	BooleanField Field = iota + 1
+	// BooleanKind names a boolean encoded as uint8.
+	BooleanKind Kind = iota + 1
 
-	// Int32Field encodes a signed 32-bit integer.
-	Int32Field
+	// Int32Kind names a signed 32-bit integer.
+	Int32Kind
 
-	// Uint16Field encodes an unsigned 16-bit integer.
-	Uint16Field
+	// Uint16Kind names an unsigned 16-bit integer.
+	Uint16Kind
 
-	// Uint32Field encodes an unsigned 32-bit integer.
-	Uint32Field
+	// Uint32Kind names an unsigned 32-bit integer.
+	Uint32Kind
 
-	// StringField encodes UTF-8 text with a uint16 byte length prefix.
-	StringField
+	// StringKind names UTF-8 text with a uint16 byte length prefix.
+	StringKind
 )
+
+var (
+	// BooleanField encodes a required boolean as uint8.
+	BooleanField = Field{Kind: BooleanKind}
+
+	// Int32Field encodes a required signed 32-bit integer.
+	Int32Field = Field{Kind: Int32Kind}
+
+	// Uint16Field encodes a required unsigned 16-bit integer.
+	Uint16Field = Field{Kind: Uint16Kind}
+
+	// Uint32Field encodes a required unsigned 32-bit integer.
+	Uint32Field = Field{Kind: Uint32Kind}
+
+	// StringField encodes a required UTF-8 string with a uint16 byte length prefix.
+	StringField = Field{Kind: StringKind}
+)
+
+// Field describes one payload field in declaration order.
+type Field struct {
+	Name     string
+	Kind     Kind
+	Optional bool
+}
 
 // Definition describes a packet payload in wire order.
 type Definition []Field
@@ -55,4 +79,18 @@ func Uint32(value uint32) Value {
 // String returns a string payload value.
 func String(value string) Value {
 	return Value{String: value}
+}
+
+// Optional returns an optional field declaration.
+func Optional(field Field) Field {
+	field.Optional = true
+
+	return field
+}
+
+// Named returns a field declaration with a protocol field name.
+func Named(name string, field Field) Field {
+	field.Name = name
+
+	return field
 }

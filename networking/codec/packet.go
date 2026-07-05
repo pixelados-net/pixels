@@ -16,6 +16,35 @@ type Packet struct {
 	Payload []byte
 }
 
+// NewPacket creates a packet by encoding values with a payload definition.
+func NewPacket(header uint16, definition Definition, values ...Value) (Packet, error) {
+	payload, err := AppendPayload(nil, definition, values...)
+	if err != nil {
+		return Packet{}, err
+	}
+
+	return Packet{Header: header, Payload: payload}, nil
+}
+
+// DecodePacket decodes packet payload values with a payload definition.
+func DecodePacket(packet Packet, definition Definition) ([]Value, []byte, error) {
+	return DecodePayload(nil, definition, packet.Payload)
+}
+
+// DecodePacketExact decodes packet payload values and rejects remaining bytes.
+func DecodePacketExact(packet Packet, definition Definition) ([]Value, error) {
+	values, rest, err := DecodePacket(packet, definition)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rest) != 0 {
+		return nil, ErrUnexpectedPayload
+	}
+
+	return values, nil
+}
+
 // Size returns the packet size covered by the frame length prefix.
 func (packet Packet) Size() int {
 	return HeaderSize + len(packet.Payload)

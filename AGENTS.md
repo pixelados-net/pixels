@@ -10,6 +10,21 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 - `sdk/` contains controlled reusable implementations for plugin creation and extension points.
 - `cmd/` contains executable entry points.
 
+## Networking Layout
+
+- `networking/codec/` contains two-way wire encoding and decoding helpers.
+- `networking/inbound/` contains client-to-server packet definitions.
+- `networking/outbound/` contains server-to-client packet definitions.
+- Inbound packet packages decode only; expose `Decode(packet codec.Packet) (Payload, error)` and do not expose packet constructors.
+- Outbound packet packages encode only; expose `Encode(...) (codec.Packet, error)` and do not expose packet decoders or public payload structs.
+- Outbound required protocol fields must be function parameters, while optional protocol fields must use packet-local option functions such as `WithReason(value)`.
+- Inbound decoders must validate the packet header before decoding the payload.
+- Packet definitions must not create `c2s` or `s2c` package directories.
+- Keep exactly one packet per packet package, with `packet.go` and `packet_test.go`.
+- Prefer direct functional package names such as `networking/outbound/session/hotel/availability`.
+- Avoid one-word ladder paths for packet names, such as `closed/and/opens/at`.
+- When packets share a functional concept, classify them by inbound or outbound and use a concise package name.
+
 ## Package Rules
 
 - Prefer small, single-name packages with nested paths over long package names.

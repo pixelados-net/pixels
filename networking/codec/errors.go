@@ -17,4 +17,10 @@ var (
 
 	// ErrTruncatedPayload reports a payload that ends before all fields decode.
 	ErrTruncatedPayload = errors.New("truncated payload")
+
+	// ErrUnexpectedPayload reports extra payload bytes after decoding all fields.
+	ErrUnexpectedPayload = errors.New("unexpected payload")
+
+	// ErrUnexpectedHeader reports a packet decoded with the wrong packet definition.
+	ErrUnexpectedHeader = errors.New("unexpected header")
 )
