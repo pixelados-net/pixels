@@ -3,6 +3,7 @@ package config
 import (
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
 )
 
@@ -13,6 +14,7 @@ var Module = fx.Module(
 		New,
 		App,
 		Logger,
+		Redis,
 	),
 )
 
@@ -29,4 +31,9 @@ func App(config AppConfig) appconfig.Config {
 // Logger extracts logger settings from composed configuration.
 func Logger(config AppConfig) logger.Config {
 	return config.Logger
+}
+
+// Redis extracts Redis settings from composed configuration.
+func Redis(config AppConfig) redis.Config {
+	return config.Redis
 }

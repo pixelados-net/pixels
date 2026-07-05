@@ -50,6 +50,10 @@ go tool cover -func=coverage.out
 | `PIXELS_ACCESS_KEY` | `pixels-dev-key` | API key for private endpoints through `X-API-Key`. |
 | `LOG_LEVEL` | `info` | Zap log level. |
 | `LOG_FORMAT` | `console` | Zap encoder, either `console` or `json`. |
+| `REDIS_ADDRESS` | `127.0.0.1:6379` | Redis server address. |
+| `REDIS_USERNAME` | empty | Redis ACL username. |
+| `REDIS_PASSWORD` | empty | Redis password. |
+| `REDIS_DATABASE` | `0` | Redis database number. |
 
 ## HTTP Surface
 
@@ -67,5 +71,6 @@ go build -ldflags "-X github.com/niflaot/pixels/pkg/build.CommitHash=$(git rev-p
 ```
 
 The runtime build version combines the registered version and the first eight characters of the commit hash.
+Without `-ldflags`, the commit hash defaults to `dev`, so local `go run ./cmd` prints a version like `0.1.0-dev`.
 
 Project rules for agents and contributors live in `AGENTS.md`.

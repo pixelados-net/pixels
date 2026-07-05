@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/redis"
 )
 
 // AppConfig composes startup configuration without owning component settings.
@@ -17,6 +18,9 @@ type AppConfig struct {
 
 	// Logger contains zap logger settings.
 	Logger logger.Config
+
+	// Redis contains reusable Redis storage settings.
+	Redis redis.Config
 }
 
 // Load reads dotenv files and composes all configuration holders.
@@ -35,9 +39,15 @@ func Load(paths ...string) (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	redis, err := redis.LoadConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	return AppConfig{
 		App:    app,
 		Logger: log,
+		Redis:  redis,
 	}, nil
 }
 

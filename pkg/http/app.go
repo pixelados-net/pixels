@@ -11,7 +11,8 @@ import (
 // New creates the Fiber application.
 func New(log *zap.Logger, config config.AppConfig, info build.Info) *fiber.App {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errorHandler,
+		DisableStartupMessage: true,
+		ErrorHandler:          errorHandler,
 	})
 
 	app.Use(fiberzap.New(fiberzap.Config{

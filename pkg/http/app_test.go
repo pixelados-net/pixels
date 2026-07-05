@@ -29,6 +29,15 @@ func TestStatusRouteIsPublic(t *testing.T) {
 	}
 }
 
+// TestNewDisablesStartupMessage verifies Fiber's welcome banner is disabled.
+func TestNewDisablesStartupMessage(t *testing.T) {
+	app := testApp("development")
+
+	if !app.Config().DisableStartupMessage {
+		t.Fatal("expected Fiber startup message to be disabled")
+	}
+}
+
 // TestDocsRoutesAreDevelopmentOnly verifies Scalar docs are public in development.
 func TestDocsRoutesAreDevelopmentOnly(t *testing.T) {
 	app := testApp("development")

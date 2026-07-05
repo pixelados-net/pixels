@@ -17,7 +17,7 @@ func TestNewAppBuilds(t *testing.T) {
 func TestOptionsBuilds(t *testing.T) {
 	options := options()
 
-	if len(options) != 4 {
-		t.Fatalf("expected four options, got %d", len(options))
+	if len(options) != 6 {
+		t.Fatalf("expected six options, got %d", len(options))
 	}
 }
