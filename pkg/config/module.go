@@ -4,6 +4,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/postgres"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
 )
@@ -15,6 +16,7 @@ var Module = fx.Module(
 		New,
 		App,
 		Logger,
+		Postgres,
 		Redis,
 		SSO,
 	),
@@ -33,6 +35,11 @@ func App(config AppConfig) appconfig.Config {
 // Logger extracts logger settings from composed configuration.
 func Logger(config AppConfig) logger.Config {
 	return config.Logger
+}
+
+// Postgres extracts PostgreSQL settings from composed configuration.
+func Postgres(config AppConfig) postgres.Config {
+	return config.Postgres
 }
 
 // Redis extracts Redis settings from composed configuration.

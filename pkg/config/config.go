@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/postgres"
 	"github.com/niflaot/pixels/pkg/redis"
 )
 
@@ -19,6 +20,9 @@ type AppConfig struct {
 
 	// Logger contains zap logger settings.
 	Logger logger.Config
+
+	// Postgres contains PostgreSQL storage settings.
+	Postgres postgres.Config
 
 	// Redis contains reusable Redis storage settings.
 	Redis redis.Config
@@ -43,6 +47,11 @@ func Load(paths ...string) (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	postgres, err := postgres.LoadConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	redis, err := redis.LoadConfig()
 	if err != nil {
 		return AppConfig{}, err
@@ -54,10 +63,11 @@ func Load(paths ...string) (AppConfig, error) {
 	}
 
 	return AppConfig{
-		App:    app,
-		Logger: log,
-		Redis:  redis,
-		SSO:    sso,
+		App:      app,
+		Logger:   log,
+		Postgres: postgres,
+		Redis:    redis,
+		SSO:      sso,
 	}, nil
 }
 

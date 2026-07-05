@@ -32,21 +32,21 @@ func Register(registry *netconn.HandlerRegistry) {
 // Release handles client release metadata.
 func Release(context netconn.Context, packet codec.Packet) error {
 	_, err := inrelease.Decode(packet)
-
+	// TODO: Store this on connection.
 	return err
 }
 
 // Variables handles client variable metadata.
 func Variables(context netconn.Context, packet codec.Packet) error {
 	_, err := invariables.Decode(packet)
-
+	// TODO: Store this on connection.
 	return err
 }
 
 // Policy handles client policy probes.
 func Policy(context netconn.Context, packet codec.Packet) error {
 	_, err := inpolicy.Decode(packet)
-
+	// TODO: Ideate an implementaiton of policy handling.
 	return err
 }
 

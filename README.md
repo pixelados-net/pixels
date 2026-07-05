@@ -58,6 +58,17 @@ go tool cover -func=coverage.out
 | `REDIS_USERNAME` | empty | Redis ACL username. |
 | `REDIS_PASSWORD` | empty | Redis password. |
 | `REDIS_DATABASE` | `0` | Redis database number. |
+| `PIXELS_POSTGRES_HOST` | `localhost` | PostgreSQL server host. |
+| `PIXELS_POSTGRES_PORT` | `5432` | PostgreSQL server port. |
+| `PIXELS_POSTGRES_DATABASE` | `pixels` | PostgreSQL database name. |
+| `PIXELS_POSTGRES_USER` | `pixels` | PostgreSQL user. |
+| `PIXELS_POSTGRES_PASSWORD` | `pixels` | PostgreSQL password for development. |
+| `PIXELS_POSTGRES_SSL_MODE` | `disable` | PostgreSQL SSL mode. |
+| `PIXELS_POSTGRES_MAX_CONNS` | `10` | Maximum PostgreSQL pool connections. |
+| `PIXELS_POSTGRES_MIN_CONNS` | `1` | Minimum PostgreSQL pool connections. |
+| `PIXELS_POSTGRES_CONNECT_TIMEOUT` | `5s` | PostgreSQL connection timeout. |
+| `PIXELS_POSTGRES_STATEMENT_TIMEOUT` | `5s` | PostgreSQL statement timeout. |
+| `PIXELS_POSTGRES_HEALTH_TIMEOUT` | `2s` | PostgreSQL health check timeout. |
 | `SSO_DEFAULT_TTL` | `5m` | Default one-time SSO ticket lifetime. |
 | `SSO_KEY` | `pixels-development-sso-key-change-me` | HMAC key used to derive Redis storage keys for SSO tickets. |
 | `SSO_PREFIX` | `pixels:sso` | Redis key prefix for SSO ticket records. |
@@ -67,6 +78,32 @@ go tool cover -func=coverage.out
 | `PIXELS_WS_PING_INTERVAL` | `30s` | Interval between server heartbeat pings. |
 | `PIXELS_WS_PONG_TIMEOUT` | `60s` | Maximum duration without a client pong before disconnecting. |
 | `PIXELS_WS_CLOSE_GRACE` | `2s` | Maximum graceful close flushing duration. |
+
+## Database
+
+Pixels uses PostgreSQL for durable state and Liquibase for schema migrations.
+Schema migrations are composed from `database/changelog.xml`, while realm-owned
+migrations live with their realm, such as `internal/player/database`.
+
+Run schema validation:
+
+```sh
+docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.example.properties validate
+```
+
+Run schema updates:
+
+```sh
+docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.example.properties update
+```
+
+Seed changelogs are separate from the default schema changelog so development
+or test fixtures are never applied accidentally. Run them explicitly with a
+context:
+
+```sh
+docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.seed.example.properties --context-filter=development update
+```
 
 ## HTTP Surface
 

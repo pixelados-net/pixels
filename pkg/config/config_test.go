@@ -8,6 +8,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/postgres"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -21,6 +22,8 @@ func TestLoadUsesEnvironment(t *testing.T) {
 	t.Setenv("PIXELS_ACCESS_KEY", "secret")
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("LOG_FORMAT", "json")
+	t.Setenv("PIXELS_POSTGRES_HOST", "db")
+	t.Setenv("PIXELS_POSTGRES_DATABASE", "pixels_test")
 	t.Setenv("REDIS_ADDRESS", "localhost:6380")
 	t.Setenv("SSO_DEFAULT_TTL", "10m")
 	t.Setenv("SSO_KEY", "secret-sso-key")
@@ -46,6 +49,10 @@ func TestLoadUsesEnvironment(t *testing.T) {
 		t.Fatalf("expected json logger format, got %q", config.Logger.Format)
 	}
 
+	if config.Postgres.Database != "pixels_test" {
+		t.Fatalf("expected PostgreSQL database from environment, got %q", config.Postgres.Database)
+	}
+
 	if config.Redis.Address != "localhost:6380" {
 		t.Fatalf("expected Redis address from environment, got %q", config.Redis.Address)
 	}
@@ -57,10 +64,10 @@ func TestLoadUsesEnvironment(t *testing.T) {
 
 // TestLoadUsesDotenv verifies dotenv files populate environment variables.
 func TestLoadUsesDotenv(t *testing.T) {
-	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
+	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := "PIXELS_ENV=dotenv\nPIXELS_HOST=localhost\nPIXELS_PORT=9090\nPIXELS_ACCESS_KEY=dotenv-key\nLOG_LEVEL=warn\nLOG_FORMAT=console\nREDIS_ADDRESS=localhost:6381\nSSO_DEFAULT_TTL=15m\nSSO_KEY=dotenv-sso-key\n"
+	content := "PIXELS_ENV=dotenv\nPIXELS_HOST=localhost\nPIXELS_PORT=9090\nPIXELS_ACCESS_KEY=dotenv-key\nLOG_LEVEL=warn\nLOG_FORMAT=console\nPIXELS_POSTGRES_HOST=dotenv-db\nREDIS_ADDRESS=localhost:6381\nSSO_DEFAULT_TTL=15m\nSSO_KEY=dotenv-sso-key\n"
 
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatalf("write dotenv: %v", err)
@@ -81,6 +88,10 @@ func TestLoadUsesDotenv(t *testing.T) {
 
 	if config.App.AccessKey != "dotenv-key" {
 		t.Fatalf("expected dotenv access key, got %q", config.App.AccessKey)
+	}
+
+	if config.Postgres.Host != "dotenv-db" {
+		t.Fatalf("expected dotenv PostgreSQL host, got %q", config.Postgres.Host)
 	}
 
 	if config.Redis.Address != "localhost:6381" {
@@ -113,13 +124,13 @@ func TestLoadReturnsEnvironmentError(t *testing.T) {
 
 // TestModuleProvidesConfig verifies the Fx module exposes composed and focused config.
 func TestModuleProvidesConfig(t *testing.T) {
-	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
+	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
 
 	var invoked bool
 	app := fxtest.New(
 		t,
 		Module,
-		fx.Invoke(func(config AppConfig, app appconfig.Config, log logger.Config, redis redis.Config, sso sso.Config) {
+		fx.Invoke(func(config AppConfig, app appconfig.Config, log logger.Config, postgres postgres.Config, redis redis.Config, sso sso.Config) {
 			invoked = true
 
 			if config.App != app {
@@ -128,6 +139,10 @@ func TestModuleProvidesConfig(t *testing.T) {
 
 			if config.Logger != log {
 				t.Fatalf("expected logger config provider to match composed config")
+			}
+
+			if config.Postgres != postgres {
+				t.Fatalf("expected PostgreSQL config provider to match composed config")
 			}
 
 			if config.Redis != redis {

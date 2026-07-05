@@ -13,6 +13,20 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: pixels
+          POSTGRES_USER: pixels
+          POSTGRES_PASSWORD: pixels
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pixels -d pixels"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,6 +42,12 @@ jobs:
 
       - name: Vet
         run: go vet ./...
+
+      - name: Validate database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties validate
+
+      - name: Apply database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties update
 
       - name: Test
         run: |

@@ -10,6 +10,7 @@ import (
 	pixelhttp "github.com/niflaot/pixels/pkg/http"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/postgres"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
 )
@@ -26,7 +27,7 @@ func newApp() *fx.App {
 
 // options returns the dependency graph options.
 func options() []fx.Option {
-	options := make([]fx.Option, 0, 10)
+	options := make([]fx.Option, 0, 11)
 	options = append(options, build.Module)
 	options = append(options, config.Module)
 	options = append(options, netconn.Module)
@@ -35,6 +36,7 @@ func options() []fx.Option {
 	options = append(options, sso.Module)
 	options = append(options, ws.Module)
 	options = append(options, logger.Module)
+	options = append(options, postgres.Module)
 	options = append(options, redis.Module)
 	options = append(options, fx.WithLogger(logger.NewFx))
 
