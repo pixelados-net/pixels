@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"slices"
 	"sync"
 	"time"
 
@@ -208,10 +209,8 @@ func (policy HandlerPolicy) Allows(context Context) bool {
 	if policy.RequiresAuthenticated && !context.Authenticated {
 		return false
 	}
-	for _, state := range policy.AllowedStates {
-		if context.State == state {
-			return true
-		}
+	if slices.Contains(policy.AllowedStates, context.State) {
+		return true
 	}
 
 	return len(policy.AllowedStates) == 0
