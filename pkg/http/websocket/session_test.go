@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 // TestSocketSessionSendQueue verifies bounded outbound queue behavior.
@@ -83,6 +84,43 @@ func TestSocketSessionWaitFinishes(t *testing.T) {
 	case <-socket.done:
 	default:
 		t.Fatal("expected done to close")
+	}
+}
+
+// TestPacketLoggerForEnvironmentRecordsDevelopment verifies development packet logs.
+func TestPacketLoggerForEnvironmentRecordsDevelopment(t *testing.T) {
+	core, logs := observer.New(zap.DebugLevel)
+	logger := packetLoggerForEnvironment("development", zap.New(core))
+	if logger == nil {
+		t.Fatal("expected development packet logger")
+	}
+
+	context := netconn.Context{ConnectionID: "one", ConnectionKind: kind, State: netconn.StateConnected}
+	packet := codec.Packet{Header: 7, Payload: []byte{1, 2}}
+
+	logger.Received(context, packet)
+	logger.Sent(context, packet)
+	logger.Unhandled(context, packet)
+	logger.(packetLogger).Disconnected(context, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: "sso ticket not found"})
+
+	if logs.Len() != 4 {
+		t.Fatalf("expected four packet logs, got %d", logs.Len())
+	}
+	if logs.All()[0].Message != "packet received" || logs.All()[1].Message != "packet sent" {
+		t.Fatalf("unexpected packet log messages: %#v", logs.All())
+	}
+	if logs.All()[2].Level != zap.WarnLevel || logs.All()[2].Message != "packet unhandled" {
+		t.Fatalf("unexpected unhandled packet log: %#v", logs.All()[2])
+	}
+	if logs.All()[3].Message != "websocket disconnecting" {
+		t.Fatalf("unexpected disconnect log: %#v", logs.All()[3])
+	}
+}
+
+// TestPacketLoggerForEnvironmentSkipsProduction verifies production packet logs are disabled.
+func TestPacketLoggerForEnvironmentSkipsProduction(t *testing.T) {
+	if packetLoggerForEnvironment("production", zap.NewNop()) != nil {
+		t.Fatal("expected production packet logger to be disabled")
 	}
 }
 

@@ -76,6 +76,12 @@ go tool cover -func=coverage.out
 - `POST /api/sso/tickets` creates one-time SSO tickets and requires `X-API-Key`.
 - Private routes require `X-API-Key: <PIXELS_ACCESS_KEY>`.
 
+## Development Security
+
+When `PIXELS_ENV=development`, connection encryption is optional. Development clients can skip Diffie by not sending the Diffie handshake packets and by sending the SSO ticket over the plain pixel protocol after the normal release or metadata packets.
+
+When `PIXELS_ENV=production`, authentication requires an active secure channel before the SSO ticket is accepted.
+
 ## Packet API
 
 Inbound packets are decoded from `codec.Packet` into typed payloads:

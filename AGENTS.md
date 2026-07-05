@@ -69,6 +69,7 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 - Include request headers, request bodies, responses, possible error codes, and response bodies.
 - Keep `/status`, `/ws`, and development-only documentation routes public.
 - Protect private routes with the configured API key header.
+- Return meaningful HTTP errors instead of generic status failures, and make logs include enough context to explain why a request failed.
 
 ## Testing
 

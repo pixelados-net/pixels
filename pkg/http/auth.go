@@ -8,9 +8,7 @@ const apiKeyHeader = "X-API-Key"
 func auth(accessKey string) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		if ctx.Get(apiKeyHeader) != accessKey {
-			return ctx.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error: "unauthorized",
-			})
+			return fiber.NewError(fiber.StatusUnauthorized, "missing or invalid api key")
 		}
 
 		return ctx.Next()

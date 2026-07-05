@@ -51,6 +51,16 @@ type Sender func(context.Context, codec.Packet) error
 // Disposer releases transport resources for a connection.
 type Disposer func(context.Context, Reason) error
 
+// PacketLogger records packet traffic and routing misses.
+type PacketLogger interface {
+	// Received records an inbound packet.
+	Received(Context, codec.Packet)
+	// Sent records an outbound packet.
+	Sent(Context, codec.Packet)
+	// Unhandled records a packet without a registered handler.
+	Unhandled(Context, codec.Packet)
+}
+
 // SecurityActivator activates security after queued transport writes.
 type SecurityActivator func(context.Context, SecureChannel) error
 
@@ -209,6 +219,8 @@ type SessionConfig struct {
 	Outbound *HandlerRegistry
 	// SecurityPolicy controls whether encryption is required.
 	SecurityPolicy SecurityPolicy
+	// PacketLogger records development packet traffic.
+	PacketLogger PacketLogger
 	// Sender writes outbound packets through the transport.
 	Sender Sender
 	// Disposer releases transport resources.

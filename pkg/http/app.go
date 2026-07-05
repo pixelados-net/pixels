@@ -19,8 +19,9 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Ser
 	})
 
 	app.Use(fiberzap.New(fiberzap.Config{
-		Logger: log,
-		Fields: []string{"latency", "status", "method", "url"},
+		Logger:   log,
+		Fields:   []string{"latency", "status", "method", "url", "error"},
+		Messages: []string{"http server request failed", "http client request failed", "http request completed"},
 	}))
 
 	registerPublic(app, config, info, websocket)

@@ -48,14 +48,14 @@ func websocketGate(ctx *fiber.Ctx) error {
 		return ctx.Next()
 	}
 
-	return fiber.ErrUpgradeRequired
+	return fiber.NewError(fiber.StatusUpgradeRequired, "websocket upgrade required")
 }
 
 // docsHandler returns the Scalar documentation page.
 func docsHandler(config config.AppConfig) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		if config.App.Environment != development {
-			return notFoundHandler(ctx)
+			return fiber.NewError(fiber.StatusNotFound, "documentation is available only in development")
 		}
 
 		ctx.Type("html")
@@ -80,13 +80,13 @@ func createSSOTicketHandler(service *sso.Service) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		var request CreateSSOTicketRequest
 		if err := ctx.BodyParser(&request); err != nil {
-			return fiber.ErrBadRequest
+			return fiber.NewError(fiber.StatusBadRequest, "invalid sso ticket request body")
 		}
 
 		ticket, err := service.Create(ctx.Context(), ssoRequest(request))
 		if err != nil {
 			if errors.Is(err, sso.ErrInvalidTicket) {
-				return fiber.ErrBadRequest
+				return fiber.NewError(fiber.StatusBadRequest, "invalid sso ticket request")
 			}
 
 			return err
@@ -110,7 +110,5 @@ func ssoRequest(request CreateSSOTicketRequest) sso.CreateRequest {
 
 // notFoundHandler returns an authenticated not found response.
 func notFoundHandler(ctx *fiber.Ctx) error {
-	return ctx.Status(fiber.StatusNotFound).JSON(ErrorResponse{
-		Error: "not found",
-	})
+	return fiber.NewError(fiber.StatusNotFound, "route not found")
 }

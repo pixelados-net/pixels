@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"github.com/niflaot/pixels/networking/codec"
 )
 
 // Session is a transport-agnostic connection implementation.
@@ -38,6 +36,8 @@ type Session struct {
 	policy SecurityPolicy
 	// security opens and seals connection bytes.
 	security SecureChannel
+	// logger records development packet traffic.
+	logger PacketLogger
 	// done closes when disposal starts.
 	done chan struct{}
 	// inbound routes received packets.
@@ -50,6 +50,12 @@ type Session struct {
 	disposer Disposer
 	// activator installs security after queued writes.
 	activator SecurityActivator
+}
+
+// disconnectLogger records connection disposal reasons.
+type disconnectLogger interface {
+	// Disconnected records a disposal reason.
+	Disconnected(Context, Reason)
 }
 
 // NewSession creates a session connection.
@@ -81,6 +87,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		lastPongAt: startedAt,
 		state:      StateCreated,
 		policy:     normalizeSecurityPolicy(config.SecurityPolicy),
+		logger:     config.PacketLogger,
 		done:       make(chan struct{}),
 		inbound:    inbound,
 		outbound:   outbound,
@@ -180,38 +187,6 @@ func (session *Session) Authenticate(at time.Time) error {
 	return nil
 }
 
-// Receive handles an inbound packet.
-func (session *Session) Receive(ctx context.Context, packet codec.Packet) error {
-	if err := session.markTraffic(EventPacketReceived); err != nil {
-		return err
-	}
-
-	context := session.context(InboundDirection)
-	if context.Disconnected {
-		return ErrDisposed
-	}
-
-	return session.inbound.Handle(context, packet)
-}
-
-// Send handles and writes an outbound packet.
-func (session *Session) Send(ctx context.Context, packet codec.Packet) error {
-	if err := session.markTraffic(""); err != nil {
-		return err
-	}
-
-	context := session.context(OutboundDirection)
-	if context.Disconnected {
-		return ErrDisposed
-	}
-
-	if err := session.outbound.Handle(context, packet); err != nil {
-		return err
-	}
-
-	return session.sender(ctx, packet)
-}
-
 // Disconnect disposes the connection with a reason.
 func (session *Session) Disconnect(ctx context.Context, reason Reason) error {
 	session.mutex.Lock()
@@ -223,11 +198,16 @@ func (session *Session) Disconnect(ctx context.Context, reason Reason) error {
 	session.disconnected = true
 	session.disconnectReason = reason
 	session.state = StateClosing
+	logger, logsDisconnect := session.logger.(disconnectLogger)
+	context := session.contextLocked()
 	close(session.done)
 	disposer := session.disposer
 	security := session.security
 	session.mutex.Unlock()
 
+	if logsDisconnect {
+		logger.Disconnected(context, reason)
+	}
 	if security != nil {
 		_ = security.Close(reason)
 	}

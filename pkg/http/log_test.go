@@ -1,0 +1,50 @@
+package http
+
+import (
+	stdhttp "net/http"
+	"strings"
+	"testing"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/realm/connection"
+	netconn "github.com/niflaot/pixels/networking/connection"
+	ws "github.com/niflaot/pixels/pkg/http/websocket"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
+)
+
+// TestHTTPLogsIncludeFailureReason verifies client errors include useful log context.
+func TestHTTPLogsIncludeFailureReason(t *testing.T) {
+	core, logs := observer.New(zap.WarnLevel)
+	app := testAppWithLogger(t, "development", zap.New(core))
+	response := testRequest(t, app, stdhttp.MethodPost, "/api/sso/tickets")
+
+	if response.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("expected unauthorized status 401, got %d", response.StatusCode)
+	}
+
+	body := readBody(t, response)
+	if !strings.Contains(body, "missing or invalid api key") {
+		t.Fatalf("expected meaningful response error, got %s", body)
+	}
+
+	if logs.Len() != 1 {
+		t.Fatalf("expected one warning log, got %d", logs.Len())
+	}
+
+	fields := logs.All()[0].ContextMap()
+	if fields["error"] != "missing or invalid api key" {
+		t.Fatalf("expected meaningful log error, got %#v", fields["error"])
+	}
+}
+
+// testAppWithLogger creates a route test app with a custom logger.
+func testAppWithLogger(t *testing.T, environment string, log *zap.Logger) *fiber.App {
+	t.Helper()
+
+	service := testSSO(t)
+	registry := netconn.NewRegistry()
+	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, connection.NewHandlers(service), zap.NewNop())
+
+	return New(log, testConfig(environment), testInfo(), service, adapter, registry)
+}

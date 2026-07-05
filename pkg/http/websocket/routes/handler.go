@@ -52,7 +52,7 @@ func disconnectHandler(registry *netconn.Registry) fiber.Handler {
 
 		err = registry.Disconnect(ctx.Context(), netconn.Kind(ctx.Params("kind")), netconn.ID(ctx.Params("id")), reason)
 		if errors.Is(err, netconn.ErrConnectionNotFound) {
-			return fiber.ErrNotFound
+			return fiber.NewError(fiber.StatusNotFound, "connection not found")
 		}
 		if err != nil {
 			return err
@@ -106,7 +106,7 @@ func listConnections(registry *netconn.Registry, kind string) []netconn.Connecti
 func parseDisconnectBody(ctx *fiber.Ctx) (netconn.Reason, error) {
 	var request DisconnectRequest
 	if err := ctx.BodyParser(&request); err != nil {
-		return netconn.Reason{}, fiber.ErrBadRequest
+		return netconn.Reason{}, fiber.NewError(fiber.StatusBadRequest, "invalid disconnect request body")
 	}
 
 	return reasonFromRequest(request)

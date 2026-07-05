@@ -34,6 +34,42 @@ func TestSessionSendRoutesAndWrites(t *testing.T) {
 	}
 }
 
+// TestSessionPacketLoggerRecordsTraffic verifies packet logger hooks.
+func TestSessionPacketLoggerRecordsTraffic(t *testing.T) {
+	fixture := sessionFixture(t)
+	logger := &testPacketLogger{}
+	fixture.PacketLogger = logger
+	session := mustSession(t, fixture)
+
+	if err := session.Receive(context.Background(), codec.Packet{Header: 1}); err != nil {
+		t.Fatalf("receive packet: %v", err)
+	}
+	if err := session.Send(context.Background(), codec.Packet{Header: 2}); err != nil {
+		t.Fatalf("send packet: %v", err)
+	}
+
+	if logger.received != 1 || logger.sent != 1 || logger.unhandled != 0 {
+		t.Fatalf("unexpected logger counters: %#v", logger)
+	}
+}
+
+// TestSessionPacketLoggerRecordsUnhandled verifies missing inbound handlers are warned.
+func TestSessionPacketLoggerRecordsUnhandled(t *testing.T) {
+	fixture := sessionFixture(t)
+	logger := &testPacketLogger{}
+	fixture.PacketLogger = logger
+	session := mustSession(t, fixture)
+
+	err := session.Receive(context.Background(), codec.Packet{Header: 99})
+	if !errors.Is(err, ErrHandlerNotFound) {
+		t.Fatalf("expected handler not found, got %v", err)
+	}
+
+	if logger.received != 1 || logger.unhandled != 1 {
+		t.Fatalf("unexpected logger counters: %#v", logger)
+	}
+}
+
 // TestSessionAuthenticateTracksTime verifies authentication state.
 func TestSessionAuthenticateTracksTime(t *testing.T) {
 	session := mustSession(t, sessionFixture(t))
@@ -180,6 +216,27 @@ func mustSession(t *testing.T, config sessionFixtureConfig) *Session {
 	}
 
 	return session
+}
+
+// testPacketLogger records packet logger calls.
+type testPacketLogger struct {
+	// received, sent, and unhandled count packet logger calls.
+	received, sent, unhandled int
+}
+
+// Received records an inbound packet.
+func (logger *testPacketLogger) Received(Context, codec.Packet) {
+	logger.received++
+}
+
+// Sent records an outbound packet.
+func (logger *testPacketLogger) Sent(Context, codec.Packet) {
+	logger.sent++
+}
+
+// Unhandled records a packet without a handler.
+func (logger *testPacketLogger) Unhandled(Context, codec.Packet) {
+	logger.unhandled++
 }
 
 // mustTransition applies a transition or fails the test.

@@ -150,10 +150,17 @@ func (session *Session) context(direction Direction) Context {
 	session.mutex.RLock()
 	defer session.mutex.RUnlock()
 
+	context := session.contextLocked()
+	context.Direction = direction
+
+	return context
+}
+
+// contextLocked returns a context snapshot while the session mutex is held.
+func (session *Session) contextLocked() Context {
 	return Context{
 		ConnectionID:     session.id,
 		ConnectionKind:   session.kind,
-		Direction:        direction,
 		State:            session.state,
 		StartedAt:        session.startedAt,
 		RemoteAddr:       session.remoteAddr,

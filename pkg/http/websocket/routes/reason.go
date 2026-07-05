@@ -29,7 +29,7 @@ var reasonCodes = []netconn.DisconnectCode{
 func reasonFromRequest(request DisconnectRequest) (netconn.Reason, error) {
 	reason, ok := parseReason(request.Reason)
 	if !ok {
-		return netconn.Reason{}, fiber.ErrBadRequest
+		return netconn.Reason{}, fiber.NewError(fiber.StatusBadRequest, "unsupported disconnect reason")
 	}
 
 	return netconn.Reason{Code: reason, Message: request.Message}, nil
