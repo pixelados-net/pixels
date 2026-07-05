@@ -2,6 +2,7 @@
 package main
 
 import (
+	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	pixelhttp "github.com/niflaot/pixels/pkg/http"
@@ -22,10 +23,11 @@ func newApp() *fx.App {
 
 // options returns the dependency graph options.
 func options() []fx.Option {
-	options := make([]fx.Option, 0, 6)
+	options := make([]fx.Option, 0, 7)
 	options = append(options, build.Module)
 	options = append(options, config.Module)
 	options = append(options, pixelhttp.Module)
+	options = append(options, sso.Module)
 	options = append(options, logger.Module)
 	options = append(options, redis.Module)
 	options = append(options, fx.WithLogger(logger.NewFx))

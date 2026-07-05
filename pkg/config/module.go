@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/niflaot/pixels/internal/auth/sso"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
 	"github.com/niflaot/pixels/pkg/redis"
@@ -15,6 +16,7 @@ var Module = fx.Module(
 		App,
 		Logger,
 		Redis,
+		SSO,
 	),
 )
 
@@ -36,4 +38,9 @@ func Logger(config AppConfig) logger.Config {
 // Redis extracts Redis settings from composed configuration.
 func Redis(config AppConfig) redis.Config {
 	return config.Redis
+}
+
+// SSO extracts single sign-on settings from composed configuration.
+func SSO(config AppConfig) sso.Config {
+	return config.SSO
 }

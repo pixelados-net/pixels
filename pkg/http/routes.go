@@ -1,8 +1,12 @@
 package http
 
 import (
+	"errors"
+	"time"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	"github.com/niflaot/pixels/pkg/http/openapi"
@@ -18,7 +22,8 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info) {
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App) {
+func registerPrivate(app *fiber.App, sso *sso.Service) {
+	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
 	app.Use(notFoundHandler)
 }
 
@@ -68,6 +73,39 @@ func docsHandler(config config.AppConfig) fiber.Handler {
   <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 </body>
 </html>`)
+	}
+}
+
+// createSSOTicketHandler creates one-time SSO tickets.
+func createSSOTicketHandler(service *sso.Service) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		var request CreateSSOTicketRequest
+		if err := ctx.BodyParser(&request); err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		ticket, err := service.Create(ctx.Context(), ssoRequest(request))
+		if err != nil {
+			if errors.Is(err, sso.ErrInvalidTicket) {
+				return fiber.ErrBadRequest
+			}
+
+			return err
+		}
+
+		return ctx.Status(fiber.StatusCreated).JSON(CreateSSOTicketResponse{
+			Ticket:    ticket.Value,
+			ExpiresAt: ticket.ExpiresAt.UTC().Format(time.RFC3339),
+		})
+	}
+}
+
+// ssoRequest converts an HTTP request into an SSO request.
+func ssoRequest(request CreateSSOTicketRequest) sso.CreateRequest {
+	return sso.CreateRequest{
+		UserID: request.UserID,
+		IP:     request.IP,
+		TTL:    time.Duration(request.TTLSeconds) * time.Second,
 	}
 }
 

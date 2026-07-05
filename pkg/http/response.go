@@ -12,3 +12,16 @@ type StatusResponse struct {
 	Environment string `json:"environment"`
 	Version     string `json:"version"`
 }
+
+// CreateSSOTicketRequest is the private SSO ticket creation body.
+type CreateSSOTicketRequest struct {
+	UserID     string `json:"userId"`
+	IP         string `json:"ip,omitempty"`
+	TTLSeconds int    `json:"ttlSeconds,omitempty"`
+}
+
+// CreateSSOTicketResponse is the private SSO ticket creation response.
+type CreateSSOTicketResponse struct {
+	Ticket    string `json:"ticket"`
+	ExpiresAt string `json:"expiresAt"`
+}

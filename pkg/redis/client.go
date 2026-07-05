@@ -58,3 +58,17 @@ func (client *Client) Find(ctx context.Context, key string) ([]byte, bool, error
 func (client *Client) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
 	return client.client.Set(ctx, key, value, ttl).Err()
 }
+
+// Take reads and deletes a Redis key atomically.
+func (client *Client) Take(ctx context.Context, key string) ([]byte, bool, error) {
+	value, err := client.client.GetDel(ctx, key).Bytes()
+	if errors.Is(err, goredis.Nil) {
+		return nil, false, nil
+	}
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	return value, true, nil
+}

@@ -58,12 +58,16 @@ go tool cover -func=coverage.out
 | `REDIS_USERNAME` | empty | Redis ACL username. |
 | `REDIS_PASSWORD` | empty | Redis password. |
 | `REDIS_DATABASE` | `0` | Redis database number. |
+| `SSO_DEFAULT_TTL` | `5m` | Default one-time SSO ticket lifetime. |
+| `SSO_KEY` | `pixels-development-sso-key-change-me` | HMAC key used to derive Redis storage keys for SSO tickets. |
+| `SSO_PREFIX` | `pixels:sso` | Redis key prefix for SSO ticket records. |
 
 ## HTTP Surface
 
 - `GET /status` returns public server status.
 - `GET /ws` is the public websocket entrypoint.
 - `GET /docs` serves Scalar API docs only when `PIXELS_ENV=development`.
+- `POST /api/sso/tickets` creates one-time SSO tickets and requires `X-API-Key`.
 - Private routes require `X-API-Key: <PIXELS_ACCESS_KEY>`.
 
 ## Packet API

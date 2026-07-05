@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/niflaot/pixels/internal/auth/sso"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
 	"github.com/niflaot/pixels/pkg/redis"
@@ -21,6 +22,9 @@ type AppConfig struct {
 
 	// Redis contains reusable Redis storage settings.
 	Redis redis.Config
+
+	// SSO contains single sign-on ticket settings.
+	SSO sso.Config
 }
 
 // Load reads dotenv files and composes all configuration holders.
@@ -44,10 +48,16 @@ func Load(paths ...string) (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	sso, err := sso.LoadConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	return AppConfig{
 		App:    app,
 		Logger: log,
 		Redis:  redis,
+		SSO:    sso,
 	}, nil
 }
 

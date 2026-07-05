@@ -5,18 +5,22 @@ import (
 	stdhttp "net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/logger"
+	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/zap"
 )
 
 // TestStatusRouteIsPublic verifies status responses do not require an API key.
 func TestStatusRouteIsPublic(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	response := testRequest(t, app, stdhttp.MethodGet, "/status")
 
 	if response.StatusCode != fiber.StatusOK {
@@ -31,7 +35,7 @@ func TestStatusRouteIsPublic(t *testing.T) {
 
 // TestNewDisablesStartupMessage verifies Fiber's welcome banner is disabled.
 func TestNewDisablesStartupMessage(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 
 	if !app.Config().DisableStartupMessage {
 		t.Fatal("expected Fiber startup message to be disabled")
@@ -40,7 +44,7 @@ func TestNewDisablesStartupMessage(t *testing.T) {
 
 // TestDocsRoutesAreDevelopmentOnly verifies Scalar docs are public in development.
 func TestDocsRoutesAreDevelopmentOnly(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	response := testRequest(t, app, stdhttp.MethodGet, "/docs")
 
 	if response.StatusCode != fiber.StatusOK {
@@ -55,7 +59,7 @@ func TestDocsRoutesAreDevelopmentOnly(t *testing.T) {
 
 // TestDocsRoutesAreHiddenOutsideDevelopment verifies docs return not found outside development.
 func TestDocsRoutesAreHiddenOutsideDevelopment(t *testing.T) {
-	app := testApp("production")
+	app := testApp(t, "production")
 	response := testRequest(t, app, stdhttp.MethodGet, "/docs")
 
 	if response.StatusCode != fiber.StatusNotFound {
@@ -65,7 +69,7 @@ func TestDocsRoutesAreHiddenOutsideDevelopment(t *testing.T) {
 
 // TestOpenAPIIsEmbeddedInDocs verifies Scalar receives an inline OpenAPI document.
 func TestOpenAPIIsEmbeddedInDocs(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	response := testRequest(t, app, stdhttp.MethodGet, "/docs")
 
 	if response.StatusCode != fiber.StatusOK {
@@ -80,7 +84,7 @@ func TestOpenAPIIsEmbeddedInDocs(t *testing.T) {
 
 // TestPrivateRoutesRequireAccessKey verifies private routes require API keys.
 func TestPrivateRoutesRequireAccessKey(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	response := testRequest(t, app, stdhttp.MethodGet, "/private")
 
 	if response.StatusCode != fiber.StatusUnauthorized {
@@ -90,7 +94,7 @@ func TestPrivateRoutesRequireAccessKey(t *testing.T) {
 
 // TestPrivateRoutesAllowAccessKey verifies authenticated private routes continue.
 func TestPrivateRoutesAllowAccessKey(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	request := newRequest(stdhttp.MethodGet, "/private")
 	request.Header.Set(apiKeyHeader, "secret")
 
@@ -104,9 +108,35 @@ func TestPrivateRoutesAllowAccessKey(t *testing.T) {
 	}
 }
 
+// TestCreateSSOTicketRoute verifies private SSO ticket creation.
+func TestCreateSSOTicketRoute(t *testing.T) {
+	app := testApp(t, "development")
+	request, err := stdhttp.NewRequest(stdhttp.MethodPost, "/api/sso/tickets", strings.NewReader(`{"userId":"todo-user","ip":"127.0.0.1","ttlSeconds":60}`))
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+
+	request.Header.Set(apiKeyHeader, "secret")
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := app.Test(request)
+	if err != nil {
+		t.Fatalf("test request: %v", err)
+	}
+
+	if response.StatusCode != fiber.StatusCreated {
+		t.Fatalf("expected created status 201, got %d", response.StatusCode)
+	}
+
+	body := readBody(t, response)
+	if !strings.Contains(body, `"ticket"`) {
+		t.Fatalf("expected ticket response, got %s", body)
+	}
+}
+
 // TestWebsocketRouteRequiresUpgrade verifies websocket entrypoint is public but requires upgrade.
 func TestWebsocketRouteRequiresUpgrade(t *testing.T) {
-	app := testApp("development")
+	app := testApp(t, "development")
 	response := testRequest(t, app, stdhttp.MethodGet, "/ws")
 
 	if response.StatusCode != fiber.StatusUpgradeRequired {
@@ -115,8 +145,10 @@ func TestWebsocketRouteRequiresUpgrade(t *testing.T) {
 }
 
 // testApp creates a Fiber app for route tests.
-func testApp(environment string) *fiber.App {
-	return New(zap.NewNop(), testConfig(environment), testInfo())
+func testApp(t *testing.T, environment string) *fiber.App {
+	t.Helper()
+
+	return New(zap.NewNop(), testConfig(environment), testInfo(), testSSO(t))
 }
 
 // testConfig creates composed configuration for route tests.
@@ -132,7 +164,26 @@ func testConfig(environment string) config.AppConfig {
 			Level:  "info",
 			Format: logger.FormatConsole,
 		},
+		SSO: sso.Config{
+			DefaultTTL: time.Minute,
+			Key:        "test-sso-key",
+			Prefix:     "pixels:sso",
+		},
 	}
+}
+
+// testSSO creates an SSO service for route tests.
+func testSSO(t *testing.T) *sso.Service {
+	t.Helper()
+	server := miniredis.RunT(t)
+	client := redis.New(redis.Config{Address: server.Addr()})
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Fatalf("close redis: %v", err)
+		}
+	})
+
+	return sso.New(sso.Config{DefaultTTL: time.Minute, Key: "test-sso-key", Prefix: "pixels:sso"}, client)
 }
 
 // testInfo creates build metadata for route tests.

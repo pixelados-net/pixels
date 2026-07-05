@@ -65,6 +65,23 @@ const Spec = `{
           "environment": { "type": "string", "example": "development" },
           "version": { "type": "string", "example": "0.1.0-abcdef12" }
         }
+      },
+      "CreateSSOTicketRequest": {
+        "type": "object",
+        "required": ["userId"],
+        "properties": {
+          "userId": { "type": "string", "description": "Temporary TODO user id bound to the SSO ticket." },
+          "ip": { "type": "string", "description": "Optional IP address allowed to consume the ticket." },
+          "ttlSeconds": { "type": "integer", "minimum": 1, "description": "Optional TTL override in seconds." }
+        }
+      },
+      "CreateSSOTicketResponse": {
+        "type": "object",
+        "required": ["ticket", "expiresAt"],
+        "properties": {
+          "ticket": { "type": "string", "description": "Opaque one-time SSO ticket." },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
       }
     }
   },
@@ -126,6 +143,60 @@ const Spec = `{
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": { "error": "not found" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sso/tickets": {
+      "post": {
+        "summary": "Create SSO ticket",
+        "description": "Creates a Redis-backed one-time SSO ticket for the configured TTL.",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ApiKeyHeader" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSSOTicketRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "SSO ticket created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateSSOTicketResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Request body is invalid or missing userId.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "Bad Request" }
+              }
+            }
+          },
+          "401": {
+            "description": "API key is missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "unauthorized" }
+              }
+            }
+          },
+          "500": {
+            "description": "Redis or ticket storage failed.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           }

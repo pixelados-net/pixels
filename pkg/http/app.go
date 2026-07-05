@@ -3,13 +3,14 @@ package http
 import (
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/auth/sso"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	"go.uber.org/zap"
 )
 
 // New creates the Fiber application.
-func New(log *zap.Logger, config config.AppConfig, info build.Info) *fiber.App {
+func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler:          errorHandler,
@@ -22,7 +23,7 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info) *fiber.App {
 
 	registerPublic(app, config, info)
 	app.Use(auth(config.App.AccessKey))
-	registerPrivate(app)
+	registerPrivate(app, sso)
 
 	return app
 }
