@@ -105,6 +105,8 @@ func (handler Handler) resultLists(ctx context.Context, playerID int64, code str
 		return handler.myWorldLists(ctx, playerID)
 	case "official_view":
 		return handler.officialLists(ctx)
+	case "roomads_view":
+		return handler.eventLists(ctx)
 	case "hotel_view", "popular":
 		return handler.hotelLists(ctx, data)
 	default:

@@ -42,6 +42,17 @@ func (handler Handler) officialLists(ctx context.Context) ([]outsearch.ResultLis
 	return []outsearch.ResultList{list}, len(list.Rooms), nil
 }
 
+// eventLists builds the events tab placeholder list.
+func (handler Handler) eventLists(ctx context.Context) ([]outsearch.ResultList, int, error) {
+	rooms, err := handler.Rooms.ListHighestScore(ctx, DefaultLimit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	list := outsearch.ResultList{Code: "categories", Data: "", Action: ActionNone, Mode: ModeList, Rooms: handler.cards(rooms)}
+	return []outsearch.ResultList{list}, len(list.Rooms), nil
+}
+
 // myWorldLists builds player-owned and favorite lists.
 func (handler Handler) myWorldLists(ctx context.Context, playerID int64) ([]outsearch.ResultList, int, error) {
 	owned, err := handler.Rooms.ListByOwner(ctx, playerID)

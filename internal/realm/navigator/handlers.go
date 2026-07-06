@@ -4,12 +4,16 @@ import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	cancreatecmd "github.com/niflaot/pixels/internal/realm/navigator/commands/cancreate"
 	createcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/create"
+	eventcatscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/eventcats"
+	flatcatscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/flatcats"
 	forwardcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/forward"
 	infocmd "github.com/niflaot/pixels/internal/realm/navigator/commands/info"
 	initcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/init"
 	searchcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/search"
 	cancreatehandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/cancreate"
 	createhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/create"
+	eventcatshandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/eventcats"
+	flatcatshandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/flatcats"
 	forwardhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/forward"
 	infohandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/info"
 	inithandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/init"
@@ -65,6 +69,15 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Players:  deps.Players,
 		Bindings: deps.Bindings,
 		Rooms:    deps.Rooms,
+	}, deps.Log))
+	flatcatshandler.Register(handlers.Inbound, flatcatshandler.New(flatcatscmd.Handler{
+		Players:    deps.Players,
+		Bindings:   deps.Bindings,
+		Categories: deps.Rooms,
+	}, deps.Log))
+	eventcatshandler.Register(handlers.Inbound, eventcatshandler.New(eventcatscmd.Handler{
+		Players:  deps.Players,
+		Bindings: deps.Bindings,
 	}, deps.Log))
 }
 
