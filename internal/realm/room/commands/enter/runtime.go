@@ -3,10 +3,10 @@ package enter
 import (
 	"context"
 
+	"github.com/niflaot/pixels/internal/command"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	"github.com/niflaot/pixels/internal/realm/room/broadcast"
+	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
 	roomentered "github.com/niflaot/pixels/internal/realm/room/events/entered"
-	roomleft "github.com/niflaot/pixels/internal/realm/room/events/left"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
@@ -20,15 +20,8 @@ import (
 // join moves a player into the target room.
 func (handler Handler) join(ctx context.Context, player *playerlive.Player, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout) (*roomlive.Room, error) {
 	if previousID, found := player.CurrentRoom(); found && previousID != room.ID {
-		previousRoom, roomFound := handler.Runtime.Find(previousID)
-		previousUnitID := unitIDForPlayer(previousRoom, player.ID())
-		if _, left, err := handler.Runtime.Leave(ctx, player.ID()); err != nil {
+		if err := handler.leavePreviousRoom(ctx, player.ID()); err != nil {
 			return nil, err
-		} else if left {
-			if roomFound && previousUnitID > 0 {
-				_ = broadcast.RoomRemove(ctx, handler.Connections, previousRoom, previousUnitID, player.ID())
-			}
-			_ = handler.publish(ctx, roomleft.Name, roomleft.Payload{PlayerID: player.ID(), RoomID: previousID})
 		}
 	}
 
@@ -59,6 +52,16 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 	return active, handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID})
 }
 
+// leavePreviousRoom runs the standard room leave command.
+func (handler Handler) leavePreviousRoom(ctx context.Context, playerID int64) error {
+	return (leavecmd.Handler{
+		Players: handler.Players, Bindings: handler.Bindings, Runtime: handler.Runtime,
+		Connections: handler.Connections, Events: handler.Events,
+	}).Handle(ctx, command.Envelope[leavecmd.Command]{
+		Command: leavecmd.Command{PlayerID: playerID},
+	})
+}
+
 // loadWorld loads the room runtime world from its persistent layout.
 func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
 	roomGrid, err := roomLayout.Grid()
@@ -85,20 +88,6 @@ func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
 // rotationFromLayout converts layout direction to runtime rotation.
 func rotationFromLayout(roomLayout layout.Layout) worldunit.Rotation {
 	return worldunit.Rotation(roomLayout.DoorDirection % 8)
-}
-
-// unitIDForPlayer returns the live unit id for a player.
-func unitIDForPlayer(room *roomlive.Room, playerID int64) int64 {
-	if room == nil {
-		return 0
-	}
-	for _, unit := range room.Units() {
-		if unit.PlayerID == playerID {
-			return unit.UnitID
-		}
-	}
-
-	return 0
 }
 
 // publish emits room lifecycle events.

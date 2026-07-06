@@ -4,9 +4,11 @@ import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	entercmd "github.com/niflaot/pixels/internal/realm/room/commands/enter"
+	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
 	modelcmd "github.com/niflaot/pixels/internal/realm/room/commands/model"
 	tagscmd "github.com/niflaot/pixels/internal/realm/room/commands/tags"
 	walkcmd "github.com/niflaot/pixels/internal/realm/room/commands/walk"
+	desktophandler "github.com/niflaot/pixels/internal/realm/room/handlers/desktop"
 	enterhandler "github.com/niflaot/pixels/internal/realm/room/handlers/enter"
 	modelhandler "github.com/niflaot/pixels/internal/realm/room/handlers/model"
 	tagshandler "github.com/niflaot/pixels/internal/realm/room/handlers/tags"
@@ -61,5 +63,9 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	}, deps.Log))
 	walkhandler.Register(handlers.Inbound, walkhandler.New(walkcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
+	}, deps.Log))
+	desktophandler.Register(handlers.Inbound, desktophandler.New(leavecmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
+		Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log))
 }

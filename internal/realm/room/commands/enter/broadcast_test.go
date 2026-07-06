@@ -37,6 +37,17 @@ func TestSendRoomStateWithEmptyRoom(t *testing.T) {
 	}
 }
 
+// TestPlayerFilter verifies optional room state filtering.
+func TestPlayerFilter(t *testing.T) {
+	if playerFilter(0) != nil {
+		t.Fatal("expected no filter")
+	}
+	filter := playerFilter(7)
+	if len(filter) != 1 || filter[0] != 7 {
+		t.Fatalf("unexpected filter %#v", filter)
+	}
+}
+
 // TestBroadcastJoinedSendsToOtherOccupants verifies joined broadcasts.
 func TestBroadcastJoinedSendsToOtherOccupants(t *testing.T) {
 	connections := netconn.NewRegistry()

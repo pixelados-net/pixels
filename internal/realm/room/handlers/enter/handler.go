@@ -24,7 +24,7 @@ func New(handler entercmd.Handler, log *zap.Logger) netconn.Handler {
 		}
 
 		return dispatcher.Dispatch(context.Background(), command.Envelope[entercmd.Command]{
-			Command:  entercmd.Command{Handler: connection, RoomID: int64(payload.FlatID)},
+			Command:  entercmd.Command{Handler: connection, RoomID: int64(payload.FlatID), Password: payload.Password},
 			Metadata: command.Metadata{ConnectionID: string(connection.ConnectionID)},
 		})
 	}

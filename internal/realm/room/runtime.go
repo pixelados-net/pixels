@@ -3,8 +3,10 @@ package room
 import (
 	"context"
 
+	"github.com/niflaot/pixels/internal/command"
 	playerdisconnected "github.com/niflaot/pixels/internal/realm/player/events/disconnected"
 	"github.com/niflaot/pixels/internal/realm/room/broadcast"
+	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
 	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
 	"github.com/niflaot/pixels/internal/realm/room/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -20,21 +22,18 @@ func NewLiveRegistry(publisher bus.Publisher, connections *netconn.Registry) *li
 }
 
 // RegisterRuntimeCleanup removes room occupancy on player disconnect.
-func RegisterRuntimeCleanup(lifecycle fx.Lifecycle, subscriber bus.Subscriber, registry *live.Registry, connections *netconn.Registry) error {
+func RegisterRuntimeCleanup(lifecycle fx.Lifecycle, subscriber bus.Subscriber, publisher bus.Publisher, registry *live.Registry, connections *netconn.Registry) error {
 	subscription, err := subscriber.Subscribe(playerdisconnected.Name, bus.PriorityNormal, func(ctx context.Context, event bus.Event) error {
 		disconnected, ok := event.Payload.(playerdisconnected.Payload)
 		if !ok || disconnected.PlayerID <= 0 {
 			return nil
 		}
 
-		room, found := registry.FindByPlayer(disconnected.PlayerID)
-		unitID := unitIDForPlayer(room, disconnected.PlayerID)
-		_, _, removeErr := registry.RemovePlayer(ctx, disconnected.PlayerID)
-		if removeErr == nil && found && unitID > 0 {
-			_ = broadcast.RoomRemove(ctx, connections, room, unitID, disconnected.PlayerID)
-		}
-
-		return removeErr
+		return (leavecmd.Handler{
+			Runtime: registry, Connections: connections, Events: publisher,
+		}).Handle(ctx, command.Envelope[leavecmd.Command]{
+			Command: leavecmd.Command{PlayerID: disconnected.PlayerID},
+		})
 	})
 	if err != nil {
 		return err
@@ -46,20 +45,6 @@ func RegisterRuntimeCleanup(lifecycle fx.Lifecycle, subscriber bus.Subscriber, r
 	}})
 
 	return nil
-}
-
-// unitIDForPlayer returns the live unit id for a player.
-func unitIDForPlayer(room *live.Room, playerID int64) int64 {
-	if room == nil {
-		return 0
-	}
-	for _, unit := range room.Units() {
-		if unit.PlayerID == playerID {
-			return unit.UnitID
-		}
-	}
-
-	return 0
 }
 
 // occupancyEvent maps live occupancy to a realm event payload.

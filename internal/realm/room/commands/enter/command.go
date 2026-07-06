@@ -32,6 +32,8 @@ type Command struct {
 	Handler netconn.Context
 	// RoomID identifies the room to join.
 	RoomID int64
+	// Password stores the optional room entry password.
+	Password string
 }
 
 // Handler handles room entry commands.

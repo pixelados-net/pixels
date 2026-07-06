@@ -41,7 +41,7 @@ func TestRegisterRuntimeCleanupRemovesDisconnectedPlayer(t *testing.T) {
 	lifecycle := fxtest.NewLifecycle(t)
 	local := bus.New()
 	registry := NewLiveRegistry(local, netconn.NewRegistry())
-	if err := RegisterRuntimeCleanup(lifecycle, local, registry, netconn.NewRegistry()); err != nil {
+	if err := RegisterRuntimeCleanup(lifecycle, local, local, registry, netconn.NewRegistry()); err != nil {
 		t.Fatalf("register cleanup: %v", err)
 	}
 	if _, err := registry.Activate(live.Snapshot{ID: 9, MaxUsers: 1}); err != nil {
@@ -68,7 +68,7 @@ func TestRegisterRuntimeCleanupIgnoresUnknownPayload(t *testing.T) {
 	lifecycle := fxtest.NewLifecycle(t)
 	local := bus.New()
 	registry := NewLiveRegistry(local, netconn.NewRegistry())
-	if err := RegisterRuntimeCleanup(lifecycle, local, registry, netconn.NewRegistry()); err != nil {
+	if err := RegisterRuntimeCleanup(lifecycle, local, local, registry, netconn.NewRegistry()); err != nil {
 		t.Fatalf("register cleanup: %v", err)
 	}
 

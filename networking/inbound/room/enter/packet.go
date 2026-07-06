@@ -12,10 +12,16 @@ const (
 type Payload struct {
 	// FlatID identifies the room to enter.
 	FlatID int32
+
+	// Password stores the optional room password.
+	Password string
 }
 
 // Definition describes the ROOM_ENTER payload fields.
-var Definition = codec.Definition{codec.Named("flatId", codec.Int32Field)}
+var Definition = codec.Definition{
+	codec.Named("flatId", codec.Int32Field),
+	codec.Named("password", codec.StringField),
+}
 
 // Decode unpacks a ROOM_ENTER packet payload.
 func Decode(packet codec.Packet) (Payload, error) {
@@ -26,5 +32,5 @@ func Decode(packet codec.Packet) (Payload, error) {
 	if err != nil {
 		return Payload{}, err
 	}
-	return Payload{FlatID: values[0].Int32}, nil
+	return Payload{FlatID: values[0].Int32, Password: values[1].String}, nil
 }
