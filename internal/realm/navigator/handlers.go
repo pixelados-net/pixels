@@ -3,6 +3,7 @@ package navigator
 import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	cancreatecmd "github.com/niflaot/pixels/internal/realm/navigator/commands/cancreate"
+	countscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/categorycounts"
 	createcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/create"
 	eventcatscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/eventcats"
 	flatcatscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/flatcats"
@@ -11,6 +12,7 @@ import (
 	initcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/init"
 	searchcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/search"
 	cancreatehandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/cancreate"
+	countshandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/categorycounts"
 	createhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/create"
 	eventcatshandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/eventcats"
 	flatcatshandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/flatcats"
@@ -79,6 +81,11 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Players:  deps.Players,
 		Bindings: deps.Bindings,
 	}, deps.Log))
+	countshandler.Register(handlers.Inbound, countshandler.New(countscmd.Handler{
+		Players:  deps.Players,
+		Bindings: deps.Bindings,
+		Counts:   deps.Counts,
+	}, deps.Log))
 }
 
 // HandlerDeps contains navigator handler dependencies.
@@ -95,6 +102,8 @@ type HandlerDeps struct {
 	Rooms roomservice.Manager
 	// Runtime stores active room runtime state.
 	Runtime *roomlive.Registry
+	// Counts stores current navigator category counts.
+	Counts *CategoryCountBroadcaster
 	// Events publishes realm events.
 	Events *bus.Bus
 	// Log records command dispatch.

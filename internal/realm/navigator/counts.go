@@ -2,6 +2,7 @@ package navigator
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -86,6 +87,28 @@ func (broadcaster *CategoryCountBroadcaster) Close() {
 	}
 }
 
+// Snapshot returns current category count entries.
+func (broadcaster *CategoryCountBroadcaster) Snapshot() []outcounts.Entry {
+	broadcaster.mutex.Lock()
+	defer broadcaster.mutex.Unlock()
+
+	entries := make(map[int32]outcounts.Entry)
+	for _, payload := range broadcaster.rooms {
+		if payload.CategoryID == nil {
+			continue
+		}
+
+		categoryID := int32(*payload.CategoryID)
+		entry := entries[categoryID]
+		entry.CategoryID = categoryID
+		entry.CurrentVisitorCount += int32(payload.Count)
+		entry.MaxVisitorCount += int32(payload.MaxUsers)
+		entries[categoryID] = entry
+	}
+
+	return sortedEntries(entries)
+}
+
 // queue stores room occupancy and schedules a flush.
 func (broadcaster *CategoryCountBroadcaster) queue(payload roomoccupancy.Payload) {
 	broadcaster.mutex.Lock()
@@ -142,12 +165,22 @@ func (broadcaster *CategoryCountBroadcaster) takePending() []outcounts.Entry {
 	broadcaster.mutex.Lock()
 	defer broadcaster.mutex.Unlock()
 
-	entries := make([]outcounts.Entry, 0, len(broadcaster.pending))
-	for _, entry := range broadcaster.pending {
-		entries = append(entries, entry)
-	}
+	entries := sortedEntries(broadcaster.pending)
 	broadcaster.pending = make(map[int32]outcounts.Entry)
 	broadcaster.timer = nil
 
 	return entries
+}
+
+// sortedEntries maps entries to stable protocol order.
+func sortedEntries(entries map[int32]outcounts.Entry) []outcounts.Entry {
+	results := make([]outcounts.Entry, 0, len(entries))
+	for _, entry := range entries {
+		results = append(results, entry)
+	}
+	sort.Slice(results, func(left int, right int) bool {
+		return results[left].CategoryID < results[right].CategoryID
+	})
+
+	return results
 }

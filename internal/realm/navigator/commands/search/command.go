@@ -78,12 +78,12 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return err
 	}
 
-	viewer := player.OpenNavigator()
-	viewer.SetLastSearch(navviewer.LastSearch{Code: envelope.Command.Code, Query: envelope.Command.Data})
-	lists, count, err := handler.resultLists(ctx, player.ID(), envelope.Command.Code, envelope.Command.Data)
+	lists, count, err := handler.Result(ctx, player.ID(), envelope.Command.Code, envelope.Command.Data)
 	if err != nil {
 		return err
 	}
+	viewer := player.OpenNavigator()
+	viewer.SetSearch(navviewer.LastSearch{Code: envelope.Command.Code, Query: envelope.Command.Data}, VisibleRoomIDs(lists))
 
 	packet, err := outsearch.Encode(envelope.Command.Code, envelope.Command.Data, lists)
 	if err != nil {
@@ -94,6 +94,25 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 
 	return handler.publish(ctx, player.ID(), envelope.Command.Code, envelope.Command.Data, count)
+}
+
+// Result builds navigator result lists for one player search.
+func (handler Handler) Result(ctx context.Context, playerID int64, code string, data string) ([]outsearch.ResultList, int, error) {
+	return handler.resultLists(ctx, playerID, code, data)
+}
+
+// VisibleRoomIDs extracts room ids from navigator result lists.
+func VisibleRoomIDs(lists []outsearch.ResultList) []int64 {
+	roomIDs := make([]int64, 0)
+	for _, list := range lists {
+		for _, room := range list.Rooms {
+			if room.RoomID > 0 {
+				roomIDs = append(roomIDs, int64(room.RoomID))
+			}
+		}
+	}
+
+	return roomIDs
 }
 
 // resultLists builds navigator result lists for the requested context.

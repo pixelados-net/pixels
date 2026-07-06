@@ -14,11 +14,13 @@ var Module = fx.Module(
 	fx.Provide(
 		NewStore,
 		NewCategoryCountBroadcaster,
+		NewRoomCountBroadcaster,
 		service.New,
 		NewManager,
 	),
 	fx.Invoke(RegisterConnectionHandlers),
 	fx.Invoke(RegisterCategoryCounts),
+	fx.Invoke(RegisterRoomCounts),
 )
 
 // NewStore creates the navigator persistence store.

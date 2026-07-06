@@ -6,6 +6,8 @@ import (
 
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	"github.com/niflaot/pixels/networking/outbound/navigator/roomcard"
+	outsearch "github.com/niflaot/pixels/networking/outbound/navigator/searchresult"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
@@ -32,6 +34,18 @@ func TestResultListsMapsRoomAdsView(t *testing.T) {
 	}
 	if count != 1 || len(lists) != 1 || lists[0].Code != "categories" {
 		t.Fatalf("unexpected lists %#v count %d", lists, count)
+	}
+}
+
+// TestVisibleRoomIDsExtractsResultRooms verifies visible room id snapshots.
+func TestVisibleRoomIDsExtractsResultRooms(t *testing.T) {
+	roomIDs := VisibleRoomIDs([]outsearch.ResultList{
+		{Rooms: []roomcard.Card{{RoomID: 4}, {RoomID: 0}}},
+		{Rooms: []roomcard.Card{{RoomID: 7}}},
+	})
+
+	if len(roomIDs) != 2 || roomIDs[0] != 4 || roomIDs[1] != 7 {
+		t.Fatalf("unexpected room ids %#v", roomIDs)
 	}
 }
 
