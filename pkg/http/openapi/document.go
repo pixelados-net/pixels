@@ -38,6 +38,8 @@ func routeTags() []openapi3.Tag {
 		tag("WebSocket", "Pixel-protocol WebSocket entrypoints."),
 		tag("SSO", "Protected single-sign-on ticket routes."),
 		tag("Admin Connections", "Protected connection inspection and disconnection routes."),
+		tag("Admin Rooms", "Protected room metadata and runtime routes."),
+		tag("Admin Navigator", "Protected navigator metadata routes."),
 		tag("Fallback", "Authenticated fallback behavior."),
 	}
 }

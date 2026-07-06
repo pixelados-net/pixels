@@ -104,6 +104,15 @@ func (service *Service) Search(ctx context.Context, query string, limit int) ([]
 	return service.store.SearchRooms(ctx, query, normalizeLimit(limit))
 }
 
+// ListTags lists normalized room tags.
+func (service *Service) ListTags(ctx context.Context, roomID int64) ([]roommodel.Tag, error) {
+	if roomID <= 0 {
+		return nil, ErrInvalidRoomID
+	}
+
+	return service.store.ListRoomTags(ctx, roomID)
+}
+
 // SoftDelete soft deletes a room.
 func (service *Service) SoftDelete(ctx context.Context, id int64) error {
 	if id <= 0 {

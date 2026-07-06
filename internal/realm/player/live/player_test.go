@@ -106,6 +106,27 @@ func TestPlayerNavigatorLifecycle(t *testing.T) {
 	}
 }
 
+// TestPlayerRoomPresenceLifecycle verifies embedded room presence behavior.
+func TestPlayerRoomPresenceLifecycle(t *testing.T) {
+	player := mustPlayer(t, 10, "ian")
+	if _, found := player.CurrentRoom(); found {
+		t.Fatal("expected no current room")
+	}
+
+	if err := player.EnterRoom(9); err != nil {
+		t.Fatalf("enter room: %v", err)
+	}
+	roomID, found := player.CurrentRoom()
+	if !found || roomID != 9 {
+		t.Fatalf("unexpected current room found=%v id=%d", found, roomID)
+	}
+
+	leftID, found := player.LeaveRoom()
+	if !found || leftID != 9 {
+		t.Fatalf("unexpected left room found=%v id=%d", found, leftID)
+	}
+}
+
 // TestRegistryNavigatorAudienceFiltersPlayers verifies navigator audience derivation.
 func TestRegistryNavigatorAudienceFiltersPlayers(t *testing.T) {
 	registry := NewRegistry()

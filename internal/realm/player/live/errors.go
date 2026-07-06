@@ -12,4 +12,7 @@ var (
 
 	// ErrPlayerExists reports a duplicate live player.
 	ErrPlayerExists = errors.New("live player exists")
+
+	// ErrInvalidRoomPresence reports malformed room presence data.
+	ErrInvalidRoomPresence = errors.New("invalid room presence")
 )

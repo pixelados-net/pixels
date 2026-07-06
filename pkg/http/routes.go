@@ -7,10 +7,14 @@ import (
 	fiberws "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	"github.com/niflaot/pixels/pkg/http/openapi"
+	roomroutes "github.com/niflaot/pixels/pkg/http/room/routes"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	wsroutes "github.com/niflaot/pixels/pkg/http/websocket/routes"
 )
@@ -25,9 +29,10 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, registry *netconn.Registry) {
+func registerPrivate(app *fiber.App, sso *sso.Service, registry *netconn.Registry, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager) {
 	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
 	wsroutes.Register(app, registry)
+	roomroutes.Register(app, rooms, runtime, registry, navigator)
 	app.Use(notFoundHandler)
 }
 

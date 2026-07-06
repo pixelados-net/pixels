@@ -4,6 +4,9 @@ import (
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
@@ -12,7 +15,7 @@ import (
 )
 
 // New creates the Fiber application.
-func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, registry *netconn.Registry) *fiber.App {
+func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, registry *netconn.Registry, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler:          errorHandler,
@@ -26,7 +29,7 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Ser
 
 	registerPublic(app, config, info, websocket)
 	app.Use(auth(config.App.AccessKey))
-	registerPrivate(app, sso, registry)
+	registerPrivate(app, sso, registry, rooms, runtime, navigator)
 
 	return app
 }

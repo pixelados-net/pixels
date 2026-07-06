@@ -28,6 +28,9 @@ type Finder interface {
 
 	// Search searches public room navigator fields.
 	Search(ctx context.Context, query string, limit int) ([]roommodel.Room, error)
+
+	// ListTags lists normalized room tags.
+	ListTags(ctx context.Context, roomID int64) ([]roommodel.Tag, error)
 }
 
 // Manager creates, reads, and deletes room records.

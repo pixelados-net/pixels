@@ -19,6 +19,9 @@ type Player struct {
 
 	// navigator stores navigator UI state when opened.
 	navigator *navviewer.Viewer
+
+	// room stores the player's current room presence.
+	room RoomPresence
 }
 
 // NewPlayer creates a live player.
@@ -116,4 +119,52 @@ func (player *Player) CloseNavigator() (*navviewer.Viewer, bool) {
 	player.navigator = nil
 
 	return viewer, true
+}
+
+// EnterRoom stores the player's current room id.
+func (player *Player) EnterRoom(roomID int64) error {
+	if roomID <= 0 {
+		return ErrInvalidRoomPresence
+	}
+
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+
+	player.room.currentID = roomID
+
+	return nil
+}
+
+// CurrentRoom returns the player's current room id.
+func (player *Player) CurrentRoom() (int64, bool) {
+	player.mutex.RLock()
+	defer player.mutex.RUnlock()
+
+	return player.room.Current()
+}
+
+// LeaveRoom clears the player's current room id.
+func (player *Player) LeaveRoom() (int64, bool) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+
+	roomID, found := player.room.Current()
+	player.room.currentID = 0
+
+	return roomID, found
+}
+
+// RoomPresence stores live room presence for one player.
+type RoomPresence struct {
+	// currentID identifies the room currently joined by the player.
+	currentID int64
+}
+
+// Current returns the current room id.
+func (presence RoomPresence) Current() (int64, bool) {
+	if presence.currentID <= 0 {
+		return 0, false
+	}
+
+	return presence.currentID, true
 }

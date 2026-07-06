@@ -85,6 +85,130 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 - Prefer table-driven tests when cases share the same setup.
 - CI must compile and test the full module before changes are considered ready.
 
+## Implemented Feature Index
+
+Use this section as a searchable map of major implemented behavior and the
+minimum manual checks expected when touching it.
+
+### FEATURE: Startup, Config, Logging
+
+- Owns `cmd/`, `pkg/config`, `pkg/logger`, `pkg/build`, and Fx wiring.
+- Loads `.env`, environment defaults, app host/port/access key, logger level,
+  logger format, build version, and commit hash.
+- Test after changes:
+  - `go test ./pkg/config/... ./pkg/logger/... ./pkg/build/...`
+  - `go run cmd/main.go` logs environment, host, port, and version.
+
+### FEATURE: HTTP API, OpenAPI, Admin Auth
+
+- Owns `pkg/http` and `pkg/http/openapi`.
+- Provides `/status`, `/ws`, development-only `/docs`, SSO ticket creation,
+  connection admin routes, room admin routes, and navigator admin routes.
+- Private routes require `X-API-Key`; `/status`, `/ws`, and `/docs` stay public.
+- Test after changes:
+  - `go test ./pkg/http/...`
+  - Open `/docs` in development and verify route groups are visible.
+  - Call private routes with and without `X-API-Key`.
+
+### FEATURE: Redis SSO
+
+- Owns `internal/auth/sso` and Redis-backed ticket storage.
+- Creates one-time SSO tickets with TTL, optional IP binding, and player id.
+- Consuming a ticket deletes it, so the same ticket cannot authenticate twice.
+- Test after changes:
+  - `go test ./internal/auth/sso/...`
+  - Create a ticket through `POST /api/sso/tickets`.
+  - Login once with that ticket and verify a second login fails.
+
+### FEATURE: Postgres, Liquibase, Seeds
+
+- Owns `pkg/postgres` and realm `database/` folders.
+- Provides Postgres pool config, per-realm migrations, and per-environment seeds.
+- Test after changes:
+  - Run migrations against the `.env` database.
+  - Verify seeded demo players, room layouts, rooms, categories, navigator data.
+  - `go test ./pkg/postgres/... ./internal/realm/...`
+
+### FEATURE: Event Bus and Commands
+
+- Owns `pkg/bus` and `internal/command`.
+- Provides prioritized local events and typed command dispatch with debug logs.
+- Realm packet handlers decode packets and dispatch commands; realm commands own
+  behavior.
+- Test after changes:
+  - `go test ./pkg/bus ./internal/command`
+  - Run with debug logs and verify `event published` and `command dispatched`.
+
+### FEATURE: Pixel Codec and Packets
+
+- Owns `networking/codec`, `networking/inbound`, and `networking/outbound`.
+- Encodes and decodes declarative packet definitions for handshake, security,
+  session, navigator, and room packets.
+- Test after changes:
+  - `go test ./networking/...`
+  - Run packet benchmarks after changing hot path packets.
+  - Verify inbound decoders reject unexpected headers.
+
+### FEATURE: Connection Sessions and WebSocket Transport
+
+- Owns `networking/connection` and `pkg/http/websocket`.
+- Provides transport-agnostic sessions, state machine, security policy, handler
+  registries, disconnect reasons, heartbeat, ordered WebSocket writes, and
+  debug packet logging.
+- Test after changes:
+  - `go test ./networking/connection ./pkg/http/websocket/...`
+  - Connect Nitro to `/ws`, authenticate, and verify packet receive/send logs.
+  - Verify admin connection count/list/disconnect routes.
+
+### FEATURE: Player Realm
+
+- Owns `internal/realm/player`.
+- Provides persistent player/profile models, repositories, services, live player
+  registry, session peer, embedded navigator viewer, and current room presence.
+- Test after changes:
+  - `go test ./internal/realm/player/...`
+  - Authenticate with a seeded SSO ticket and verify user info bootstrap.
+  - Enter and leave a room and verify live player room presence updates.
+
+### FEATURE: Navigator Realm
+
+- Owns `internal/realm/navigator`.
+- Provides navigator persistence, embedded viewer state, init/search/create/info
+  handlers, room forwarding, favorites data, saved searches, preferences, lifted
+  rooms, category preferences, and debounced live category counts.
+- Test after changes:
+  - `go test ./internal/realm/navigator/...`
+  - In Nitro, open navigator and verify metadata tabs, flat categories, settings,
+    saved searches, favorites, lifted rooms, and collapsed categories.
+  - Search hotel/myworld/official views and verify room cards show live counts.
+  - Create a room and verify `navigator.room_created`.
+  - Request room info and verify missing rooms return `navigator.nosuchflat`.
+
+### FEATURE: Room Realm
+
+- Owns `internal/realm/room`.
+- Provides room layouts, categories, tags, persistent room metadata, runtime room
+  registry, occupancy events, entry commands, model/heightmap packets, and tag
+  packets.
+- Test after changes:
+  - `go test ./internal/realm/room/...`
+  - Click a room from navigator, enter it, and verify empty room model renders.
+  - Fill a runtime room to capacity and verify `room.entry_error`.
+  - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
+
+### FEATURE: Room and Navigator Admin Routes
+
+- Owns `pkg/http/room/routes` and related OpenAPI models.
+- Provides protected room list/detail/occupancy/close/forward routes plus
+  navigator categories and lifted room routes.
+- Test after changes:
+  - `go test ./pkg/http/...`
+  - `GET /api/admin/rooms`, `/api/admin/rooms/:id`,
+    `/api/admin/rooms/:id/occupancy`.
+  - `POST /api/admin/rooms/:id/close` closes active runtime rooms.
+  - `POST /api/admin/rooms/:id/forward` sends `room.forward` to active occupants.
+  - `GET /api/admin/navigator/categories` and `/api/admin/navigator/lifted`.
+
 ## SDK Rules
 
 - Treat `sdk/` as a controlled extension surface.

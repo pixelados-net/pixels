@@ -4,10 +4,14 @@ import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	cancreatecmd "github.com/niflaot/pixels/internal/realm/navigator/commands/cancreate"
 	createcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/create"
+	forwardcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/forward"
+	infocmd "github.com/niflaot/pixels/internal/realm/navigator/commands/info"
 	initcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/init"
 	searchcmd "github.com/niflaot/pixels/internal/realm/navigator/commands/search"
 	cancreatehandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/cancreate"
 	createhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/create"
+	forwardhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/forward"
+	infohandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/info"
 	inithandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/init"
 	searchhandler "github.com/niflaot/pixels/internal/realm/navigator/handlers/search"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
@@ -50,6 +54,17 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Bindings: deps.Bindings,
 		Rooms:    deps.Rooms,
 		Events:   deps.Events,
+	}, deps.Log))
+	infohandler.Register(handlers.Inbound, infohandler.New(infocmd.Handler{
+		Players:  deps.Players,
+		Bindings: deps.Bindings,
+		Rooms:    deps.Rooms,
+		Runtime:  deps.Runtime,
+	}, deps.Log))
+	forwardhandler.Register(handlers.Inbound, forwardhandler.New(forwardcmd.Handler{
+		Players:  deps.Players,
+		Bindings: deps.Bindings,
+		Rooms:    deps.Rooms,
 	}, deps.Log))
 }
 

@@ -19,7 +19,14 @@ const (
 )
 
 // Module provides the local event bus.
-var Module = fx.Module("event-bus", fx.Provide(NewWithLogger))
+var Module = fx.Module(
+	"event-bus",
+	fx.Provide(
+		NewWithLogger,
+		NewPublisher,
+		NewSubscriber,
+	),
+)
 
 // Handler handles one local event.
 type Handler func(context.Context, Event) error
@@ -59,6 +66,16 @@ func NewWithLogger(log *zap.Logger) *Bus {
 	}
 
 	return &Bus{manager: gookitevent.NewManager("pixels"), log: log}
+}
+
+// NewPublisher exposes the bus through its publish contract.
+func NewPublisher(local *Bus) Publisher {
+	return local
+}
+
+// NewSubscriber exposes the bus through its subscription contract.
+func NewSubscriber(local *Bus) Subscriber {
+	return local
 }
 
 // Publish publishes an event to subscribers.

@@ -22,6 +22,7 @@ var Module = fx.Module(
 		NewManager,
 	),
 	fx.Invoke(RegisterRuntimeCleanup),
+	fx.Invoke(RegisterConnectionHandlers),
 )
 
 // NewLayoutStore creates the room layout persistence store.

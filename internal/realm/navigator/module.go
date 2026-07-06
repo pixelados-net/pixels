@@ -13,10 +13,12 @@ var Module = fx.Module(
 	"realm-navigator",
 	fx.Provide(
 		NewStore,
+		NewCategoryCountBroadcaster,
 		service.New,
 		NewManager,
 	),
 	fx.Invoke(RegisterConnectionHandlers),
+	fx.Invoke(RegisterCategoryCounts),
 )
 
 // NewStore creates the navigator persistence store.
