@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	netconn "github.com/niflaot/pixels/networking/connection"
 )
@@ -105,6 +106,28 @@ func TestRegistryRemovePlayerReportsMissing(t *testing.T) {
 	}
 	if removed {
 		t.Fatal("expected missing player")
+	}
+}
+
+// TestRegistryUnloadIdleClosesEmptyRooms verifies idle room cleanup.
+func TestRegistryUnloadIdleClosesEmptyRooms(t *testing.T) {
+	registry := NewRegistry(nil)
+	if _, err := registry.Activate(Snapshot{ID: 9, MaxUsers: 1}); err != nil {
+		t.Fatalf("activate room: %v", err)
+	}
+	if _, err := registry.Join(context.Background(), 9, occupantForTest(7)); err != nil {
+		t.Fatalf("join room: %v", err)
+	}
+	if _, removed, err := registry.Leave(context.Background(), 7); err != nil || !removed {
+		t.Fatalf("leave room removed=%v err=%v", removed, err)
+	}
+
+	closed, err := registry.UnloadIdle(context.Background(), time.Second, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("unload idle: %v", err)
+	}
+	if len(closed) != 1 || registry.Count() != 0 {
+		t.Fatalf("unexpected closed=%#v count=%d", closed, registry.Count())
 	}
 }
 

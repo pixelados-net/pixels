@@ -18,4 +18,13 @@ var (
 
 	// ErrRoomFull reports an active room at capacity.
 	ErrRoomFull = errors.New("room full")
+
+	// ErrWorldNotLoaded reports world behavior before room world loading.
+	ErrWorldNotLoaded = errors.New("room world not loaded")
+
+	// ErrInvalidWorld reports malformed room world loading input.
+	ErrInvalidWorld = errors.New("invalid room world")
+
+	// ErrUnitNotFound reports a missing room world unit.
+	ErrUnitNotFound = errors.New("room unit not found")
 )

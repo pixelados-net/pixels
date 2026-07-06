@@ -1,8 +1,11 @@
 package live
 
 import (
+	"sort"
 	"sync"
 	"time"
+
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
 // Room stores active runtime state for one loaded room.
@@ -15,6 +18,9 @@ type Room struct {
 
 	// occupants stores occupants by player id.
 	occupants map[int64]Occupant
+
+	// world stores loaded room world behavior.
+	world *World
 
 	// loadedAt stores when the active room was loaded.
 	loadedAt time.Time
@@ -68,6 +74,9 @@ func (room *Room) Join(occupant Occupant) (Occupancy, error) {
 	}
 
 	room.occupants[occupant.PlayerID] = occupant.WithJoinTime(time.Now())
+	if room.world != nil {
+		room.world.addUnit(occupant.PlayerID)
+	}
 	room.idleSince = nil
 
 	return room.occupancyLocked(), nil
@@ -83,6 +92,9 @@ func (room *Room) Leave(playerID int64) (Occupancy, bool) {
 	}
 
 	delete(room.occupants, playerID)
+	if room.world != nil {
+		room.world.removeUnit(playerID)
+	}
 	if len(room.occupants) == 0 {
 		now := time.Now()
 		room.idleSince = &now
@@ -119,6 +131,9 @@ func (room *Room) Close() Occupancy {
 
 	room.closed = true
 	room.occupants = make(map[int64]Occupant)
+	if room.world != nil {
+		room.world.clearUnits()
+	}
 	now := time.Now()
 	room.idleSince = &now
 
@@ -147,4 +162,44 @@ func (room *Room) occupancyLocked() Occupancy {
 	}
 
 	return Occupancy{RoomID: room.snapshot.ID, CategoryID: room.snapshot.CategoryID, Count: len(room.occupants), MaxUsers: room.snapshot.MaxUsers, PlayerIDs: playerIDs}
+}
+
+// Units returns stable world unit snapshots.
+func (room *Room) Units() []UnitSnapshot {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	if room.world == nil {
+		return nil
+	}
+
+	playerIDs := make([]int64, 0, len(room.world.units))
+	for playerID := range room.world.units {
+		playerIDs = append(playerIDs, playerID)
+	}
+	sort.Slice(playerIDs, func(left int, right int) bool {
+		return playerIDs[left] < playerIDs[right]
+	})
+
+	units := make([]UnitSnapshot, 0, len(playerIDs))
+	for _, playerID := range playerIDs {
+		roomUnit := room.world.units[playerID]
+		units = append(units, unitSnapshot(playerID, roomUnit))
+	}
+
+	return units
+}
+
+// unitSnapshot maps a world unit to a runtime snapshot.
+func unitSnapshot(playerID int64, roomUnit *worldunit.Unit) UnitSnapshot {
+	return UnitSnapshot{
+		PlayerID:     playerID,
+		UnitID:       roomUnit.ID(),
+		Position:     roomUnit.Position(),
+		Previous:     roomUnit.Previous(),
+		BodyRotation: roomUnit.BodyRotation(),
+		HeadRotation: roomUnit.HeadRotation(),
+		Moving:       roomUnit.Moving(),
+		Statuses:     roomUnit.Statuses(),
+	}
 }

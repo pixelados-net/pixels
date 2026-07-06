@@ -6,14 +6,18 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomentered "github.com/niflaot/pixels/internal/realm/room/events/entered"
 	roomleft "github.com/niflaot/pixels/internal/realm/room/events/left"
+	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
 )
 
 // join moves a player into the target room.
-func (handler Handler) join(ctx context.Context, player *playerlive.Player, connection netconn.Context, room roommodel.Room) error {
+func (handler Handler) join(ctx context.Context, player *playerlive.Player, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout) error {
 	if previousID, found := player.CurrentRoom(); found && previousID != room.ID {
 		if _, left, err := handler.Runtime.Leave(ctx, player.ID()); err != nil {
 			return err
@@ -22,9 +26,14 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		}
 	}
 
-	_, err := handler.Runtime.Activate(roomSnapshot(room))
+	active, err := handler.Runtime.Activate(roomSnapshot(room))
 	if err != nil {
 		return err
+	}
+	if !active.WorldLoaded() {
+		if err := loadWorld(active, roomLayout); err != nil {
+			return err
+		}
 	}
 
 	_, err = handler.Runtime.Join(ctx, room.ID, roomlive.Occupant{
@@ -38,6 +47,34 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 	}
 
 	return handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID})
+}
+
+// loadWorld loads the room runtime world from its persistent layout.
+func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
+	roomGrid, err := roomLayout.Grid()
+	if err != nil {
+		return err
+	}
+	doorPoint, ok := grid.NewPoint(roomLayout.DoorX, roomLayout.DoorY)
+	if !ok {
+		return roomlive.ErrInvalidWorld
+	}
+
+	return room.LoadWorld(roomlive.WorldConfig{
+		Grid: roomGrid,
+		Door: worldpath.Position{
+			Point: doorPoint,
+			Z:     grid.Height(roomLayout.DoorZ),
+		},
+		Body:  rotationFromLayout(roomLayout),
+		Head:  rotationFromLayout(roomLayout),
+		Rules: worldpath.DefaultRules(),
+	})
+}
+
+// rotationFromLayout converts layout direction to runtime rotation.
+func rotationFromLayout(roomLayout layout.Layout) worldunit.Rotation {
+	return worldunit.Rotation(roomLayout.DoorDirection % 8)
 }
 
 // publish emits room lifecycle events.

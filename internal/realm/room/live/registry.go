@@ -3,6 +3,7 @@ package live
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 // OccupancyPublisher publishes occupancy changes.
@@ -127,6 +128,32 @@ func (registry *Registry) Close(ctx context.Context, roomID int64) (Occupancy, b
 	occupancy := room.Close()
 
 	return occupancy, true, registry.publishOccupancy(ctx, occupancy)
+}
+
+// UnloadIdle closes rooms that have been empty for at least idleFor.
+func (registry *Registry) UnloadIdle(ctx context.Context, idleFor time.Duration, now time.Time) ([]Occupancy, error) {
+	registry.mutex.RLock()
+	roomIDs := make([]int64, 0, len(registry.rooms))
+	for roomID, room := range registry.rooms {
+		idleSince := room.IdleSince()
+		if idleSince != nil && !idleSince.Add(idleFor).After(now) {
+			roomIDs = append(roomIDs, roomID)
+		}
+	}
+	registry.mutex.RUnlock()
+
+	closedOccupancies := make([]Occupancy, 0, len(roomIDs))
+	for _, roomID := range roomIDs {
+		occupancy, closed, err := registry.Close(ctx, roomID)
+		if err != nil {
+			return closedOccupancies, err
+		}
+		if closed {
+			closedOccupancies = append(closedOccupancies, occupancy)
+		}
+	}
+
+	return closedOccupancies, nil
 }
 
 // Count returns the number of active rooms.

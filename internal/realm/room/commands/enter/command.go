@@ -66,7 +66,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err != nil {
 		return err
 	}
-	if err := handler.join(ctx, player, envelope.Command.Handler, room); err != nil {
+	if err := handler.join(ctx, player, envelope.Command.Handler, room, roomLayout); err != nil {
 		return handler.sendEntryError(ctx, envelope.Command.Handler, err)
 	}
 	if err := player.EnterRoom(room.ID); err != nil {
