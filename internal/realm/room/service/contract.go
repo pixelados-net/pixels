@@ -25,6 +25,9 @@ type Finder interface {
 
 	// ListHighestScore lists highest scoring rooms.
 	ListHighestScore(ctx context.Context, limit int) ([]roommodel.Room, error)
+
+	// Search searches public room navigator fields.
+	Search(ctx context.Context, query string, limit int) ([]roommodel.Room, error)
 }
 
 // Manager creates, reads, and deletes room records.

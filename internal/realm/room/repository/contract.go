@@ -19,6 +19,9 @@ type RoomReader interface {
 
 	// ListHighestScoreRooms lists active rooms by score.
 	ListHighestScoreRooms(ctx context.Context, limit int) ([]roommodel.Room, error)
+
+	// SearchRooms searches active rooms by public navigator text.
+	SearchRooms(ctx context.Context, query string, limit int) ([]roommodel.Room, error)
 }
 
 // RoomWriter writes room records.

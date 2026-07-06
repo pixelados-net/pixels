@@ -103,30 +103,6 @@ func TestListCategoriesReadsStore(t *testing.T) {
 	}
 }
 
-// TestCreateRejectsInvalidInput verifies create validation.
-func TestCreateRejectsInvalidInput(t *testing.T) {
-	cases := []struct {
-		name     string
-		params   CreateParams
-		expected error
-	}{
-		{name: "owner", params: CreateParams{Name: "Test Room", ModelName: "model_a"}, expected: ErrInvalidOwner},
-		{name: "name", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "no", ModelName: "model_a"}, expected: ErrInvalidRoomName},
-		{name: "description", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", Description: strings.Repeat("x", MaxRoomDescriptionLength+1), ModelName: "model_a"}, expected: ErrInvalidDescription},
-		{name: "max users", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", MaxUsers: MaxRoomUsers + 1, ModelName: "model_a"}, expected: ErrInvalidMaxUsers},
-		{name: "trade", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", ModelName: "model_a", TradeMode: roommodel.TradeMode(9)}, expected: ErrInvalidTradeMode},
-	}
-
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := New(newFakeStore(), fakeLayouts{found: true, enabled: true}).Create(context.Background(), test.params)
-			if !errors.Is(err, test.expected) {
-				t.Fatalf("expected %v, got %v", test.expected, err)
-			}
-		})
-	}
-}
-
 // newFakeStore creates a room store for tests.
 func newFakeStore() *fakeStore {
 	return &fakeStore{room: roommodel.Room{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}}, Name: "Test Room"}, found: true, deleted: true}
@@ -141,16 +117,12 @@ func validCreateForTest() CreateParams {
 type fakeStore struct {
 	// room is the returned room.
 	room roommodel.Room
-
 	// found reports whether lookups succeed.
 	found bool
-
 	// deleted reports whether delete succeeds.
 	deleted bool
-
 	// tags stores replacement tags.
 	tags []string
-
 	// limit stores the last list limit.
 	limit int
 }
@@ -182,6 +154,12 @@ func (store *fakeStore) ListHighestScoreRooms(_ context.Context, limit int) ([]r
 	return []roommodel.Room{store.room}, nil
 }
 
+// SearchRooms searches rooms for tests.
+func (store *fakeStore) SearchRooms(_ context.Context, _ string, limit int) ([]roommodel.Room, error) {
+	store.limit = limit
+	return []roommodel.Room{store.room}, nil
+}
+
 // SoftDeleteRoom soft deletes a room for tests.
 func (store *fakeStore) SoftDeleteRoom(context.Context, int64) (bool, error) {
 	return store.deleted, nil
@@ -207,7 +185,6 @@ func (store *fakeStore) ReplaceRoomTags(_ context.Context, _ int64, tags []strin
 type fakeLayouts struct {
 	// found reports whether lookups succeed.
 	found bool
-
 	// enabled reports whether the layout is enabled.
 	enabled bool
 }
@@ -240,4 +217,28 @@ func (layouts fakeLayouts) List(context.Context) ([]layout.Layout, error) {
 // Catalog loads a layout catalog for tests.
 func (layouts fakeLayouts) Catalog(context.Context) (*layout.Catalog, error) {
 	return nil, nil
+}
+
+// TestCreateRejectsInvalidInput verifies create validation.
+func TestCreateRejectsInvalidInput(t *testing.T) {
+	cases := []struct {
+		name     string
+		params   CreateParams
+		expected error
+	}{
+		{name: "owner", params: CreateParams{Name: "Test Room", ModelName: "model_a"}, expected: ErrInvalidOwner},
+		{name: "name", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "no", ModelName: "model_a"}, expected: ErrInvalidRoomName},
+		{name: "description", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", Description: strings.Repeat("x", MaxRoomDescriptionLength+1), ModelName: "model_a"}, expected: ErrInvalidDescription},
+		{name: "max users", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", MaxUsers: MaxRoomUsers + 1, ModelName: "model_a"}, expected: ErrInvalidMaxUsers},
+		{name: "trade", params: CreateParams{OwnerPlayerID: 7, OwnerName: "demo", Name: "Test Room", ModelName: "model_a", TradeMode: roommodel.TradeMode(9)}, expected: ErrInvalidTradeMode},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := New(newFakeStore(), fakeLayouts{found: true, enabled: true}).Create(context.Background(), test.params)
+			if !errors.Is(err, test.expected) {
+				t.Fatalf("expected %v, got %v", test.expected, err)
+			}
+		})
+	}
 }

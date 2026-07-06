@@ -16,6 +16,7 @@ var Module = fx.Module(
 		service.New,
 		NewManager,
 	),
+	fx.Invoke(RegisterConnectionHandlers),
 )
 
 // NewStore creates the navigator persistence store.

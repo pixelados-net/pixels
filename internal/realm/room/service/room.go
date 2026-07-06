@@ -94,6 +94,16 @@ func (service *Service) ListHighestScore(ctx context.Context, limit int) ([]room
 	return service.store.ListHighestScoreRooms(ctx, normalizeLimit(limit))
 }
 
+// Search searches public room navigator fields.
+func (service *Service) Search(ctx context.Context, query string, limit int) ([]roommodel.Room, error) {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return service.ListPopular(ctx, limit)
+	}
+
+	return service.store.SearchRooms(ctx, query, normalizeLimit(limit))
+}
+
 // SoftDelete soft deletes a room.
 func (service *Service) SoftDelete(ctx context.Context, id int64) error {
 	if id <= 0 {

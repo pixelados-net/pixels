@@ -31,6 +31,9 @@ returning ` + roomColumns
 	// listHighestScoreRoomsSQL reads active rooms by score.
 	listHighestScoreRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null order by score desc, id asc limit $1`
 
+	// searchRoomsSQL reads active rooms matching public navigator text.
+	searchRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and (name ilike $1 or owner_name ilike $1 or description ilike $1 or exists (select 1 from room_tags where room_tags.room_id = rooms.id and room_tags.tag ilike $1)) order by score desc, updated_at desc limit $2`
+
 	// softDeleteRoomSQL soft deletes one active room.
 	softDeleteRoomSQL = `update rooms set deleted_at = now(), updated_at = now(), version = version + 1 where id = $1 and deleted_at is null`
 )
@@ -95,6 +98,11 @@ func (repository *Repository) ListHighestScoreRooms(ctx context.Context, limit i
 	return repository.listRooms(ctx, listHighestScoreRoomsSQL, limit)
 }
 
+// SearchRooms searches active rooms by public navigator text.
+func (repository *Repository) SearchRooms(ctx context.Context, query string, limit int) ([]roommodel.Room, error) {
+	return repository.listRooms2(ctx, searchRoomsSQL, "%"+query+"%", limit)
+}
+
 // SoftDeleteRoom soft deletes a room record.
 func (repository *Repository) SoftDeleteRoom(ctx context.Context, id int64) (bool, error) {
 	tag, err := repository.executor.Exec(ctx, softDeleteRoomSQL, id)
@@ -122,6 +130,17 @@ func (repository *Repository) findRoom(ctx context.Context, query string, argume
 // listRooms lists rooms with a query.
 func (repository *Repository) listRooms(ctx context.Context, query string, argument any) ([]roommodel.Room, error) {
 	rows, err := repository.executor.Query(ctx, query, argument)
+	if err != nil {
+		return nil, fmt.Errorf("list rooms: %w", err)
+	}
+	defer rows.Close()
+
+	return scanRooms(rows)
+}
+
+// listRooms2 lists rooms with two query arguments.
+func (repository *Repository) listRooms2(ctx context.Context, query string, first any, second any) ([]roommodel.Room, error) {
+	rows, err := repository.executor.Query(ctx, query, first, second)
 	if err != nil {
 		return nil, fmt.Errorf("list rooms: %w", err)
 	}
