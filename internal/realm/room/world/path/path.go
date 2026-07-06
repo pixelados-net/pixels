@@ -75,6 +75,14 @@ type Path struct {
 	versions map[grid.Point]uint32
 }
 
+// NewPath creates a path from steps without observed column versions.
+func NewPath(steps []Step) Path {
+	pathSteps := make([]Step, len(steps))
+	copy(pathSteps, steps)
+
+	return Path{steps: pathSteps}
+}
+
 // Rules stores pathfinding movement rules.
 type Rules struct {
 	// MaxStepUp stores the maximum allowed upward step height.
