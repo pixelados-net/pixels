@@ -2,6 +2,7 @@ package enter
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
@@ -26,11 +27,7 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 		return err
 	}
 
-	entryPacket, err := outentrytile.Encode(int32(roomLayout.DoorX), int32(roomLayout.DoorY), int32(roomLayout.DoorDirection))
-	if err != nil {
-		return err
-	}
-	if err := connection.Send(ctx, entryPacket); err != nil {
+	if err := SendEntryTile(ctx, connection, roomLayout); err != nil {
 		return err
 	}
 
@@ -40,4 +37,19 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 	}
 
 	return connection.Send(ctx, modelPacket)
+}
+
+// SendEntryTile sends the current room entry tile settings.
+func SendEntryTile(ctx context.Context, connection netconn.Context, roomLayout layout.Layout) error {
+	entryPacket, err := outentrytile.Encode(
+		int32(roomLayout.DoorX),
+		int32(roomLayout.DoorY),
+		strconv.FormatFloat(float64(roomLayout.DoorZ), 'f', 1, 64),
+		int32(roomLayout.DoorDirection),
+	)
+	if err != nil {
+		return err
+	}
+
+	return connection.Send(ctx, entryPacket)
 }

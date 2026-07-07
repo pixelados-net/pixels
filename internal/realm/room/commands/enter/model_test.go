@@ -27,6 +27,14 @@ func TestSendModelSendsEntryTileBeforeScaledHeightmap(t *testing.T) {
 		t.Fatalf("unexpected model packet order %#v", *sent)
 	}
 
+	entryValues, err := codec.DecodePacketExact((*sent)[1], outentrytile.Definition)
+	if err != nil {
+		t.Fatalf("decode entry tile packet: %v", err)
+	}
+	if entryValues[0].Int32 != 0 || entryValues[1].Int32 != 0 || entryValues[2].String != "0.0" || entryValues[3].Int32 != 2 {
+		t.Fatalf("unexpected entry tile values %#v", entryValues)
+	}
+
 	values, err := codec.DecodePacketExact((*sent)[2], outmodel.Definition)
 	if err != nil {
 		t.Fatalf("decode model packet: %v", err)

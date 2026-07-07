@@ -12,10 +12,11 @@ const (
 var Definition = codec.Definition{
 	codec.Named("x", codec.Int32Field),
 	codec.Named("y", codec.Int32Field),
+	codec.Named("z", codec.StringField),
 	codec.Named("direction", codec.Int32Field),
 }
 
 // Encode creates a ROOM_MODEL_DOOR packet.
-func Encode(x int32, y int32, direction int32) (codec.Packet, error) {
-	return codec.NewPacket(Header, Definition, codec.Int32(x), codec.Int32(y), codec.Int32(direction))
+func Encode(x int32, y int32, z string, direction int32) (codec.Packet, error) {
+	return codec.NewPacket(Header, Definition, codec.Int32(x), codec.Int32(y), codec.String(z), codec.Int32(direction))
 }

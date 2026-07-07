@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset pixels:pixels-room-seed-development-0003-refresh-default-room-layouts context:development
+--changeset pixels:pixels-room-seed-development-0004-refresh-default-room-doors context:development
 insert into room_layouts (name, tile_size, heightmap, door_x, door_y, door_z, door_direction, club_level, enabled)
 values
     ('model_a', 105, E'xxxxxxxxxxxx\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxx000000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxx00000000\rxxxxxxxxxxxx\rxxxxxxxxxxxx', 3, 5, 0, 2, 0, true),

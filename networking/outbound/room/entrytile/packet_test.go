@@ -8,7 +8,7 @@ import (
 
 // TestEncode verifies ROOM_MODEL_DOOR packet construction.
 func TestEncode(t *testing.T) {
-	packet, err := Encode(1, 2, 3)
+	packet, err := Encode(1, 2, "0.0", 3)
 	if err != nil {
 		t.Fatalf("encode packet: %v", err)
 	}
@@ -16,7 +16,7 @@ func TestEncode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode packet: %v", err)
 	}
-	if packet.Header != Header || values[0].Int32 != 1 || values[1].Int32 != 2 || values[2].Int32 != 3 {
+	if packet.Header != Header || values[0].Int32 != 1 || values[1].Int32 != 2 || values[2].String != "0.0" || values[3].Int32 != 3 {
 		t.Fatalf("unexpected packet %#v values %#v", packet, values)
 	}
 }
