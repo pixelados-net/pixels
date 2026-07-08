@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/internal/realm/room/world/surface"
@@ -80,6 +81,9 @@ type WorldConfig struct {
 
 	// Fixtures stores dynamic initial column fixtures.
 	Fixtures []surface.Fixture
+
+	// Furniture stores placed furniture items projected into fixtures on load.
+	Furniture []worldfurniture.Item
 
 	// Door stores the room entry position.
 	Door worldpath.Position

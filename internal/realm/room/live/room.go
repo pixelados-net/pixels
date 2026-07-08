@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
@@ -197,6 +198,31 @@ func (room *Room) Units() []UnitSnapshot {
 	}
 
 	return units
+}
+
+// FurnitureItems returns stable placed furniture item snapshots.
+func (room *Room) FurnitureItems() []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	if room.world == nil {
+		return nil
+	}
+
+	ids := make([]int64, 0, len(room.world.furniture))
+	for id := range room.world.furniture {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(left int, right int) bool {
+		return ids[left] < ids[right]
+	})
+
+	items := make([]worldfurniture.Item, 0, len(ids))
+	for _, id := range ids {
+		items = append(items, room.world.furniture[id])
+	}
+
+	return items
 }
 
 // unitSnapshot maps a world unit to a runtime snapshot.

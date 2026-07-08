@@ -7,9 +7,11 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
 	roomentered "github.com/niflaot/pixels/internal/realm/room/events/entered"
+	roomfurniture "github.com/niflaot/pixels/internal/realm/room/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -30,7 +32,7 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		return nil, err
 	}
 	if !active.WorldLoaded() {
-		if err := loadWorld(active, roomLayout); err != nil {
+		if err := handler.loadWorld(ctx, active, room, roomLayout); err != nil {
 			return nil, err
 		}
 	}
@@ -62,8 +64,8 @@ func (handler Handler) leavePreviousRoom(ctx context.Context, playerID int64) er
 	})
 }
 
-// loadWorld loads the room runtime world from its persistent layout.
-func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
+// loadWorld loads the room runtime world from its persistent layout and placed furniture.
+func (handler Handler) loadWorld(ctx context.Context, room *roomlive.Room, roomData roommodel.Room, roomLayout layout.Layout) error {
 	roomGrid, err := roomLayout.Grid()
 	if err != nil {
 		return err
@@ -73,8 +75,14 @@ func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
 		return roomlive.ErrInvalidWorld
 	}
 
+	furnitureItems, err := handler.loadFurniture(ctx, roomData.ID)
+	if err != nil {
+		return err
+	}
+
 	return room.LoadWorld(roomlive.WorldConfig{
-		Grid: roomGrid,
+		Grid:      roomGrid,
+		Furniture: furnitureItems,
 		Door: worldpath.Position{
 			Point: doorPoint,
 			Z:     grid.Height(roomLayout.DoorZ),
@@ -83,6 +91,15 @@ func loadWorld(room *roomlive.Room, roomLayout layout.Layout) error {
 		Head:  rotationFromLayout(roomLayout),
 		Rules: worldpath.DefaultRules(),
 	})
+}
+
+// loadFurniture loads placed furniture for a room, tolerating an unconfigured furniture manager.
+func (handler Handler) loadFurniture(ctx context.Context, roomID int64) ([]worldfurniture.Item, error) {
+	if handler.Furniture == nil {
+		return nil, nil
+	}
+
+	return roomfurniture.LoadRoomFurniture(ctx, handler.Furniture, roomID)
 }
 
 // rotationFromLayout converts layout direction to runtime rotation.

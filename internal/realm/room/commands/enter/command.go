@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/niflaot/pixels/internal/command"
+	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomsession "github.com/niflaot/pixels/internal/realm/room/commands/session"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
@@ -46,6 +47,8 @@ type Handler struct {
 	Rooms roomservice.Manager
 	// Layouts reads room layouts.
 	Layouts layout.Manager
+	// Furniture reads placed and inventory furniture records.
+	Furniture furnitureservice.Manager
 	// Runtime stores active rooms.
 	Runtime *roomlive.Registry
 	// Connections stores active network connections.
@@ -117,6 +120,10 @@ func (handler Handler) sendEntered(ctx context.Context, connection netconn.Conte
 	}
 
 	if err := SendModel(ctx, connection, room, roomLayout); err != nil {
+		return err
+	}
+
+	if err := handler.sendFloorItems(ctx, connection, room, active); err != nil {
 		return err
 	}
 

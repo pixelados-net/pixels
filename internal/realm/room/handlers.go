@@ -2,6 +2,7 @@ package room
 
 import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	entercmd "github.com/niflaot/pixels/internal/realm/room/commands/enter"
 	entrytilecmd "github.com/niflaot/pixels/internal/realm/room/commands/entrytile"
@@ -39,6 +40,8 @@ type HandlerDeps struct {
 	Rooms roomservice.Manager
 	// Layouts manages room layouts.
 	Layouts layout.Manager
+	// Furniture manages placed and inventory furniture records.
+	Furniture furnitureservice.Manager
 	// Runtime stores active rooms.
 	Runtime *roomlive.Registry
 	// Connections stores active network connections.
@@ -57,7 +60,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 
 	enterhandler.Register(handlers.Inbound, enterhandler.New(entercmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
-		Layouts: deps.Layouts, Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
+		Layouts: deps.Layouts, Furniture: deps.Furniture, Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log))
 	modelhandler.Register(handlers.Inbound, modelhandler.New(modelcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Layouts: deps.Layouts,

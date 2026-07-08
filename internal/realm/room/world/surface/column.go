@@ -75,8 +75,11 @@ func (column Column) Len() int {
 	return int(column.count) + len(column.extra)
 }
 
-// AddSection adds a resolved tile section.
+// AddSection adds a resolved tile section, letting a blocking section replace a tied-height section.
 func (column *Column) AddSection(section Section) {
+	if section.state == StateBlocked && column.replaceTiedSection(section) {
+		return
+	}
 	if len(column.extra) > 0 {
 		column.insertExtra(section)
 
@@ -124,6 +127,30 @@ func (column Column) TopSection() (Section, bool) {
 // Dynamic reports whether the column was materialized from dynamic state.
 func (column Column) Dynamic() bool {
 	return column.version > 0
+}
+
+// replaceTiedSection replaces an existing section at the same height with a blocking section.
+func (column *Column) replaceTiedSection(section Section) bool {
+	if len(column.extra) > 0 {
+		for index := range column.extra {
+			if column.extra[index].Z() == section.Z() {
+				column.extra[index] = section
+
+				return true
+			}
+		}
+
+		return false
+	}
+	for index := 0; index < int(column.count); index++ {
+		if column.sections[index].Z() == section.Z() {
+			column.sections[index] = section
+
+			return true
+		}
+	}
+
+	return false
 }
 
 // insertInline adds an inline section ordered by height.

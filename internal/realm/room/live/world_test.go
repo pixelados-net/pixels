@@ -5,8 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	"github.com/niflaot/pixels/internal/realm/room/world/surface"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
@@ -23,6 +25,69 @@ func TestRoomLoadWorldCreatesUnitsForJoin(t *testing.T) {
 	}
 	if units[0].Position.Point != pointForTest(t, 0, 0) || units[0].Position.Z != 0 {
 		t.Fatalf("unexpected position %#v", units[0].Position)
+	}
+}
+
+// TestRoomLoadWorldProjectsFurnitureIntoFixturesAndSnapshot verifies furniture loading.
+func TestRoomLoadWorldProjectsFurnitureIntoFixturesAndSnapshot(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 128})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	roomGrid := gridForTest(t, "000", 0, 0)
+	table := worldfurniture.Item{
+		ID:       11,
+		Point:    pointForTest(t, 2, 0),
+		Rotation: worldunit.RotationNorth,
+		Definition: worldfurniture.Definition{
+			Width: 1, Length: 1, StackHeight: 1, AllowStack: true,
+		},
+	}
+
+	if err := room.LoadWorld(WorldConfig{
+		Grid:      roomGrid,
+		Furniture: []worldfurniture.Item{table},
+		Door:      worldpath.Position{Point: pointForTest(t, 0, 0)},
+		Body:      worldunit.RotationSouth,
+		Head:      worldunit.RotationSouth,
+	}); err != nil {
+		t.Fatalf("load world: %v", err)
+	}
+
+	items := room.FurnitureItems()
+	if len(items) != 1 || items[0].ID != 11 {
+		t.Fatalf("unexpected furniture snapshot %#v", items)
+	}
+
+	column, err := room.world.resolver.Column(pointForTest(t, 2, 0))
+	if err != nil {
+		t.Fatalf("resolve column: %v", err)
+	}
+	if column.Len() != 1 {
+		t.Fatalf("expected the furniture block to replace the walkable base, got %d sections", column.Len())
+	}
+	top, ok := column.TopSection()
+	if !ok || top.State() != surface.StateBlocked || top.SourceID() != 11 {
+		t.Fatalf("expected blocked section from furniture, got %#v found=%v", top, ok)
+	}
+
+	if _, err := room.Join(occupantForTest(7)); err != nil {
+		t.Fatalf("join room: %v", err)
+	}
+	if _, err := room.MoveTo(7, pointForTest(t, 2, 0)); !errors.Is(err, worldpath.ErrNoPath) {
+		t.Fatalf("expected blocked tile to be unreachable, got %v", err)
+	}
+}
+
+// TestRoomFurnitureItemsReturnsNilWithoutWorld verifies the snapshot default.
+func TestRoomFurnitureItemsReturnsNilWithoutWorld(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 2})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+
+	if items := room.FurnitureItems(); items != nil {
+		t.Fatalf("expected nil furniture snapshot, got %#v", items)
 	}
 }
 

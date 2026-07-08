@@ -163,7 +163,7 @@ func TestLoadWorldRejectsInvalidLayout(t *testing.T) {
 		t.Fatalf("create room: %v", err)
 	}
 
-	err = loadWorld(room, layout.Layout{Heightmap: "x", DoorX: 0, DoorY: 0})
+	err = (Handler{}).loadWorld(context.Background(), room, roommodel.Room{}, layout.Layout{Heightmap: "x", DoorX: 0, DoorY: 0})
 	if err == nil {
 		t.Fatal("expected invalid layout world")
 	}

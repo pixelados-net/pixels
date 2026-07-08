@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/networking/codec"
@@ -76,7 +77,7 @@ func TestJoinBroadcastsPreviousRoomRemoval(t *testing.T) {
 	if err != nil {
 		t.Fatalf("activate previous room: %v", err)
 	}
-	if err := loadWorld(previous, layoutForTest()); err != nil {
+	if err := (Handler{}).loadWorld(context.Background(), previous, roommodel.Room{}, layoutForTest()); err != nil {
 		t.Fatalf("load previous world: %v", err)
 	}
 	if _, err := runtime.Join(context.Background(), 3, occupantForTest(7)); err != nil {

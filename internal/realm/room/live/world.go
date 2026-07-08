@@ -1,8 +1,10 @@
 package live
 
 import (
+	"fmt"
 	"sort"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/internal/realm/room/world/surface"
@@ -16,6 +18,9 @@ type World struct {
 
 	// resolver resolves world columns.
 	resolver *surface.Resolver
+
+	// furniture stores placed furniture items by id.
+	furniture map[int64]worldfurniture.Item
 
 	// door stores the room entry position.
 	door worldpath.Position
@@ -84,7 +89,13 @@ func (room *Room) WorldLoaded() bool {
 
 // newWorld creates loaded world state.
 func newWorld(config WorldConfig) (*World, error) {
-	resolver, err := surface.NewResolver(config.Grid, config.Fixtures)
+	fixtures, furnitureIndex, err := furnitureFixtures(config.Furniture)
+	if err != nil {
+		return nil, err
+	}
+	fixtures = append(fixtures, config.Fixtures...)
+
+	resolver, err := surface.NewResolver(config.Grid, fixtures)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +106,7 @@ func newWorld(config WorldConfig) (*World, error) {
 	return &World{
 		grid:       config.Grid,
 		resolver:   resolver,
+		furniture:  furnitureIndex,
 		door:       config.Door,
 		body:       config.Body,
 		head:       config.Head,
@@ -102,6 +114,22 @@ func newWorld(config WorldConfig) (*World, error) {
 		units:      make(map[int64]*worldunit.Unit),
 		nextUnitID: 1,
 	}, nil
+}
+
+// furnitureFixtures converts placed furniture items into resolver fixtures and an id index.
+func furnitureFixtures(items []worldfurniture.Item) ([]surface.Fixture, map[int64]worldfurniture.Item, error) {
+	fixtures := make([]surface.Fixture, 0, len(items))
+	index := make(map[int64]worldfurniture.Item, len(items))
+	for _, item := range items {
+		itemFixtures, err := worldfurniture.Fixtures(item)
+		if err != nil {
+			return nil, nil, fmt.Errorf("build fixtures for furniture item %d: %w", item.ID, err)
+		}
+		fixtures = append(fixtures, itemFixtures...)
+		index[item.ID] = item
+	}
+
+	return fixtures, index, nil
 }
 
 // addUnit creates a world unit for a player.
