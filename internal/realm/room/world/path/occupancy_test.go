@@ -1,6 +1,7 @@
 package path
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
@@ -44,6 +45,37 @@ func TestFinderOccupancyIsSectionSpecific(t *testing.T) {
 	if occupancy.Len() != 1 || occupancy.Empty() {
 		t.Fatal("expected one occupied position")
 	}
+}
+
+// TestFinderSlotSectionsAreDestinationOnly verifies sit/lay tiles accept a unit as the path goal
+// but never as a transit tile toward a further goal.
+func TestFinderSlotSectionsAreDestinationOnly(t *testing.T) {
+	point := grid.MustPoint(1, 0)
+	fixture := fixtureForTest(t, surface.FixtureParams{Point: point, Z: 0, Top: 1, State: surface.StateSit})
+	resolver := resolverForTest(t, "000", []surface.Fixture{fixture})
+	finder := NewFinder(resolver, DefaultRules())
+
+	if _, err := finder.Find(Position{Point: grid.MustPoint(0, 0), Z: 0}, point); err != nil {
+		t.Fatalf("expected seat reachable as goal, got %v", err)
+	}
+	if _, err := finder.Find(Position{Point: grid.MustPoint(0, 0), Z: 0}, grid.MustPoint(2, 0)); !errors.Is(err, ErrNoPath) {
+		t.Fatalf("expected no path through the seat, got %v", err)
+	}
+}
+
+// TestFinderGoalPrefersSitSectionOverBaseFloor verifies a goal resolves to a sit slot above the
+// base floor even when the slot's height does not tie with it (e.g. a chair with stack_height > 0).
+func TestFinderGoalPrefersSitSectionOverBaseFloor(t *testing.T) {
+	point := grid.MustPoint(1, 0)
+	fixture := fixtureForTest(t, surface.FixtureParams{Point: point, Z: 1, Top: 1, State: surface.StateSit})
+	resolver := resolverForTest(t, "00", []surface.Fixture{fixture})
+	finder := NewFinder(resolver, DefaultRules())
+
+	roomPath, err := finder.Find(Position{Point: grid.MustPoint(0, 0), Z: 0}, point)
+	if err != nil {
+		t.Fatalf("find sit path: %v", err)
+	}
+	assertSteps(t, roomPath, []Position{{Point: point, Z: 1}})
 }
 
 // TestFinderDiagonalBlockedByOccupiedCorners verifies occupancy diagonal safety.

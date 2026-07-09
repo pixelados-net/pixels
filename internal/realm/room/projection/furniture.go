@@ -31,10 +31,10 @@ func floorItemRecord(item furnituremodel.Item, definition furnituremodel.Definit
 		X:           *item.X,
 		Y:           *item.Y,
 		Rotation:    int(item.Rotation),
-		Z:           furnitureHeightValue(*item.Z),
-		ExtraHeight: extraHeightValue(definition),
+		Z:           FurnitureHeightValue(*item.Z),
+		ExtraHeight: ExtraHeightValue(definition),
 		ExtraData:   item.ExtraData,
-		UsagePolicy: usagePolicyValue(definition),
+		UsagePolicy: UsagePolicyValue(definition),
 		OwnerID:     item.OwnerPlayerID,
 	}
 }
@@ -54,19 +54,19 @@ func ownerRecords(items []furnituremodel.Item, ownerNames map[int64]string) []ou
 	return owners
 }
 
-// extraHeightValue returns the walkable top height string for walk/sit definitions, matching Arcturus's
+// ExtraHeightValue returns the walkable top height string for walk/sit definitions, matching Arcturus's
 // serializeFloorData rule of only reporting it for allowWalk or allowSit items (not allowLay).
-func extraHeightValue(definition furnituremodel.Definition) string {
+func ExtraHeightValue(definition furnituremodel.Definition) string {
 	if !definition.AllowWalk && !definition.AllowSit {
 		return ""
 	}
 
-	return furnitureHeightValue(definition.StackHeight)
+	return FurnitureHeightValue(definition.StackHeight)
 }
 
-// usagePolicyValue reports whether a definition exposes toggle-style interaction, matching
+// UsagePolicyValue reports whether a definition exposes toggle-style interaction, matching
 // Arcturus's isUsable() rule of having more than one interaction mode.
-func usagePolicyValue(definition furnituremodel.Definition) int32 {
+func UsagePolicyValue(definition furnituremodel.Definition) int32 {
 	if definition.InteractionModesCount > 1 {
 		return 1
 	}
@@ -74,7 +74,7 @@ func usagePolicyValue(definition furnituremodel.Definition) int32 {
 	return 0
 }
 
-// furnitureHeightValue formats a persisted decimal height using the room world's rounded height.
-func furnitureHeightValue(value float64) string {
+// FurnitureHeightValue formats a persisted decimal height using the room world's rounded height.
+func FurnitureHeightValue(value float64) string {
 	return strconv.Itoa(int(roomfurniture.RoundHeight(value)))
 }

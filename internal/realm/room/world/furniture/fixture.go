@@ -23,12 +23,15 @@ func Fixtures(item Item) ([]surface.Fixture, error) {
 	return fixtures, nil
 }
 
-// tileFixture builds the resolver fixture for one footprint tile.
+// tileFixture builds the resolver fixture for one footprint tile. Slot tiles expose their walkable
+// section at the item's base height, not its top: units reach a seat or bed at floor level and the
+// sit/lay status carries the visual height offset, so pathfinding step limits never gate on how tall
+// the furniture is.
 func tileFixture(item Item, point grid.Point, top grid.Height, slotsByPoint map[grid.Point]Slot) (surface.Fixture, error) {
 	if slot, ok := slotsByPoint[point]; ok {
 		return surface.NewFixture(surface.FixtureParams{
 			Point:    point,
-			Z:        slot.Z,
+			Z:        item.Z,
 			Top:      top,
 			Stacking: item.Definition.AllowStack,
 			State:    slotState(slot.Status),

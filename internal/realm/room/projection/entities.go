@@ -54,7 +54,7 @@ func Statuses(room *roomlive.Room, playerIDs ...int64) []outstatus.Unit {
 		if len(allowed) > 0 && !allowed[unit.PlayerID] {
 			continue
 		}
-		records = append(records, statusRecord(unit, statusActions(unit.Statuses)))
+		records = append(records, statusPositionRecord(unit, unit.Position, statusActions(unit.Statuses)))
 	}
 
 	return records
@@ -90,7 +90,9 @@ func unitRecord(occupant roomlive.Occupant, unit roomlive.UnitSnapshot) outunits
 	}
 }
 
-// statusRecord maps one live unit to one protocol status.
+// statusRecord maps one live unit to one protocol movement status, anchored at the unit's previous
+// position so the client animates the step from its origin tile. Static snapshots must use
+// statusPositionRecord with the current position instead.
 func statusRecord(unit roomlive.UnitSnapshot, actions []outstatus.Action) outstatus.Unit {
 	return statusPositionRecord(unit, unit.Previous, actions)
 }

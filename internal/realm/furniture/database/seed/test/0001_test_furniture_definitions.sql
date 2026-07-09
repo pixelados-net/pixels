@@ -5,9 +5,9 @@ insert into furniture_definitions (id, sprite_id, name, public_name, kind, width
 overriding system value
 values
     (1, 22, 'table_plasto_4leg', 'table_plasto_4leg', 'floor', 2, 2, 1.00, true, false, false, false, true, 'default', 2, '', '', '{}'),
-    (2, 39, 'chair_plasto', 'chair_plasto', 'floor', 1, 1, 1.00, false, false, true, false, true, 'default', 2, '', '', '{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":4}]}'),
-    (3, 28, 'sofa_silo', 'Gray Sofa', 'floor', 2, 1, 1.10, true, false, true, false, true, 'default', 2, '', '', '{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":4},{"dx":1,"dy":0,"status":"sit","body_rotation":4}]}'),
-    (4, 45, 'bed_silo_one', 'Single Bed', 'floor', 1, 3, 1.80, false, false, false, true, true, 'bed', 1, '', '', '{"slots":[{"dx":0,"dy":1,"status":"lay","body_rotation":4}]}'),
-    (5, 46, 'bed_silo_two', 'Double Bed', 'floor', 2, 3, 1.80, false, false, false, true, true, 'bed', 1, '', '', '{"slots":[{"dx":0,"dy":1,"status":"lay","body_rotation":4},{"dx":1,"dy":1,"status":"lay","body_rotation":4}]}')
+    (2, 39, 'chair_plasto', 'chair_plasto', 'floor', 1, 1, 1.00, false, false, true, false, true, 'default', 2, '', '', '{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":0}]}'),
+    (3, 28, 'sofa_silo', 'Gray Sofa', 'floor', 2, 1, 1.10, true, false, true, false, true, 'default', 2, '', '', '{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":0},{"dx":1,"dy":0,"status":"sit","body_rotation":0}]}'),
+    (4, 45, 'bed_silo_one', 'Single Bed', 'floor', 1, 3, 1.80, false, false, false, true, true, 'bed', 1, '', '', '{"slots":[{"dx":0,"dy":0,"status":"lay","body_rotation":0}]}'),
+    (5, 46, 'bed_silo_two', 'Double Bed', 'floor', 2, 3, 1.80, false, false, false, true, true, 'bed', 1, '', '', '{"slots":[{"dx":0,"dy":0,"status":"lay","body_rotation":0},{"dx":1,"dy":0,"status":"lay","body_rotation":0}]}')
 on conflict do nothing;
 --rollback delete from furniture_definitions where id in (1, 2, 3, 4, 5);

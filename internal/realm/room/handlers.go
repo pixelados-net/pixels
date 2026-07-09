@@ -4,6 +4,7 @@ import (
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	entercmd "github.com/niflaot/pixels/internal/realm/room/commands/enter"
 	entrytilecmd "github.com/niflaot/pixels/internal/realm/room/commands/entrytile"
 	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
@@ -42,6 +43,8 @@ type HandlerDeps struct {
 	Layouts layout.Manager
 	// Furniture manages placed and inventory furniture records.
 	Furniture furnitureservice.Manager
+	// PlayerDirectory resolves durable player identities for furniture owners not currently online.
+	PlayerDirectory playerservice.Finder
 	// Runtime stores active rooms.
 	Runtime *roomlive.Registry
 	// Connections stores active network connections.
@@ -60,7 +63,8 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 
 	enterhandler.Register(handlers.Inbound, enterhandler.New(entercmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
-		Layouts: deps.Layouts, Furniture: deps.Furniture, Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
+		Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
+		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log))
 	modelhandler.Register(handlers.Inbound, modelhandler.New(modelcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Layouts: deps.Layouts,

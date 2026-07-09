@@ -63,6 +63,8 @@ func appendValue(dst []byte, field Field, value Value) ([]byte, error) {
 		return binary.BigEndian.AppendUint32(dst, value.Uint32), nil
 	case StringKind:
 		return appendString(dst, value.String)
+	case ByteKind:
+		return append(dst, value.Byte), nil
 	default:
 		return dst, ErrInvalidField
 	}
@@ -93,6 +95,11 @@ func decodeValue(field Field, src []byte) (Value, []byte, error) {
 		return Uint32(binary.BigEndian.Uint32(src[:4])), src[4:], nil
 	case StringKind:
 		return decodeString(src)
+	case ByteKind:
+		if len(src) < 1 {
+			return Value{}, src, ErrTruncatedPayload
+		}
+		return Byte(src[0]), src[1:], nil
 	default:
 		return Value{}, src, ErrInvalidField
 	}

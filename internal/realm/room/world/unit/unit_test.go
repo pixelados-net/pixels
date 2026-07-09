@@ -155,6 +155,17 @@ func TestUnitClearPath(t *testing.T) {
 	assertNoStatus(t, roomUnit, StatusMove)
 }
 
+// TestUnitSetHeightCorrectsVerticalPositionOnly verifies SetHeight updates Z without moving the
+// unit's tile, used to fix a stale elevated Z after the furniture a unit stood on moves away.
+func TestUnitSetHeightCorrectsVerticalPositionOnly(t *testing.T) {
+	roomUnit := unitForTest(t)
+	roomUnit.SetHeight(3)
+
+	if roomUnit.Position() != positionForTest(1, 1, 3) {
+		t.Fatalf("expected height corrected in place, got %#v", roomUnit.Position())
+	}
+}
+
 // TestUnitStatusesAreStable verifies status mutation and ordering.
 func TestUnitStatusesAreStable(t *testing.T) {
 	roomUnit := unitForTest(t)

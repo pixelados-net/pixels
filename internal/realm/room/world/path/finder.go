@@ -138,19 +138,36 @@ func (search *search) visit(current openNode) error {
 	return nil
 }
 
-// visitNeighbor evaluates all sections in one neighbor column.
+// visitNeighbor evaluates one neighbor column. Sit and lay sections are destination-only: a unit
+// can enter them when the tile is the search goal but never route through them, and a goal whose
+// top section is a slot resolves to that slot alone so reaching a chair or bed tile always means
+// using it rather than whichever tied-cost section a search happens to pop first.
 func (search *search) visitNeighbor(current openNode, point grid.Point, diagonal bool) {
 	column, err := search.column(point)
 	if err != nil {
 		return
 	}
+	if point == search.goal {
+		if top, ok := column.TopSection(); ok && isSlotState(top.State()) {
+			if search.acceptsSection(current, top) {
+				search.accept(current, top, diagonal)
+			}
+
+			return
+		}
+	}
 	for index := 0; index < column.Len(); index++ {
 		section, ok := column.Section(index)
-		if !ok || !search.acceptsSection(current, section) {
+		if !ok || isSlotState(section.State()) || !search.acceptsSection(current, section) {
 			continue
 		}
 		search.accept(current, section, diagonal)
 	}
+}
+
+// isSlotState reports whether a section state represents an interactive sit or lay slot.
+func isSlotState(state surface.State) bool {
+	return state == surface.StateSit || state == surface.StateLay
 }
 
 // acceptsSection reports whether a section can be entered from current.

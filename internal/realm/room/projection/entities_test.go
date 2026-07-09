@@ -28,6 +28,43 @@ func TestUnitsAndStatuses(t *testing.T) {
 	}
 }
 
+// TestStatusesSnapshotUsesCurrentPosition verifies the room-enter snapshot anchors each unit at its
+// current tile, not the tile it stepped from, so newcomers never see occupants one step behind.
+func TestStatusesSnapshotUsesCurrentPosition(t *testing.T) {
+	room, err := roomlive.NewRoom(roomlive.Snapshot{ID: 9, MaxUsers: 5})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	roomGrid, err := grid.Parse("00", grid.WithDoor(0, 0))
+	if err != nil {
+		t.Fatalf("parse grid: %v", err)
+	}
+	if err := room.LoadWorld(roomlive.WorldConfig{
+		Grid: roomGrid,
+		Door: worldpath.Position{Point: grid.MustPoint(0, 0)},
+		Body: worldunit.RotationEast,
+		Head: worldunit.RotationEast,
+	}); err != nil {
+		t.Fatalf("load world: %v", err)
+	}
+	if _, err := room.Join(roomlive.Occupant{
+		PlayerID: 7, Username: "demo", ConnectionID: "conn", ConnectionKind: "websocket",
+	}); err != nil {
+		t.Fatalf("join room: %v", err)
+	}
+	if _, err := room.MoveTo(7, grid.MustPoint(1, 0)); err != nil {
+		t.Fatalf("move unit: %v", err)
+	}
+	if movements := room.Tick(); len(movements) != 1 {
+		t.Fatalf("expected one movement, got %#v", movements)
+	}
+
+	statusRecords := Statuses(room)
+	if len(statusRecords) != 1 || statusRecords[0].X != 1 || statusRecords[0].Y != 0 {
+		t.Fatalf("expected snapshot at current tile (1,0), got %#v", statusRecords)
+	}
+}
+
 // TestNilRoomProjection verifies nil room guards.
 func TestNilRoomProjection(t *testing.T) {
 	if Units(nil) != nil || Statuses(nil) != nil {

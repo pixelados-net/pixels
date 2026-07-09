@@ -7,8 +7,8 @@ import (
 
 // TestAppendPayloadAndDecodePayload verifies schema-ordered payload round trips.
 func TestAppendPayloadAndDecodePayload(t *testing.T) {
-	definition := Definition{Named("ok", BooleanField), Int32Field, Uint16Field, Uint32Field, StringField}
-	payload, err := AppendPayload(nil, definition, Bool(true), Int32(-7), Uint16(9), Uint32(11), String("nitro"))
+	definition := Definition{Named("ok", BooleanField), Int32Field, Uint16Field, Uint32Field, StringField, ByteField}
+	payload, err := AppendPayload(nil, definition, Bool(true), Int32(-7), Uint16(9), Uint32(11), String("nitro"), Byte(200))
 	if err != nil {
 		t.Fatalf("append payload: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestAppendPayloadAndDecodePayload(t *testing.T) {
 		t.Fatalf("expected no remaining payload, got %d", len(rest))
 	}
 
-	if !values[0].Boolean || values[1].Int32 != -7 || values[4].String != "nitro" {
+	if !values[0].Boolean || values[1].Int32 != -7 || values[4].String != "nitro" || values[5].Byte != 200 {
 		t.Fatalf("unexpected values: %#v", values)
 	}
 
@@ -54,6 +54,14 @@ func TestAppendPayloadSkipsMissingOptionalValues(t *testing.T) {
 // TestDecodePayloadRejectsTruncatedString verifies short strings fail decoding.
 func TestDecodePayloadRejectsTruncatedString(t *testing.T) {
 	_, _, err := DecodePayload(nil, Definition{StringField}, []byte{0, 5, 'h'})
+	if !errors.Is(err, ErrTruncatedPayload) {
+		t.Fatalf("expected truncated payload error, got %v", err)
+	}
+}
+
+// TestDecodePayloadRejectsTruncatedByte verifies a missing byte field is reported.
+func TestDecodePayloadRejectsTruncatedByte(t *testing.T) {
+	_, _, err := DecodePayload(nil, Definition{ByteField}, nil)
 	if !errors.Is(err, ErrTruncatedPayload) {
 		t.Fatalf("expected truncated payload error, got %v", err)
 	}

@@ -44,6 +44,13 @@ func (statuses *statuses) clear(key string) {
 	delete(statuses.values, key)
 }
 
+// has reports whether a status key is present.
+func (statuses statuses) has(key string) bool {
+	_, found := statuses.values[key]
+
+	return found
+}
+
 // snapshot returns statuses ordered by key.
 func (statuses statuses) snapshot() []Status {
 	result := make([]Status, 0, len(statuses.values))

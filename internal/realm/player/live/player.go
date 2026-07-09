@@ -3,6 +3,7 @@ package live
 import (
 	"sync"
 
+	inventoryviewer "github.com/niflaot/pixels/internal/realm/furniture/viewer/live"
 	navviewer "github.com/niflaot/pixels/internal/realm/navigator/viewer/live"
 )
 
@@ -19,6 +20,9 @@ type Player struct {
 
 	// navigator stores navigator UI state when opened.
 	navigator *navviewer.Viewer
+
+	// inventory stores furniture inventory viewer state when opened.
+	inventory *inventoryviewer.Holder
 
 	// room stores the player's current room presence.
 	room RoomPresence
@@ -119,6 +123,45 @@ func (player *Player) CloseNavigator() (*navviewer.Viewer, bool) {
 	player.navigator = nil
 
 	return viewer, true
+}
+
+// OpenInventory creates or returns the player's inventory viewer holder.
+func (player *Player) OpenInventory() *inventoryviewer.Holder {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+
+	if player.inventory == nil {
+		player.inventory = inventoryviewer.NewHolder()
+	}
+
+	return player.inventory
+}
+
+// Inventory returns the player's inventory viewer holder.
+func (player *Player) Inventory() (*inventoryviewer.Holder, bool) {
+	player.mutex.RLock()
+	defer player.mutex.RUnlock()
+
+	if player.inventory == nil {
+		return nil, false
+	}
+
+	return player.inventory, true
+}
+
+// CloseInventory removes the player's inventory viewer holder.
+func (player *Player) CloseInventory() (*inventoryviewer.Holder, bool) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+
+	if player.inventory == nil {
+		return nil, false
+	}
+
+	holder := player.inventory
+	player.inventory = nil
+
+	return holder, true
 }
 
 // EnterRoom stores the player's current room id.

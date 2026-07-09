@@ -106,6 +106,29 @@ func TestPlayerNavigatorLifecycle(t *testing.T) {
 	}
 }
 
+// TestPlayerInventoryLifecycle verifies embedded inventory holder behavior.
+func TestPlayerInventoryLifecycle(t *testing.T) {
+	player := mustPlayer(t, 10, "ian")
+	if _, found := player.Inventory(); found {
+		t.Fatal("expected no inventory holder")
+	}
+
+	holder := player.OpenInventory()
+
+	found, ok := player.Inventory()
+	if !ok || found != holder {
+		t.Fatalf("unexpected inventory holder found=%v holder=%#v", ok, found)
+	}
+
+	closed, ok := player.CloseInventory()
+	if !ok || closed != holder {
+		t.Fatalf("unexpected closed holder found=%v holder=%#v", ok, closed)
+	}
+	if _, found := player.Inventory(); found {
+		t.Fatal("expected closed inventory holder")
+	}
+}
+
 // TestPlayerRoomPresenceLifecycle verifies embedded room presence behavior.
 func TestPlayerRoomPresenceLifecycle(t *testing.T) {
 	player := mustPlayer(t, 10, "ian")

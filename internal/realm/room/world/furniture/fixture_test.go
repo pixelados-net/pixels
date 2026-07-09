@@ -52,7 +52,7 @@ func TestFixturesProducesSitStateForChairSlot(t *testing.T) {
 	if len(fixtures) != 1 {
 		t.Fatalf("expected one fixture, got %d", len(fixtures))
 	}
-	assertFixture(t, fixtures[0], 1, 1, surface.StateSit, false, 2)
+	assertFixture(t, fixtures[0], 0, 1, surface.StateSit, false, 2)
 }
 
 // TestFixturesBlocksNonSlotTilesOfLayItem verifies a bed-shaped item blocks its non-slot tiles.
@@ -76,7 +76,7 @@ func TestFixturesBlocksNonSlotTilesOfLayItem(t *testing.T) {
 		t.Fatalf("expected three fixtures, got %d", len(fixtures))
 	}
 	assertFixture(t, fixtures[0], 0, 2, surface.StateBlocked, false, 3)
-	assertFixture(t, fixtures[1], 2, 2, surface.StateLay, false, 3)
+	assertFixture(t, fixtures[1], 0, 2, surface.StateLay, false, 3)
 	assertFixture(t, fixtures[2], 0, 2, surface.StateBlocked, false, 3)
 }
 

@@ -27,6 +27,12 @@ func (state State) Walkable() bool {
 	return state == StateOpen || state == StateSit || state == StateLay
 }
 
+// replacesTiedSection reports whether the state is a terminal, mutually-exclusive state that
+// must replace rather than duplicate an existing section tied at the same height.
+func (state State) replacesTiedSection() bool {
+	return state == StateBlocked || state == StateSit || state == StateLay
+}
+
 // Source stores the origin of a resolved tile section.
 type Source uint8
 

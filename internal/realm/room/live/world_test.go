@@ -79,6 +79,35 @@ func TestRoomLoadWorldProjectsFurnitureIntoFixturesAndSnapshot(t *testing.T) {
 	}
 }
 
+// TestRoomSurfaceHeightsReturnsZeroWithoutWorld verifies the unloaded-world default.
+func TestRoomSurfaceHeightsReturnsZeroWithoutWorld(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 2})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+
+	width, height, tiles := room.SurfaceHeights()
+	if width != 0 || height != 0 || tiles != nil {
+		t.Fatalf("expected zero surface heights, got width=%d height=%d tiles=%#v", width, height, tiles)
+	}
+}
+
+// TestRoomSurfaceHeightsResolvesValidAndInvalidTiles verifies per-tile height resolution.
+func TestRoomSurfaceHeightsResolvesValidAndInvalidTiles(t *testing.T) {
+	room := worldRoomForTest(t, "0x", 0, 0)
+
+	width, height, tiles := room.SurfaceHeights()
+	if width != 2 || height != 1 || len(tiles) != 2 {
+		t.Fatalf("unexpected surface dimensions width=%d height=%d tiles=%#v", width, height, tiles)
+	}
+	if !tiles[0].Valid || tiles[0].Height != 0 || tiles[0].StackingBlocked {
+		t.Fatalf("unexpected valid tile %#v", tiles[0])
+	}
+	if tiles[1].Valid {
+		t.Fatalf("expected invalid tile, got %#v", tiles[1])
+	}
+}
+
 // TestRoomFurnitureItemsReturnsNilWithoutWorld verifies the snapshot default.
 func TestRoomFurnitureItemsReturnsNilWithoutWorld(t *testing.T) {
 	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 2})

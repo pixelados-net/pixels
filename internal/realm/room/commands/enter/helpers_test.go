@@ -8,6 +8,8 @@ import (
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
@@ -305,4 +307,31 @@ func (manager layoutManagerForTest) List(context.Context) ([]layout.Layout, erro
 // Catalog returns layout catalog data.
 func (manager layoutManagerForTest) Catalog(context.Context) (*layout.Catalog, error) {
 	return nil, nil
+}
+
+// playerDirectoryForTest stubs the durable player lookup contract.
+type playerDirectoryForTest struct {
+	// usernames maps player id to display name for players that exist.
+	usernames map[int64]string
+
+	// err stores the returned error.
+	err error
+}
+
+// FindByID finds a player by id.
+func (directory playerDirectoryForTest) FindByID(_ context.Context, id int64) (playerservice.Record, bool, error) {
+	if directory.err != nil {
+		return playerservice.Record{}, false, directory.err
+	}
+	username, found := directory.usernames[id]
+	if !found {
+		return playerservice.Record{}, false, nil
+	}
+
+	return playerservice.Record{Player: playermodel.Player{Username: username}}, true, nil
+}
+
+// FindByUsername finds a player by username.
+func (directory playerDirectoryForTest) FindByUsername(context.Context, string) (playerservice.Record, bool, error) {
+	return playerservice.Record{}, false, nil
 }

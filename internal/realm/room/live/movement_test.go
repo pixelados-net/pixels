@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/internal/realm/room/world/surface"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -204,6 +205,41 @@ func TestRoomTickCancelsPathWhenFixturesChangeMidWalk(t *testing.T) {
 	units := room.Units()
 	if len(units) != 1 || units[0].Moving {
 		t.Fatalf("expected cleared movement, got %#v", units)
+	}
+}
+
+// TestRoomReloadFurnitureTracksSnapshotAndFixtures verifies furniture reload updates both resolver and snapshot.
+func TestRoomReloadFurnitureTracksSnapshotAndFixtures(t *testing.T) {
+	room := worldRoomForTest(t, "000", 0, 0)
+	item := worldfurniture.Item{
+		ID:       5,
+		Point:    pointForTest(t, 2, 0),
+		Rotation: worldunit.RotationNorth,
+		Definition: worldfurniture.Definition{
+			Width: 1, Length: 1, StackHeight: 1, AllowStack: true,
+		},
+	}
+
+	if _, err := room.ReloadFurniture(5, &item); err != nil {
+		t.Fatalf("reload furniture: %v", err)
+	}
+	if items := room.FurnitureItems(); len(items) != 1 || items[0].ID != 5 {
+		t.Fatalf("unexpected furniture snapshot %#v", items)
+	}
+
+	column, err := room.world.resolver.Column(pointForTest(t, 2, 0))
+	if err != nil {
+		t.Fatalf("resolve column: %v", err)
+	}
+	if top, ok := column.TopSection(); !ok || top.State() != surface.StateBlocked {
+		t.Fatalf("expected blocked section from reloaded furniture, got %#v found=%v", top, ok)
+	}
+
+	if _, err := room.ReloadFurniture(5, nil); err != nil {
+		t.Fatalf("remove furniture: %v", err)
+	}
+	if items := room.FurnitureItems(); len(items) != 0 {
+		t.Fatalf("expected furniture removed, got %#v", items)
 	}
 }
 

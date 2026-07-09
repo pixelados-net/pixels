@@ -27,4 +27,13 @@ var (
 
 	// ErrUnitNotFound reports a missing room world unit.
 	ErrUnitNotFound = errors.New("room unit not found")
+
+	// ErrInvalidPlacement reports a footprint tile outside the room grid.
+	ErrInvalidPlacement = errors.New("invalid furniture placement")
+
+	// ErrTileOccupied reports a footprint tile currently occupied by a unit.
+	ErrTileOccupied = errors.New("furniture placement tile occupied")
+
+	// ErrCannotStack reports a footprint tile that does not accept stacking.
+	ErrCannotStack = errors.New("furniture placement cannot stack")
 )

@@ -75,9 +75,11 @@ func (column Column) Len() int {
 	return int(column.count) + len(column.extra)
 }
 
-// AddSection adds a resolved tile section, letting a blocking section replace a tied-height section.
+// AddSection adds a resolved tile section, letting a blocking, sit, or lay section replace a
+// tied-height section rather than duplicate it, since a tile can only have one such terminal
+// state at a given height.
 func (column *Column) AddSection(section Section) {
-	if section.state == StateBlocked && column.replaceTiedSection(section) {
+	if section.state.replacesTiedSection() && column.replaceTiedSection(section) {
 		return
 	}
 	if len(column.extra) > 0 {

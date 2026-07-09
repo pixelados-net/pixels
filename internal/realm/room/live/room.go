@@ -7,8 +7,21 @@ import (
 	"time"
 
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
+
+// TileHeight describes one resolved tile's current walkable height and stacking state.
+type TileHeight struct {
+	// Valid reports whether the tile is part of the room.
+	Valid bool
+
+	// Height stores the current walkable top height.
+	Height grid.Height
+
+	// StackingBlocked reports whether new items cannot stack on this tile.
+	StackingBlocked bool
+}
 
 // Room stores active runtime state for one loaded room.
 type Room struct {
@@ -223,6 +236,54 @@ func (room *Room) FurnitureItems() []worldfurniture.Item {
 	}
 
 	return items
+}
+
+// SurfaceHeights returns the room's current per-tile walkable heights, row-major by (y*width+x).
+func (room *Room) SurfaceHeights() (uint16, uint16, []TileHeight) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	if room.world == nil {
+		return 0, 0, nil
+	}
+
+	width, height := room.world.grid.Width(), room.world.grid.Height()
+	tiles := make([]TileHeight, 0, int(width)*int(height))
+	for y := uint16(0); y < height; y++ {
+		for x := uint16(0); x < width; x++ {
+			section, err := room.world.resolver.TopSection(grid.Point{X: x, Y: y})
+			if err != nil {
+				tiles = append(tiles, TileHeight{})
+
+				continue
+			}
+			tiles = append(tiles, TileHeight{Valid: true, Height: section.Z(), StackingBlocked: !section.Stacking()})
+		}
+	}
+
+	return width, height, tiles
+}
+
+// SlotOccupant returns a player id currently occupying any sit/lay slot of a placed furniture item.
+func (room *Room) SlotOccupant(itemID int64) (int64, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	if room.world == nil {
+		return 0, false
+	}
+	item, found := room.world.furniture[itemID]
+	if !found {
+		return 0, false
+	}
+
+	for _, slot := range worldfurniture.Slots(item) {
+		if playerID, occupied := room.world.slotOccupants[slot.Point]; occupied {
+			return playerID, true
+		}
+	}
+
+	return 0, false
 }
 
 // unitSnapshot maps a world unit to a runtime snapshot.

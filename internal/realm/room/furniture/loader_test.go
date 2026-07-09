@@ -135,7 +135,13 @@ type fakeManager struct {
 }
 
 // FindDefinitionByID finds a definition for tests.
-func (manager *fakeManager) FindDefinitionByID(context.Context, int64) (furnituremodel.Definition, bool, error) {
+func (manager *fakeManager) FindDefinitionByID(_ context.Context, id int64) (furnituremodel.Definition, bool, error) {
+	for _, definition := range manager.definitions {
+		if definition.ID == id {
+			return definition, true, nil
+		}
+	}
+
 	return furnituremodel.Definition{}, false, nil
 }
 

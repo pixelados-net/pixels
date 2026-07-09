@@ -126,6 +126,13 @@ func TestCommandNameAndSoftMoveErrors(t *testing.T) {
 	if !errors.Is(err, hardErr) {
 		t.Fatalf("expected hard error, got %v", err)
 	}
+
+	// ErrInvalidStart can surface when the surface under a unit changed height after it last moved
+	// (e.g. furniture it stood on was moved away); it must never disconnect the client.
+	err = handler.handleMoveError(context.Background(), room, 7, grid.MustPoint(1, 0), worldpath.ErrInvalidStart)
+	if err != nil {
+		t.Fatalf("expected invalid start to be treated as a soft move miss, got %v", err)
+	}
 }
 
 // handlerForTest creates a walk command handler.

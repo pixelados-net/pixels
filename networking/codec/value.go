@@ -18,6 +18,9 @@ const (
 
 	// StringKind names UTF-8 text with a uint16 byte length prefix.
 	StringKind
+
+	// ByteKind names a raw unsigned 8-bit integer.
+	ByteKind
 )
 
 var (
@@ -35,6 +38,9 @@ var (
 
 	// StringField encodes a required UTF-8 string with a uint16 byte length prefix.
 	StringField = Field{Kind: StringKind}
+
+	// ByteField encodes a required raw unsigned 8-bit integer.
+	ByteField = Field{Kind: ByteKind}
 )
 
 // Field describes one payload field in declaration order.
@@ -62,6 +68,8 @@ type Value struct {
 	Uint32 uint32
 	// String stores a UTF-8 payload value.
 	String string
+	// Byte stores a raw unsigned 8-bit payload value.
+	Byte uint8
 }
 
 // Bool returns a boolean payload value.
@@ -87,6 +95,11 @@ func Uint32(value uint32) Value {
 // String returns a string payload value.
 func String(value string) Value {
 	return Value{String: value}
+}
+
+// Byte returns a raw unsigned 8-bit payload value.
+func Byte(value uint8) Value {
+	return Value{Byte: value}
 }
 
 // Optional returns an optional field declaration.

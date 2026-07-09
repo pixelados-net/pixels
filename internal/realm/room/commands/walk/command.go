@@ -103,10 +103,14 @@ func (handler Handler) handleMoveError(ctx context.Context, active *roomlive.Roo
 	return broadcast.RoomUnitStatus(ctx, handler.Connections, active, unit, 0)
 }
 
-// isSoftMoveError reports movement misses that should not disconnect clients.
+// isSoftMoveError reports movement misses that should not disconnect clients. ErrInvalidStart in
+// particular can surface when the surface underneath a unit changed height after it last moved (e.g.
+// furniture it stood on was picked up or moved away); it is a stale-state miss, never a reason to
+// drop the connection.
 func isSoftMoveError(err error) bool {
 	return errors.Is(err, worldpath.ErrInvalidGoal) ||
 		errors.Is(err, worldpath.ErrNoPath) ||
 		errors.Is(err, worldpath.ErrSearchLimit) ||
-		errors.Is(err, worldpath.ErrInvalidPath)
+		errors.Is(err, worldpath.ErrInvalidPath) ||
+		errors.Is(err, worldpath.ErrInvalidStart)
 }

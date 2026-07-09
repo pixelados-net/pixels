@@ -71,6 +71,63 @@ func TestSendFloorItemsPropagatesStoreErrors(t *testing.T) {
 	}
 }
 
+// TestSendFloorItemsResolvesOfflineOwnerFromPlayerDirectory verifies an item owner who is neither the
+// room owner nor a current occupant still gets a real display name via the player directory, instead
+// of the empty string the client renders as a literal "null".
+func TestSendFloorItemsResolvesOfflineOwnerFromPlayerDirectory(t *testing.T) {
+	connection, sent := sessionConnectionForTest(t)
+	handler := Handler{
+		Furniture: furnitureManagerForTest{
+			definitions: []furnituremodel.Definition{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 2}}, SpriteID: 39, AllowSit: true}},
+			items:       []furnituremodel.Item{placedFurnitureItemForTest(1, 2, 42, 3, 3)},
+		},
+		PlayerDirectory: playerDirectoryForTest{usernames: map[int64]string{42: "alice"}},
+	}
+
+	err := handler.sendFloorItems(context.Background(), connection, roomForTest(), nil)
+	if err != nil {
+		t.Fatalf("send floor items: %v", err)
+	}
+	if len(*sent) != 1 || (*sent)[0].Header != outflooritems.Header {
+		t.Fatalf("expected one floor items packet, got %#v", *sent)
+	}
+}
+
+// TestSendFloorItemsPropagatesPlayerDirectoryErrors verifies player directory errors surface.
+func TestSendFloorItemsPropagatesPlayerDirectoryErrors(t *testing.T) {
+	connection, _ := sessionConnectionForTest(t)
+	expected := errors.New("directory failed")
+	handler := Handler{
+		Furniture: furnitureManagerForTest{
+			definitions: []furnituremodel.Definition{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 2}}, SpriteID: 39, AllowSit: true}},
+			items:       []furnituremodel.Item{placedFurnitureItemForTest(1, 2, 42, 3, 3)},
+		},
+		PlayerDirectory: playerDirectoryForTest{err: expected},
+	}
+
+	err := handler.sendFloorItems(context.Background(), connection, roomForTest(), nil)
+	if !errors.Is(err, expected) {
+		t.Fatalf("expected directory error, got %v", err)
+	}
+}
+
+// TestOwnerNamesSkipsDirectoryLookupForKnownOwners verifies the room owner and current occupants are
+// resolved without calling the player directory at all.
+func TestOwnerNamesSkipsDirectoryLookupForKnownOwners(t *testing.T) {
+	room := roomForTest()
+	room.OwnerPlayerID = 1
+	room.OwnerName = "demo"
+	handler := Handler{PlayerDirectory: playerDirectoryForTest{err: errors.New("must not be called")}}
+
+	names, err := handler.ownerNames(context.Background(), room, nil, []furnituremodel.Item{placedFurnitureItemForTest(1, 2, 1, 3, 3)})
+	if err != nil {
+		t.Fatalf("owner names: %v", err)
+	}
+	if names[1] != "demo" {
+		t.Fatalf("expected room owner name resolved without directory lookup, got %#v", names)
+	}
+}
+
 // TestHandleJoinsRoomWithFurnitureSendsFloorItemsPacket verifies full command orchestration with furniture.
 func TestHandleJoinsRoomWithFurnitureSendsFloorItemsPacket(t *testing.T) {
 	player := playerForTest(t)
@@ -93,8 +150,8 @@ func TestHandleJoinsRoomWithFurnitureSendsFloorItemsPacket(t *testing.T) {
 	if err != nil {
 		t.Fatalf("handle command: %v", err)
 	}
-	if len(*sent) != 7 {
-		t.Fatalf("expected entered, model, floor items, and room state packets, got %#v", *sent)
+	if len(*sent) != 8 {
+		t.Fatalf("expected entered, model, floor items, height map, and room state packets, got %#v", *sent)
 	}
 
 	active, found := handler.Runtime.Find(9)
