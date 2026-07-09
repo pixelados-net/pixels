@@ -23,6 +23,7 @@ import (
 	outauth "github.com/niflaot/pixels/networking/outbound/authentication/ok"
 	"github.com/niflaot/pixels/pkg/bus"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
+	"github.com/niflaot/pixels/pkg/logger"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/zap"
@@ -73,6 +74,7 @@ func testServer(t *testing.T, service *sso.Service) (string, func()) {
 		netconn.NewRegistry(),
 		realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()),
 		zap.NewNop(),
+		logger.Config{},
 	)
 	app.Get("/ws", websocket.New(adapter.Handle))
 

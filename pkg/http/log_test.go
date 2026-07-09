@@ -47,7 +47,8 @@ func testAppWithLogger(t *testing.T, environment string, log *zap.Logger) *fiber
 
 	service := testSSO(t)
 	registry := netconn.NewRegistry()
-	adapter := ws.New(ws.Config{}, testConfig(environment).App, registry, connection.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()), zap.NewNop())
+	config := testConfig(environment)
+	adapter := ws.New(ws.Config{}, config.App, registry, connection.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()), zap.NewNop(), config.Logger)
 
-	return New(log, testConfig(environment), testInfo(), service, adapter, registry, testRooms(), testRoomRuntime(), testNavigator())
+	return New(log, config, testInfo(), service, adapter, registry, testRooms(), testRoomRuntime(), testNavigator())
 }

@@ -9,14 +9,24 @@ import (
 
 // New builds a zap logger from logger configuration.
 func New(config Config) (*zap.Logger, error) {
+	zapConfig, err := buildConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return zapConfig.Build()
+}
+
+// buildConfig creates a zap configuration from logger settings.
+func buildConfig(config Config) (zap.Config, error) {
 	var level zapcore.Level
 
 	if err := level.UnmarshalText([]byte(config.Level)); err != nil {
-		return nil, fmt.Errorf("parse log level: %w", err)
+		return zap.Config{}, fmt.Errorf("parse log level: %w", err)
 	}
 
 	if config.Format != FormatConsole && config.Format != FormatJSON {
-		return nil, fmt.Errorf("unsupported log format: %s", config.Format)
+		return zap.Config{}, fmt.Errorf("unsupported log format: %s", config.Format)
 	}
 
 	zapConfig := zap.NewProductionConfig()
@@ -29,5 +39,21 @@ func New(config Config) (*zap.Logger, error) {
 		zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	}
 
-	return zapConfig.Build()
+	if config.ToonConsole {
+		applyToonConsole(&zapConfig)
+	}
+
+	return zapConfig, nil
+}
+
+// applyToonConsole trims zap output for protocol tracing.
+func applyToonConsole(config *zap.Config) {
+	config.Encoding = FormatTOON
+	config.DisableCaller = true
+	config.DisableStacktrace = true
+	config.EncoderConfig.TimeKey = ""
+	config.EncoderConfig.CallerKey = ""
+	config.EncoderConfig.LevelKey = "lvl"
+	config.EncoderConfig.MessageKey = "msg"
+	config.EncoderConfig.EncodeLevel = toonLevelEncoder
 }

@@ -21,6 +21,9 @@ type Config struct {
 
 	// Format is the zap encoder format.
 	Format Format `env:"LOG_FORMAT" envDefault:"console"`
+
+	// ToonConsole enables compact agent-friendly console logs.
+	ToonConsole bool `env:"TOON_CONSOLE" envDefault:"false"`
 }
 
 // LoadConfig reads logger configuration from environment variables.

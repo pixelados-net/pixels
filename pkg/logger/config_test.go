@@ -7,7 +7,7 @@ import (
 
 // TestLoadConfigUsesDefault verifies default logger configuration.
 func TestLoadConfigUsesDefault(t *testing.T) {
-	clearEnv(t, "LOG_LEVEL", "LOG_FORMAT")
+	clearEnv(t, "LOG_LEVEL", "LOG_FORMAT", "TOON_CONSOLE")
 
 	config, err := LoadConfig()
 	if err != nil {
@@ -21,12 +21,17 @@ func TestLoadConfigUsesDefault(t *testing.T) {
 	if config.Format != FormatConsole {
 		t.Fatalf("expected console format, got %q", config.Format)
 	}
+
+	if config.ToonConsole {
+		t.Fatal("expected toon console disabled")
+	}
 }
 
 // TestLoadConfigUsesEnvironment verifies logger configuration from the environment.
 func TestLoadConfigUsesEnvironment(t *testing.T) {
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("LOG_FORMAT", "json")
+	t.Setenv("TOON_CONSOLE", "true")
 
 	config, err := LoadConfig()
 	if err != nil {
@@ -39,6 +44,10 @@ func TestLoadConfigUsesEnvironment(t *testing.T) {
 
 	if config.Format != FormatJSON {
 		t.Fatalf("expected json format, got %q", config.Format)
+	}
+
+	if !config.ToonConsole {
+		t.Fatal("expected toon console enabled")
 	}
 }
 

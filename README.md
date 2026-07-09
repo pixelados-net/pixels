@@ -54,6 +54,7 @@ go tool cover -func=coverage.out
 | `PIXELS_ACCESS_KEY` | `pixels-dev-key` | API key for private endpoints through `X-API-Key`. |
 | `LOG_LEVEL` | `info` | Zap log level. |
 | `LOG_FORMAT` | `console` | Zap encoder, either `console` or `json`. |
+| `TOON_CONSOLE` | `false` | Emits each log entry as one inline TOON line for protocol tracing, without timestamp/caller and with normalized packet fields. |
 | `REDIS_ADDRESS` | `127.0.0.1:6379` | Redis server address. |
 | `REDIS_USERNAME` | empty | Redis ACL username. |
 | `REDIS_PASSWORD` | empty | Redis password. |

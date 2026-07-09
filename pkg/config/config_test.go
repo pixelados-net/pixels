@@ -22,6 +22,7 @@ func TestLoadUsesEnvironment(t *testing.T) {
 	t.Setenv("PIXELS_ACCESS_KEY", "secret")
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("LOG_FORMAT", "json")
+	t.Setenv("TOON_CONSOLE", "true")
 	t.Setenv("PIXELS_POSTGRES_HOST", "db")
 	t.Setenv("PIXELS_POSTGRES_DATABASE", "pixels_test")
 	t.Setenv("REDIS_ADDRESS", "localhost:6380")
@@ -49,6 +50,10 @@ func TestLoadUsesEnvironment(t *testing.T) {
 		t.Fatalf("expected json logger format, got %q", config.Logger.Format)
 	}
 
+	if !config.Logger.ToonConsole {
+		t.Fatal("expected toon console from environment")
+	}
+
 	if config.Postgres.Database != "pixels_test" {
 		t.Fatalf("expected PostgreSQL database from environment, got %q", config.Postgres.Database)
 	}
@@ -64,10 +69,10 @@ func TestLoadUsesEnvironment(t *testing.T) {
 
 // TestLoadUsesDotenv verifies dotenv files populate environment variables.
 func TestLoadUsesDotenv(t *testing.T) {
-	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
+	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "TOON_CONSOLE", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := "PIXELS_ENV=dotenv\nPIXELS_HOST=localhost\nPIXELS_PORT=9090\nPIXELS_ACCESS_KEY=dotenv-key\nLOG_LEVEL=warn\nLOG_FORMAT=console\nPIXELS_POSTGRES_HOST=dotenv-db\nREDIS_ADDRESS=localhost:6381\nSSO_DEFAULT_TTL=15m\nSSO_KEY=dotenv-sso-key\n"
+	content := "PIXELS_ENV=dotenv\nPIXELS_HOST=localhost\nPIXELS_PORT=9090\nPIXELS_ACCESS_KEY=dotenv-key\nLOG_LEVEL=warn\nLOG_FORMAT=console\nTOON_CONSOLE=true\nPIXELS_POSTGRES_HOST=dotenv-db\nREDIS_ADDRESS=localhost:6381\nSSO_DEFAULT_TTL=15m\nSSO_KEY=dotenv-sso-key\n"
 
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatalf("write dotenv: %v", err)
@@ -88,6 +93,10 @@ func TestLoadUsesDotenv(t *testing.T) {
 
 	if config.App.AccessKey != "dotenv-key" {
 		t.Fatalf("expected dotenv access key, got %q", config.App.AccessKey)
+	}
+
+	if !config.Logger.ToonConsole {
+		t.Fatal("expected dotenv toon console")
 	}
 
 	if config.Postgres.Host != "dotenv-db" {
@@ -113,7 +122,7 @@ func TestLoadReturnsDotenvError(t *testing.T) {
 
 // TestLoadReturnsEnvironmentError verifies invalid environment values are returned.
 func TestLoadReturnsEnvironmentError(t *testing.T) {
-	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "REDIS_ADDRESS", "SSO_DEFAULT_TTL")
+	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "TOON_CONSOLE", "REDIS_ADDRESS", "SSO_DEFAULT_TTL")
 	t.Setenv("PIXELS_PORT", "invalid")
 
 	_, err := Load()
@@ -124,7 +133,7 @@ func TestLoadReturnsEnvironmentError(t *testing.T) {
 
 // TestModuleProvidesConfig verifies the Fx module exposes composed and focused config.
 func TestModuleProvidesConfig(t *testing.T) {
-	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
+	clearEnv(t, "PIXELS_ENV", "PIXELS_HOST", "PIXELS_PORT", "PIXELS_ACCESS_KEY", "LOG_LEVEL", "LOG_FORMAT", "TOON_CONSOLE", "PIXELS_POSTGRES_HOST", "REDIS_ADDRESS", "SSO_DEFAULT_TTL", "SSO_KEY")
 
 	var invoked bool
 	app := fxtest.New(

@@ -8,6 +8,7 @@ import (
 
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	"github.com/niflaot/pixels/pkg/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -90,18 +91,18 @@ func TestSocketSessionWaitFinishes(t *testing.T) {
 // TestPacketLoggerForEnvironmentRecordsDevelopment verifies development packet logs.
 func TestPacketLoggerForEnvironmentRecordsDevelopment(t *testing.T) {
 	core, logs := observer.New(zap.DebugLevel)
-	logger := packetLoggerForEnvironment("development", zap.New(core))
-	if logger == nil {
+	trafficLogger := packetLoggerForEnvironment("development", zap.New(core), logger.Config{})
+	if trafficLogger == nil {
 		t.Fatal("expected development packet logger")
 	}
 
 	context := netconn.Context{ConnectionID: "one", ConnectionKind: kind, State: netconn.StateConnected}
 	packet := codec.Packet{Header: 7, Payload: []byte{1, 2}}
 
-	logger.Received(context, packet)
-	logger.Sent(context, packet)
-	logger.Unhandled(context, packet)
-	logger.(packetLogger).Disconnected(context, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: "sso ticket not found"})
+	trafficLogger.Received(context, packet)
+	trafficLogger.Sent(context, packet)
+	trafficLogger.Unhandled(context, packet)
+	trafficLogger.(packetLogger).Disconnected(context, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: "sso ticket not found"})
 
 	if logs.Len() != 4 {
 		t.Fatalf("expected four packet logs, got %d", logs.Len())
@@ -117,9 +118,37 @@ func TestPacketLoggerForEnvironmentRecordsDevelopment(t *testing.T) {
 	}
 }
 
+// TestPacketLoggerForEnvironmentRecordsToonFields verifies toon packet logs are compact.
+func TestPacketLoggerForEnvironmentRecordsToonFields(t *testing.T) {
+	core, logs := observer.New(zap.DebugLevel)
+	trafficLogger := packetLoggerForEnvironment("development", zap.New(core), logger.Config{ToonConsole: true})
+	if trafficLogger == nil {
+		t.Fatal("expected development packet logger")
+	}
+
+	context := netconn.Context{
+		ConnectionID:   "12345678-1234-1234-1234-123456789012",
+		ConnectionKind: kind,
+		State:          netconn.StateConnected,
+	}
+
+	trafficLogger.Received(context, codec.Packet{Header: 4000, Payload: []byte{1}})
+
+	fields := logs.All()[0].ContextMap()
+	if fields["cid"] != "12345678" {
+		t.Fatalf("expected short connection id, got %#v", fields)
+	}
+	if fields["connection_kind"] != nil {
+		t.Fatalf("expected no connection kind, got %#v", fields)
+	}
+	if fields["header"] != uint64(4000) && fields["header"] != uint16(4000) {
+		t.Fatalf("expected compact header field, got %#v", fields["header"])
+	}
+}
+
 // TestPacketLoggerForEnvironmentSkipsProduction verifies production packet logs are disabled.
 func TestPacketLoggerForEnvironmentSkipsProduction(t *testing.T) {
-	if packetLoggerForEnvironment("production", zap.NewNop()) != nil {
+	if packetLoggerForEnvironment("production", zap.NewNop(), logger.Config{}) != nil {
 		t.Fatal("expected production packet logger to be disabled")
 	}
 }
