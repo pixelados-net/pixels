@@ -67,18 +67,18 @@ func (repository *Repository) ListBalances(ctx context.Context, playerID int64) 
 }
 
 // Grant applies a signed delta and optional ledger entry atomically.
-func (repository *Repository) Grant(ctx context.Context, mutation Mutation) (currencymodel.Balance, error) {
+func (repository *Repository) Grant(ctx context.Context, mutation Mutation) (Result, error) {
 	return repository.mutate(ctx, mutation, false)
 }
 
 // Set replaces a balance and writes an optional ledger entry atomically.
-func (repository *Repository) Set(ctx context.Context, mutation Mutation) (currencymodel.Balance, error) {
+func (repository *Repository) Set(ctx context.Context, mutation Mutation) (Result, error) {
 	return repository.mutate(ctx, mutation, true)
 }
 
 // mutate serializes and persists one currency mutation.
-func (repository *Repository) mutate(ctx context.Context, mutation Mutation, absolute bool) (currencymodel.Balance, error) {
-	var result currencymodel.Balance
+func (repository *Repository) mutate(ctx context.Context, mutation Mutation, absolute bool) (Result, error) {
+	var result Result
 	err := repository.withinTx(ctx, func(ctx context.Context, executor postgres.Executor) error {
 		if err := lockBalance(ctx, executor, mutation.PlayerID, mutation.CurrencyType); err != nil {
 			return err
@@ -104,18 +104,19 @@ func (repository *Repository) mutate(ctx context.Context, mutation Mutation, abs
 			return ErrInsufficientBalance
 		}
 
-		result, err = upsertBalance(ctx, executor, mutation.PlayerID, mutation.CurrencyType, next)
+		result.Balance, err = upsertBalance(ctx, executor, mutation.PlayerID, mutation.CurrencyType, next)
 		if err != nil {
 			return err
 		}
+		result.Delta = next - previous
 		if mutation.Ledger {
-			return insertLedger(ctx, executor, ledgerEntry(mutation, next-previous, next))
+			return insertLedger(ctx, executor, ledgerEntry(mutation, result.Delta, next))
 		}
 
 		return nil
 	})
 	if err != nil {
-		return currencymodel.Balance{}, err
+		return Result{}, err
 	}
 
 	return result, nil

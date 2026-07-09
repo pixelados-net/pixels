@@ -3,6 +3,7 @@ package inventory
 
 import (
 	"github.com/niflaot/pixels/internal/realm/inventory/currency"
+	currencybroadcast "github.com/niflaot/pixels/internal/realm/inventory/currency/broadcast"
 	requestcmd "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
 	currencyrepo "github.com/niflaot/pixels/internal/realm/inventory/currency/repository"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
@@ -19,11 +20,15 @@ var Module = fx.Module(
 		currency.LoadCatalog,
 		NewCurrencyStore,
 		currencyservice.New,
+		currencybroadcast.New,
 		NewCurrencyManager,
 		NewCurrencyReader,
 		NewCurrencyRequest,
 	),
-	fx.Invoke(RegisterConnectionHandlers),
+	fx.Invoke(
+		RegisterConnectionHandlers,
+		RegisterCurrencyBroadcaster,
+	),
 )
 
 // NewCurrencyStore creates the currency persistence store.

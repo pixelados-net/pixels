@@ -11,7 +11,10 @@
       "admin.notification.default": "Mensaje del hotel.",
       "currency.name.credits": "Créditos",
       "currency.name.duckets": "Duckets",
-      "currency.name.diamonds": "Diamantes"
+      "currency.name.diamonds": "Diamantes",
+      "admin.currency.alert.grant": "Recibiste {amount} {currency}.",
+      "admin.currency.alert.deduct": "Se descontaron {amount} {currency} de tu saldo.",
+      "admin.currency.alert.set": "Tu saldo de {currency} ahora es {balance}."
     },
     "en": {
       "session.bubble.furniture.invalid_move": "You cannot place that there.",
@@ -23,7 +26,10 @@
       "admin.notification.default": "Hotel message.",
       "currency.name.credits": "Credits",
       "currency.name.duckets": "Duckets",
-      "currency.name.diamonds": "Diamonds"
+      "currency.name.diamonds": "Diamonds",
+      "admin.currency.alert.grant": "You received {amount} {currency}.",
+      "admin.currency.alert.deduct": "{amount} {currency} were deducted from your balance.",
+      "admin.currency.alert.set": "Your {currency} balance is now {balance}."
     }
   }
 }

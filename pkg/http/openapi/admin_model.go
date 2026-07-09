@@ -88,3 +88,75 @@ type PlayerNotificationResponse struct {
 	// Sent reports whether the packet was sent.
 	Sent bool `json:"sent" required:"true"`
 }
+
+// CurrencyWalletRequest identifies one player's wallet.
+type CurrencyWalletRequest struct {
+	APIKeyRequest
+	// ID stores the target player id.
+	ID int64 `path:"id" required:"true" minimum:"1"`
+}
+
+// CurrencyMutationRequest contains one administrative currency mutation.
+type CurrencyMutationRequest struct {
+	APIKeyRequest
+	// ID stores the target player id.
+	ID int64 `path:"id" required:"true" minimum:"1"`
+	// Type stores the signed protocol currency type.
+	Type int32 `path:"type" required:"true" example:"5"`
+	// Amount stores a positive delta or non-negative absolute balance.
+	Amount int64 `json:"amount" required:"true" minimum:"0"`
+	// Reason stores an optional ledger audit reason.
+	Reason string `json:"reason,omitempty"`
+	// Alert requests an additional localized generic alert.
+	Alert bool `json:"alert,omitempty" default:"false" description:"Disabled by default. When true, sends a localized alert if the player is online."`
+	// Locale optionally overrides the alert locale.
+	Locale string `json:"locale,omitempty" example:"es"`
+}
+
+// CurrencyBalanceResponse contains one currency balance.
+type CurrencyBalanceResponse struct {
+	// CurrencyType identifies the protocol currency.
+	CurrencyType int32 `json:"currencyType" required:"true"`
+	// Amount stores the absolute balance.
+	Amount int64 `json:"amount" required:"true"`
+}
+
+// CurrencyWalletResponse contains one player's configured wallet.
+type CurrencyWalletResponse struct {
+	// PlayerID identifies the wallet owner.
+	PlayerID int64 `json:"playerId" required:"true"`
+	// Balances stores configured currency balances.
+	Balances []CurrencyBalanceResponse `json:"balances" required:"true"`
+}
+
+// CurrencyTypeResponse contains one configured currency type.
+type CurrencyTypeResponse struct {
+	// Type identifies the protocol currency.
+	Type int32 `json:"type" required:"true"`
+	// Key identifies its localized name.
+	Key string `json:"key" required:"true"`
+	// Ledger reports whether mutations are audited.
+	Ledger bool `json:"ledger" required:"true"`
+	// Color stores an optional future client presentation color.
+	Color string `json:"color,omitempty"`
+}
+
+// CurrencyTypesResponse contains configured currency types.
+type CurrencyTypesResponse struct {
+	// Types stores configured currency definitions.
+	Types []CurrencyTypeResponse `json:"types" required:"true"`
+}
+
+// CurrencyMutationResponse contains a committed currency mutation.
+type CurrencyMutationResponse struct {
+	// PlayerID identifies the affected player.
+	PlayerID int64 `json:"playerId" required:"true"`
+	// CurrencyType identifies the affected currency.
+	CurrencyType int32 `json:"currencyType" required:"true"`
+	// Amount stores the resulting absolute balance.
+	Amount int64 `json:"amount" required:"true"`
+	// AlertRequested reports whether alert delivery was requested.
+	AlertRequested bool `json:"alertRequested" required:"true"`
+	// AlertSent reports whether the optional alert reached a live player.
+	AlertSent bool `json:"alertSent" required:"true"`
+}

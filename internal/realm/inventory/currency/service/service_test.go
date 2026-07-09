@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/niflaot/pixels/internal/realm/inventory/currency"
+	currencychanged "github.com/niflaot/pixels/internal/realm/inventory/currency/events/changed"
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
 	currencyrepo "github.com/niflaot/pixels/internal/realm/inventory/currency/repository"
+	"github.com/niflaot/pixels/pkg/bus"
 )
 
 // TestWalletProjectsConfiguredTypes verifies missing balances are represented as zero.
@@ -62,6 +64,41 @@ func TestGrantValidatesAndPersists(t *testing.T) {
 	}
 	if store.mutation.Ledger {
 		t.Fatal("expected duckets mutation without ledger")
+	}
+}
+
+// TestGrantPublishesCommittedChange verifies mutation events use repository results.
+func TestGrantPublishesCommittedChange(t *testing.T) {
+	store := &fakeStore{grantBalance: currencymodel.Balance{PlayerID: 7, CurrencyType: 5, Amount: 15}}
+	publisher := &fakePublisher{}
+	service := newTestServiceWithPublisher(t, store, publisher)
+
+	_, err := service.Grant(context.Background(), GrantParams{
+		PlayerID: 7, CurrencyType: 5, Amount: 5, ActorKind: ActorSystem,
+	})
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+	if len(publisher.events) != 1 || publisher.events[0].Name != currencychanged.Name {
+		t.Fatalf("unexpected events %#v", publisher.events)
+	}
+	payload, ok := publisher.events[0].Payload.(currencychanged.Payload)
+	if !ok || payload.Amount != 15 || payload.Delta != 5 || payload.PlayerID != 7 {
+		t.Fatalf("unexpected payload %#v", publisher.events[0].Payload)
+	}
+}
+
+// TestGrantKeepsCommittedResultWhenProjectionFails verifies event side effects cannot undo persistence.
+func TestGrantKeepsCommittedResultWhenProjectionFails(t *testing.T) {
+	store := &fakeStore{grantBalance: currencymodel.Balance{PlayerID: 7, CurrencyType: 5, Amount: 15}}
+	publisher := &fakePublisher{err: errors.New("projection failed")}
+	service := newTestServiceWithPublisher(t, store, publisher)
+
+	amount, err := service.Grant(context.Background(), GrantParams{
+		PlayerID: 7, CurrencyType: 5, Amount: 5, ActorKind: ActorSystem,
+	})
+	if err != nil || amount != 15 {
+		t.Fatalf("unexpected committed amount=%d err=%v", amount, err)
 	}
 }
 
@@ -126,6 +163,11 @@ func TestServiceRejectsInvalidInputs(t *testing.T) {
 
 // newTestService creates a currency service test subject.
 func newTestService(t *testing.T, store *fakeStore) *Service {
+	return newTestServiceWithPublisher(t, store, nil)
+}
+
+// newTestServiceWithPublisher creates a currency service with event publishing.
+func newTestServiceWithPublisher(t *testing.T, store *fakeStore, publisher bus.Publisher) *Service {
 	t.Helper()
 	catalog, err := currency.NewCatalog([]currencymodel.Definition{
 		{Type: -1, Key: "credits"}, {Type: 0, Key: "duckets"}, {Type: 5, Key: "diamonds"},
@@ -134,7 +176,21 @@ func newTestService(t *testing.T, store *fakeStore) *Service {
 		t.Fatalf("new catalog: %v", err)
 	}
 
-	return New(store, catalog)
+	return New(store, catalog, publisher, nil)
+}
+
+// fakePublisher records currency service events.
+type fakePublisher struct {
+	// events stores published events.
+	events []bus.Event
+	// err stores a publication failure.
+	err error
+}
+
+// Publish records one event.
+func (publisher *fakePublisher) Publish(_ context.Context, event bus.Event) error {
+	publisher.events = append(publisher.events, event)
+	return publisher.err
 }
 
 // fakeStore records currency service persistence calls.
@@ -165,13 +221,13 @@ func (store *fakeStore) ListBalances(context.Context, int64) ([]currencymodel.Ba
 }
 
 // Grant records a fake grant.
-func (store *fakeStore) Grant(_ context.Context, mutation currencyrepo.Mutation) (currencymodel.Balance, error) {
+func (store *fakeStore) Grant(_ context.Context, mutation currencyrepo.Mutation) (currencyrepo.Result, error) {
 	store.mutation = mutation
-	return store.grantBalance, store.grantErr
+	return currencyrepo.Result{Balance: store.grantBalance, Delta: mutation.Amount}, store.grantErr
 }
 
 // Set records a fake absolute set.
-func (store *fakeStore) Set(_ context.Context, mutation currencyrepo.Mutation) (currencymodel.Balance, error) {
+func (store *fakeStore) Set(_ context.Context, mutation currencyrepo.Mutation) (currencyrepo.Result, error) {
 	store.mutation = mutation
-	return store.setBalance, nil
+	return currencyrepo.Result{Balance: store.setBalance, Delta: -7}, nil
 }

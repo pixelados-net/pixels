@@ -20,6 +20,11 @@ func adminOperations() []operation {
 		adminNavigatorRead("/api/admin/navigator/categories", "List navigator categories", &APIKeyRequest{}, &CategoryListResponse{}),
 		adminNavigatorRead("/api/admin/navigator/lifted", "List navigator lifted rooms", &APIKeyRequest{}, &LiftedListResponse{}),
 		adminNotificationAction("/api/admin/players/{id}/notifications", "Send localized player notification", &PlayerNotificationRequest{}),
+		adminCurrencyRead("/api/admin/players/{id}/currencies", "Read player currency wallet", &CurrencyWalletRequest{}, &CurrencyWalletResponse{}),
+		adminCurrencyRead("/api/admin/currencies/types", "List configured currency types", &APIKeyRequest{}, &CurrencyTypesResponse{}),
+		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/grant", "Grant player currency"),
+		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/deduct", "Deduct player currency"),
+		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/set", "Set player currency balance"),
 	}
 }
 
@@ -79,6 +84,40 @@ func adminNotificationAction(path string, summary string, request any) operation
 		responses: append(
 			[]response{jsonResponse(http.StatusOK, &PlayerNotificationResponse{}, "Notification sent.")},
 			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound)...,
+		),
+		secured: true,
+	}
+}
+
+// adminCurrencyRead creates a currency administration read operation.
+func adminCurrencyRead(path string, summary string, request any, body any) operation {
+	return operation{
+		method:      http.MethodGet,
+		path:        path,
+		tag:         "Admin Currencies",
+		summary:     summary,
+		description: summary + ".",
+		request:     request,
+		responses: append(
+			[]response{jsonResponse(http.StatusOK, body, summary+".")},
+			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusInternalServerError)...,
+		),
+		secured: true,
+	}
+}
+
+// adminCurrencyAction creates a currency administration mutation operation.
+func adminCurrencyAction(path string, summary string) operation {
+	return operation{
+		method:      http.MethodPost,
+		path:        path,
+		tag:         "Admin Currencies",
+		summary:     summary,
+		description: summary + ". Optional localized alert delivery is disabled by default.",
+		request:     &CurrencyMutationRequest{},
+		responses: append(
+			[]response{jsonResponse(http.StatusOK, &CurrencyMutationResponse{}, "Currency mutation committed.")},
+			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError)...,
 		),
 		secured: true,
 	}

@@ -186,16 +186,23 @@ minimum manual checks expected when touching it.
   `networking/*/user/currency`, and `pkg/http/clientconfig`.
 - Provides a catalog-driven wallet, composable player `CurrencyHolder`, atomic
   PostgreSQL mutations, optional per-type audit ledger, wallet authentication
-  bootstrap, packet `273` handling, and public Nitro config/text resources.
+  bootstrap, packet `273` handling, real-time player-only balance projection,
+  protected admin mutation routes, and public Nitro config/text resources.
 - Durable balances stay in the currency service; `Player` composes the holder
   capability without caching or owning currency rules.
+- Admin currency alerts are opt-in (`alert` defaults to `false`), must be
+  localized through `pkg/i18n`, and must not make an already-committed balance
+  mutation fail when the target player is offline.
 - Test after changes:
-  - `go test ./internal/realm/inventory/... ./networking/... ./pkg/http/clientconfig`
+  - `go test ./internal/realm/inventory/... ./networking/... ./pkg/http/clientconfig ./pkg/http/currency/routes`
   - Apply Liquibase and verify `player_currencies` and
     `currency_ledger_entries` exist.
   - Authenticate in Nitro and verify packets `3475` and `2018` are sent.
   - Open `/client/ui-config.json` and
     `/client/texts/es/ExternalTexts.json`.
+  - Grant and deduct currency through the admin API with `alert` omitted,
+    `false`, and `true`; verify only the explicit `true` case sends a localized
+    generic alert.
 
 ### FEATURE: Navigator Realm
 

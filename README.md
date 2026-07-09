@@ -120,7 +120,19 @@ docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liqu
 - `GET /client/ui-config.json` serves Nitro's configured currency type extension.
 - `GET /client/texts/:locale/ExternalTexts.json` serves localized Nitro currency names.
 - `POST /api/sso/tickets` creates one-time SSO tickets and requires `X-API-Key`.
+- `GET /api/admin/players/:id/currencies` reads a player's configured wallet.
+- `POST /api/admin/players/:id/currencies/:type/grant` adds currency.
+- `POST /api/admin/players/:id/currencies/:type/deduct` deducts currency.
+- `POST /api/admin/players/:id/currencies/:type/set` replaces a balance.
+- `GET /api/admin/currencies/types` lists configured currency types.
 - Private routes require `X-API-Key: <PIXELS_ACCESS_KEY>`.
+
+Currency mutation bodies accept `amount`, optional `reason`, optional `locale`,
+and `alert`. Alert delivery defaults to `false`. When `alert` is `true` and the
+player is online, Pixels sends a localized generic alert after committing the
+balance. The response distinguishes `alertRequested` from `alertSent`, so an
+offline player can still receive the persistent mutation without reporting a
+false failure.
 
 The two `/client` resources are public and allow cross-origin reads. Add
 `http://127.0.0.1:3000/client/ui-config.json` to Nitro's `config.urls`, and add

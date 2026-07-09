@@ -22,14 +22,14 @@ func TestGrantMutatesAndWritesLedger(t *testing.T) {
 	}}
 	repository := testRepository(executor)
 
-	balance, err := repository.Grant(context.Background(), Mutation{
+	result, err := repository.Grant(context.Background(), Mutation{
 		PlayerID: 7, CurrencyType: -1, Amount: 5, Ledger: true, ActorKind: "system",
 	})
 	if err != nil {
 		t.Fatalf("grant: %v", err)
 	}
-	if balance.Amount != 15 || len(executor.execs) != 2 {
-		t.Fatalf("unexpected balance=%#v execs=%d", balance, len(executor.execs))
+	if result.Balance.Amount != 15 || result.Delta != 5 || len(executor.execs) != 2 {
+		t.Fatalf("unexpected result=%#v execs=%d", result, len(executor.execs))
 	}
 	if delta := executor.execs[1].arguments[2]; delta != int64(5) {
 		t.Fatalf("unexpected ledger delta %#v", delta)
@@ -45,11 +45,14 @@ func TestSetRecordsNegativeDelta(t *testing.T) {
 	}}
 	repository := testRepository(executor)
 
-	_, err := repository.Set(context.Background(), Mutation{
+	result, err := repository.Set(context.Background(), Mutation{
 		PlayerID: 7, CurrencyType: -1, Amount: 3, Ledger: true, ActorKind: "admin",
 	})
 	if err != nil {
 		t.Fatalf("set: %v", err)
+	}
+	if result.Delta != -7 {
+		t.Fatalf("unexpected result delta %d", result.Delta)
 	}
 	if delta := executor.execs[1].arguments[2]; delta != int64(-7) {
 		t.Fatalf("unexpected ledger delta %#v", delta)

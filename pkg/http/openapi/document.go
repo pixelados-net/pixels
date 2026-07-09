@@ -39,6 +39,8 @@ func routeTags() []openapi3.Tag {
 		tag("Client Config", "Public Nitro configuration and localized text extensions."),
 		tag("SSO", "Protected single-sign-on ticket routes."),
 		tag("Admin Connections", "Protected connection inspection and disconnection routes."),
+		tag("Admin Players", "Protected player communication routes."),
+		tag("Admin Currencies", "Protected player currency balance routes."),
 		tag("Admin Rooms", "Protected room metadata and runtime routes."),
 		tag("Admin Navigator", "Protected navigator metadata routes."),
 		tag("Fallback", "Authenticated fallback behavior."),

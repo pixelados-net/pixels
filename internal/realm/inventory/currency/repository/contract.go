@@ -16,10 +16,10 @@ type Store interface {
 	ListBalances(ctx context.Context, playerID int64) ([]currencymodel.Balance, error)
 
 	// Grant applies a signed delta and optional ledger entry atomically.
-	Grant(ctx context.Context, mutation Mutation) (currencymodel.Balance, error)
+	Grant(ctx context.Context, mutation Mutation) (Result, error)
 
 	// Set replaces a balance and writes an optional ledger entry atomically.
-	Set(ctx context.Context, mutation Mutation) (currencymodel.Balance, error)
+	Set(ctx context.Context, mutation Mutation) (Result, error)
 }
 
 // storeAssertion verifies Repository implements Store.

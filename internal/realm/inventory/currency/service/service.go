@@ -5,8 +5,11 @@ import (
 	"errors"
 
 	"github.com/niflaot/pixels/internal/realm/inventory/currency"
+	currencychanged "github.com/niflaot/pixels/internal/realm/inventory/currency/events/changed"
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
 	currencyrepo "github.com/niflaot/pixels/internal/realm/inventory/currency/repository"
+	"github.com/niflaot/pixels/pkg/bus"
+	"go.uber.org/zap"
 )
 
 // Service implements currency balance behavior.
@@ -16,11 +19,21 @@ type Service struct {
 
 	// catalog validates and lists configured currencies.
 	catalog *currency.Catalog
+
+	// events publishes committed currency facts.
+	events bus.Publisher
+
+	// log records non-critical projection failures.
+	log *zap.Logger
 }
 
 // New creates a currency service.
-func New(store currencyrepo.Store, catalog *currency.Catalog) *Service {
-	return &Service{store: store, catalog: catalog}
+func New(store currencyrepo.Store, catalog *currency.Catalog, events bus.Publisher, log *zap.Logger) *Service {
+	if log == nil {
+		log = zap.NewNop()
+	}
+
+	return &Service{store: store, catalog: catalog, events: events, log: log}
 }
 
 // Wallet returns every configured currency balance for a player.
@@ -71,7 +84,7 @@ func (service *Service) Grant(ctx context.Context, params GrantParams) (int64, e
 		return 0, err
 	}
 
-	balance, err := service.store.Grant(ctx, mutation(params, definition.Ledger))
+	result, err := service.store.Grant(ctx, mutation(params, definition.Ledger))
 	if errors.Is(err, currencyrepo.ErrInsufficientBalance) {
 		return 0, ErrInsufficientBalance
 	}
@@ -81,8 +94,9 @@ func (service *Service) Grant(ctx context.Context, params GrantParams) (int64, e
 	if err != nil {
 		return 0, err
 	}
+	service.publish(ctx, params.PlayerID, params.CurrencyType, result.Balance.Amount, result.Delta, params.ActorKind)
 
-	return balance.Amount, nil
+	return result.Balance.Amount, nil
 }
 
 // Set replaces a currency balance with an absolute amount.
@@ -92,12 +106,13 @@ func (service *Service) Set(ctx context.Context, params SetParams) (int64, error
 		return 0, err
 	}
 
-	balance, err := service.store.Set(ctx, setMutation(params, definition.Ledger))
+	result, err := service.store.Set(ctx, setMutation(params, definition.Ledger))
 	if err != nil {
 		return 0, err
 	}
+	service.publish(ctx, params.PlayerID, params.CurrencyType, result.Balance.Amount, result.Delta, params.ActorKind)
 
-	return balance.Amount, nil
+	return result.Balance.Amount, nil
 }
 
 // Types returns configured currency definitions.
@@ -147,5 +162,28 @@ func setMutation(params SetParams, ledger bool) currencyrepo.Mutation {
 	return currencyrepo.Mutation{
 		PlayerID: params.PlayerID, CurrencyType: params.CurrencyType, Amount: params.Amount,
 		Ledger: ledger, Reason: params.Reason, ActorKind: params.ActorKind, ActorID: params.ActorID,
+	}
+}
+
+// publish emits a committed currency change without rolling back persistence on projection failure.
+func (service *Service) publish(ctx context.Context, playerID int64, currencyType int32, amount int64, delta int64, actorKind string) {
+	if service.events == nil {
+		return
+	}
+
+	err := service.events.Publish(ctx, bus.Event{
+		Name: currencychanged.Name,
+		Payload: currencychanged.Payload{
+			PlayerID: playerID, CurrencyType: currencyType, Amount: amount, Delta: delta, ActorKind: actorKind,
+		},
+	})
+	if err != nil {
+		service.log.Warn("currency change projection failed",
+			zap.Int64("player_id", playerID),
+			zap.Int32("currency_type", currencyType),
+			zap.Int64("amount", amount),
+			zap.Int64("delta", delta),
+			zap.Error(err),
+		)
 	}
 }

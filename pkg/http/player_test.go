@@ -4,6 +4,7 @@ import (
 	"context"
 
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
@@ -11,8 +12,19 @@ import (
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	netconn "github.com/niflaot/pixels/networking/connection"
+	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
+	"go.uber.org/zap"
 )
+
+// testCurrencyDependencies composes HTTP currency route test dependencies.
+func testCurrencyDependencies(registry *netconn.Registry, log *zap.Logger) currencyroutes.Dependencies {
+	return currencyroutes.Dependencies{
+		Finder: testFinder{}, Players: testPlayers(), Connections: registry,
+		Currencies: testCurrencies(), Translations: testTranslations(), Log: log,
+	}
+}
 
 // testCurrencies returns public client currency definitions.
 func testCurrencies() testCurrencyReader {
@@ -35,6 +47,16 @@ func (testCurrencyReader) Balance(context.Context, int64, int32) (int64, error) 
 // Types returns HTTP test currency definitions.
 func (testCurrencyReader) Types(context.Context) ([]currencymodel.Definition, error) {
 	return []currencymodel.Definition{{Type: -1, Key: "credits"}, {Type: 5, Key: "diamonds"}}, nil
+}
+
+// Grant returns a fake committed balance.
+func (testCurrencyReader) Grant(_ context.Context, params currencyservice.GrantParams) (int64, error) {
+	return params.Amount, nil
+}
+
+// Set returns a fake absolute balance.
+func (testCurrencyReader) Set(_ context.Context, params currencyservice.SetParams) (int64, error) {
+	return params.Amount, nil
 }
 
 // testFinder returns persistent test player records.

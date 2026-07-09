@@ -38,6 +38,15 @@ type Mutation struct {
 	ActorID *int64
 }
 
+// Result contains the committed balance and its signed delta.
+type Result struct {
+	// Balance stores the committed currency balance.
+	Balance currencymodel.Balance
+
+	// Delta stores the signed change committed by the mutation.
+	Delta int64
+}
+
 // ledgerEntry creates an audit record from a completed mutation.
 func ledgerEntry(mutation Mutation, delta int64, balance int64) currencymodel.LedgerEntry {
 	return currencymodel.LedgerEntry{
