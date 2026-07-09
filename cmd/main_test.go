@@ -9,6 +9,7 @@ import (
 // TestNewAppBuilds verifies the dependency graph can be constructed.
 func TestNewAppBuilds(t *testing.T) {
 	setI18NPathForTest(t)
+	setCurrencyPathForTest(t)
 	app := newApp()
 
 	if app == nil {
@@ -16,12 +17,23 @@ func TestNewAppBuilds(t *testing.T) {
 	}
 }
 
+// setCurrencyPathForTest points app construction at a minimal currency catalog.
+func setCurrencyPathForTest(t *testing.T) {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "currencies.json")
+	if err := os.WriteFile(path, []byte(`[{"type":-1,"key":"credits"}]`), 0o600); err != nil {
+		t.Fatalf("write currency catalog: %v", err)
+	}
+	t.Setenv("PIXELS_CURRENCY_CATALOG_PATH", path)
+}
+
 // TestOptionsBuilds verifies dependency graph options are registered.
 func TestOptionsBuilds(t *testing.T) {
 	options := options()
 
-	if len(options) != 18 {
-		t.Fatalf("expected eighteen options, got %d", len(options))
+	if len(options) != 19 {
+		t.Fatalf("expected nineteen options, got %d", len(options))
 	}
 }
 

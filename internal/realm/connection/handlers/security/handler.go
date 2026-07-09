@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	currencyrequest "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -79,13 +80,22 @@ func authenticate(handler netconn.Context, authenticator *Authenticator, ticket 
 		return handler.Disconnect(ctx, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: err.Error()})
 	}
 
-	return sendBootstrap(handler, record)
+	return sendBootstrap(handler, record, authenticator)
 }
 
 // sendBootstrap sends the minimal connection bootstrap.
-func sendBootstrap(handler netconn.Context, record playerservice.Record) error {
+func sendBootstrap(handler netconn.Context, record playerservice.Record, authenticator *Authenticator) error {
 	for _, packet := range bootstrapPackets(record) {
 		if err := handler.Send(context.Background(), packet); err != nil {
+			return err
+		}
+	}
+	if authenticator.currencies != nil {
+		player, found := authenticator.live.Find(record.Player.ID)
+		if !found {
+			return currencyrequest.ErrPlayerNotFound
+		}
+		if err := authenticator.currencies.Send(context.Background(), handler, player.Currencies()); err != nil {
 			return err
 		}
 	}

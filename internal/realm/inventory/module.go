@@ -1,0 +1,47 @@
+// Package inventory contains player inventory realm wiring.
+package inventory
+
+import (
+	"github.com/niflaot/pixels/internal/realm/inventory/currency"
+	requestcmd "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
+	currencyrepo "github.com/niflaot/pixels/internal/realm/inventory/currency/repository"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	"github.com/niflaot/pixels/internal/realm/session/binding"
+	"github.com/niflaot/pixels/pkg/postgres"
+	"go.uber.org/fx"
+)
+
+// Module provides inventory currency persistence and packet behavior.
+var Module = fx.Module(
+	"realm-inventory",
+	fx.Provide(
+		currency.LoadCatalog,
+		NewCurrencyStore,
+		currencyservice.New,
+		NewCurrencyManager,
+		NewCurrencyReader,
+		NewCurrencyRequest,
+	),
+	fx.Invoke(RegisterConnectionHandlers),
+)
+
+// NewCurrencyStore creates the currency persistence store.
+func NewCurrencyStore(pool *postgres.Pool) currencyrepo.Store {
+	return currencyrepo.New(pool)
+}
+
+// NewCurrencyManager exposes currency management behavior.
+func NewCurrencyManager(service *currencyservice.Service) currencyservice.Manager {
+	return service
+}
+
+// NewCurrencyReader exposes currency read behavior.
+func NewCurrencyReader(service *currencyservice.Service) currencyservice.Reader {
+	return service
+}
+
+// NewCurrencyRequest creates the currency wallet command handler.
+func NewCurrencyRequest(players *playerlive.Registry, bindings *binding.Registry, currencies currencyservice.Manager) *requestcmd.Handler {
+	return &requestcmd.Handler{Players: players, Bindings: bindings, Currencies: currencies}
+}

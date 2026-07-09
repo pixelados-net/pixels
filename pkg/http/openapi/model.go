@@ -30,6 +30,21 @@ type StatusResponse struct {
 	Version string `json:"version" required:"true" example:"0.1.0-abcdef12"`
 }
 
+// CurrencyUIConfigResponse is the public Nitro currency configuration extension.
+type CurrencyUIConfigResponse struct {
+	// CurrencyTypes stores configured protocol currency ids.
+	CurrencyTypes []int32 `json:"system.currency.types" required:"true"`
+}
+
+// CurrencyExternalTextsResponse contains localized Nitro currency text entries.
+type CurrencyExternalTextsResponse map[string]string
+
+// CurrencyExternalTextsRequest identifies a requested client text locale.
+type CurrencyExternalTextsRequest struct {
+	// Locale stores the requested translation locale.
+	Locale string `path:"locale" required:"true" example:"es"`
+}
+
 // CreateSSOTicketRequest is the private SSO ticket creation body.
 type CreateSSOTicketRequest struct {
 	APIKeyRequest

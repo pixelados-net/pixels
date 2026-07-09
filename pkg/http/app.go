@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
@@ -17,7 +18,7 @@ import (
 )
 
 // New creates the Fiber application.
-func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, registry *netconn.Registry, players *playerlive.Registry, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, translations i18n.Translator) *fiber.App {
+func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, registry *netconn.Registry, players *playerlive.Registry, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencies currencyservice.Reader, translations i18n.Translator) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler:          errorHandler,
@@ -29,7 +30,7 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Ser
 		Messages: []string{"http server request failed", "http client request failed", "http request completed"},
 	}))
 
-	registerPublic(app, config, info, websocket)
+	registerPublic(app, config, info, websocket, currencies, translations)
 	app.Use(auth(config.App.AccessKey))
 	registerPrivate(app, sso, registry, players, rooms, runtime, navigator, translations)
 

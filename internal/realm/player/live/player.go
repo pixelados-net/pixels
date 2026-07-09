@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	inventoryviewer "github.com/niflaot/pixels/internal/realm/furniture/viewer/live"
+	currencyholder "github.com/niflaot/pixels/internal/realm/inventory/currency/holder"
 	navviewer "github.com/niflaot/pixels/internal/realm/navigator/viewer/live"
 )
 
@@ -24,6 +25,9 @@ type Player struct {
 	// inventory stores furniture inventory viewer state when opened.
 	inventory *inventoryviewer.Holder
 
+	// currencies stores the player's currency capability.
+	currencies *currencyholder.Holder
+
 	// room stores the player's current room presence.
 	room RoomPresence
 }
@@ -37,7 +41,11 @@ func NewPlayer(snapshot Snapshot, peer SessionPeer) (*Player, error) {
 		return nil, ErrInvalidPeer
 	}
 
-	return &Player{snapshot: snapshot, peer: peer}, nil
+	return &Player{
+		snapshot:   snapshot,
+		peer:       peer,
+		currencies: currencyholder.New(snapshot.ID),
+	}, nil
 }
 
 // ID returns the player id.
@@ -162,6 +170,11 @@ func (player *Player) CloseInventory() (*inventoryviewer.Holder, bool) {
 	player.inventory = nil
 
 	return holder, true
+}
+
+// Currencies returns the player's composed currency capability.
+func (player *Player) Currencies() *currencyholder.Holder {
+	return player.currencies
 }
 
 // EnterRoom stores the player's current room id.

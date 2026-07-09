@@ -153,7 +153,7 @@ minimum manual checks expected when touching it.
 
 - Owns `networking/codec`, `networking/inbound`, and `networking/outbound`.
 - Encodes and decodes declarative packet definitions for handshake, security,
-  session, navigator, and room packets.
+  session, currencies, navigator, and room packets.
 - Test after changes:
   - `go test ./networking/...`
   - Run packet benchmarks after changing hot path packets.
@@ -179,6 +179,23 @@ minimum manual checks expected when touching it.
   - `go test ./internal/realm/player/...`
   - Authenticate with a seeded SSO ticket and verify user info bootstrap.
   - Enter and leave a room and verify live player room presence updates.
+
+### FEATURE: Inventory Currencies
+
+- Owns `internal/realm/inventory/currency`, currency packets under
+  `networking/*/user/currency`, and `pkg/http/clientconfig`.
+- Provides a catalog-driven wallet, composable player `CurrencyHolder`, atomic
+  PostgreSQL mutations, optional per-type audit ledger, wallet authentication
+  bootstrap, packet `273` handling, and public Nitro config/text resources.
+- Durable balances stay in the currency service; `Player` composes the holder
+  capability without caching or owning currency rules.
+- Test after changes:
+  - `go test ./internal/realm/inventory/... ./networking/... ./pkg/http/clientconfig`
+  - Apply Liquibase and verify `player_currencies` and
+    `currency_ledger_entries` exist.
+  - Authenticate in Nitro and verify packets `3475` and `2018` are sent.
+  - Open `/client/ui-config.json` and
+    `/client/texts/es/ExternalTexts.json`.
 
 ### FEATURE: Navigator Realm
 

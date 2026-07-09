@@ -36,6 +36,7 @@ func routeTags() []openapi3.Tag {
 	return []openapi3.Tag{
 		tag("Public", "Public health and documentation routes."),
 		tag("WebSocket", "Pixel-protocol WebSocket entrypoints."),
+		tag("Client Config", "Public Nitro configuration and localized text extensions."),
 		tag("SSO", "Protected single-sign-on ticket routes."),
 		tag("Admin Connections", "Protected connection inspection and disconnection routes."),
 		tag("Admin Rooms", "Protected room metadata and runtime routes."),

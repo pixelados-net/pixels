@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/niflaot/pixels/internal/auth/sso"
+	currencyrequest "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
 	playerauthenticated "github.com/niflaot/pixels/internal/realm/player/events/authenticated"
 	playerauthenticating "github.com/niflaot/pixels/internal/realm/player/events/authenticating"
 	playerauthfailed "github.com/niflaot/pixels/internal/realm/player/events/authfailed"
@@ -31,16 +32,19 @@ type Authenticator struct {
 	bindings *binding.Registry
 	// events publishes authentication lifecycle events.
 	events bus.Publisher
+	// currencies sends the composed player's wallet bootstrap.
+	currencies *currencyrequest.Handler
 }
 
 // NewAuthenticator creates a security authenticator.
-func NewAuthenticator(tickets *sso.Service, players playerservice.Finder, live *live.Registry, bindings *binding.Registry, events bus.Publisher) *Authenticator {
+func NewAuthenticator(tickets *sso.Service, players playerservice.Finder, live *live.Registry, bindings *binding.Registry, events bus.Publisher, currencies *currencyrequest.Handler) *Authenticator {
 	return &Authenticator{
-		tickets:  tickets,
-		players:  players,
-		live:     live,
-		bindings: bindings,
-		events:   events,
+		tickets:    tickets,
+		players:    players,
+		live:       live,
+		bindings:   bindings,
+		events:     events,
+		currencies: currencies,
 	}
 }
 

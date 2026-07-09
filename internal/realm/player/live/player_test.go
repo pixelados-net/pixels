@@ -129,6 +129,14 @@ func TestPlayerInventoryLifecycle(t *testing.T) {
 	}
 }
 
+// TestPlayerComposesCurrencyHolder verifies wallet behavior remains outside Player.
+func TestPlayerComposesCurrencyHolder(t *testing.T) {
+	player := mustPlayer(t, 10, "ian")
+	if player.Currencies() == nil || player.Currencies().PlayerID() != player.ID() {
+		t.Fatalf("unexpected currency holder %#v", player.Currencies())
+	}
+}
+
 // TestPlayerRoomPresenceLifecycle verifies embedded room presence behavior.
 func TestPlayerRoomPresenceLifecycle(t *testing.T) {
 	player := mustPlayer(t, 10, "ian")

@@ -166,7 +166,7 @@ func testSession(t *testing.T, service *sso.Service) (*netconn.Session, *[]codec
 func testAuthenticator(t *testing.T, service *sso.Service) *Authenticator {
 	t.Helper()
 
-	return NewAuthenticator(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New())
+	return NewAuthenticator(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil)
 }
 
 // testFinder returns test player records.

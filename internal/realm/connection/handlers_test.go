@@ -31,7 +31,7 @@ func TestHandlersAuthenticateWithSSO(t *testing.T) {
 
 	players := live.NewRegistry()
 	bindings := binding.NewRegistry()
-	handlers := NewHandlers(service, testFinder{}, players, bindings, bus.New())
+	handlers := NewHandlers(service, testFinder{}, players, bindings, bus.New(), nil)
 	sent := make([]codec.Packet, 0)
 	session, err := netconn.NewSession(netconn.SessionConfig{
 		ID:       "one",

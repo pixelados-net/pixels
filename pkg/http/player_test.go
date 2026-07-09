@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 
+	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
@@ -12,6 +13,29 @@ import (
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
+
+// testCurrencies returns public client currency definitions.
+func testCurrencies() testCurrencyReader {
+	return testCurrencyReader{}
+}
+
+// testCurrencyReader returns HTTP test currency data.
+type testCurrencyReader struct{}
+
+// Wallet returns no HTTP test balances.
+func (testCurrencyReader) Wallet(context.Context, int64) ([]currencymodel.Balance, error) {
+	return nil, nil
+}
+
+// Balance returns a zero HTTP test balance.
+func (testCurrencyReader) Balance(context.Context, int64, int32) (int64, error) {
+	return 0, nil
+}
+
+// Types returns HTTP test currency definitions.
+func (testCurrencyReader) Types(context.Context) ([]currencymodel.Definition, error) {
+	return []currencymodel.Definition{{Type: -1, Key: "credits"}, {Type: 5, Key: "diamonds"}}, nil
+}
 
 // testFinder returns persistent test player records.
 type testFinder struct{}

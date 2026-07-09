@@ -59,6 +59,8 @@ go tool cover -func=coverage.out
 | `PIXELS_I18N_DEFAULT_LOCALE` | `es` | Default locale used when no player locale is available. |
 | `PIXELS_I18N_FALLBACK_LOCALE` | `en` | Fallback locale used when a key is missing in the default locale. |
 | `PIXELS_I18N_MISSING_MODE` | `key` | Missing translation behavior, either `key` or `empty`. |
+| `PIXELS_CURRENCY_CATALOG_PATH` | `currency/types.json` | JSON catalog of enabled protocol currency types. |
+| `PIXELS_CURRENCY_LEDGER_TYPES` | `-1` | Comma-separated currency types whose mutations require audit ledger entries. |
 | `REDIS_ADDRESS` | `127.0.0.1:6379` | Redis server address. |
 | `REDIS_USERNAME` | empty | Redis ACL username. |
 | `REDIS_PASSWORD` | empty | Redis password. |
@@ -115,8 +117,22 @@ docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liqu
 - `GET /status` returns public server status.
 - `GET /ws` is the public websocket entrypoint.
 - `GET /docs` serves Scalar API docs only when `PIXELS_ENV=development`.
+- `GET /client/ui-config.json` serves Nitro's configured currency type extension.
+- `GET /client/texts/:locale/ExternalTexts.json` serves localized Nitro currency names.
 - `POST /api/sso/tickets` creates one-time SSO tickets and requires `X-API-Key`.
 - Private routes require `X-API-Key: <PIXELS_ACCESS_KEY>`.
+
+The two `/client` resources are public and allow cross-origin reads. Add
+`http://127.0.0.1:3000/client/ui-config.json` to Nitro's `config.urls`, and add
+the desired locale URL, such as
+`http://127.0.0.1:3000/client/texts/es/ExternalTexts.json`, to its
+`external.texts.url` list. They are partial configuration documents and can be
+loaded after Nitro's normal files.
+
+Currency balances are sent during authentication and when Nitro requests packet
+`273`. Credits use protocol type `-1`; the initial catalog also enables duckets
+(`0`) and diamonds (`5`). Apply the schema changelog before running this
+bootstrap against an existing database.
 
 ## Development Security
 

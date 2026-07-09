@@ -36,6 +36,23 @@ func publicOperations() []operation {
 				jsonResponse(http.StatusNotFound, &ErrorResponse{}, "Documentation is disabled outside development."),
 			},
 		},
+		{
+			method:      http.MethodGet,
+			path:        "/client/ui-config.json",
+			tag:         "Client Config",
+			summary:     "Read Nitro currency configuration",
+			description: "Returns a partial Nitro UI configuration containing every configured currency type.",
+			responses:   []response{jsonResponse(http.StatusOK, &CurrencyUIConfigResponse{}, "Nitro currency UI configuration.")},
+		},
+		{
+			method:      http.MethodGet,
+			path:        "/client/texts/{locale}/ExternalTexts.json",
+			tag:         "Client Config",
+			summary:     "Read localized Nitro currency texts",
+			description: "Returns ExternalTexts-compatible currency name entries for the requested locale.",
+			request:     &CurrencyExternalTextsRequest{},
+			responses:   []response{jsonResponse(http.StatusOK, &CurrencyExternalTextsResponse{}, "Localized Nitro currency names.")},
+		},
 	}
 }
 

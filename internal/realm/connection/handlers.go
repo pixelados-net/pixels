@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/heartbeat"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/latency"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/security"
+	currencyrequest "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
 	playerdisconnected "github.com/niflaot/pixels/internal/realm/player/events/disconnected"
 	"github.com/niflaot/pixels/internal/realm/player/live"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
@@ -34,12 +35,12 @@ type Handlers struct {
 }
 
 // NewHandlers creates connection-realm handler registries.
-func NewHandlers(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus) *Handlers {
+func NewHandlers(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus, currencies *currencyrequest.Handler) *Handlers {
 	inbound := netconn.NewHandlerRegistry()
 	outbound := netconn.NewHandlerRegistry()
 	handlers := &Handlers{Inbound: inbound, Outbound: outbound, players: players, bindings: bindings, events: events}
 
-	registerInbound(inbound, security.NewAuthenticator(sso, finder, players, bindings, events))
+	registerInbound(inbound, security.NewAuthenticator(sso, finder, players, bindings, events, currencies))
 	outbound.SetFallback(noopHandler, netconn.AllowAnyActiveState(), netconn.AllowUnauthenticated())
 
 	return handlers

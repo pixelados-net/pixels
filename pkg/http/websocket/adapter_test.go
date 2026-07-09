@@ -72,7 +72,7 @@ func testServer(t *testing.T, service *sso.Service) (string, func()) {
 		Config{PingInterval: time.Hour, PongTimeout: time.Hour},
 		appconfig.Config{Environment: "development"},
 		netconn.NewRegistry(),
-		realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()),
+		realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil),
 		zap.NewNop(),
 		logger.Config{},
 	)

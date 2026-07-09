@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/niflaot/pixels/internal/auth/sso"
+	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/logger"
@@ -18,6 +19,7 @@ var Module = fx.Module(
 		App,
 		Logger,
 		I18N,
+		Currency,
 		Postgres,
 		Redis,
 		SSO,
@@ -42,6 +44,11 @@ func Logger(config AppConfig) logger.Config {
 // I18N extracts translation settings from composed configuration.
 func I18N(config AppConfig) i18n.Config {
 	return config.I18N
+}
+
+// Currency extracts inventory currency settings from composed configuration.
+func Currency(config AppConfig) currencyconfig.Config {
+	return config.Currency
 }
 
 // Postgres extracts PostgreSQL settings from composed configuration.

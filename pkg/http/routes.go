@@ -7,6 +7,7 @@ import (
 	fiberws "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
@@ -14,6 +15,7 @@ import (
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
+	"github.com/niflaot/pixels/pkg/http/clientconfig"
 	notificationroutes "github.com/niflaot/pixels/pkg/http/notification/routes"
 	"github.com/niflaot/pixels/pkg/http/openapi"
 	roomroutes "github.com/niflaot/pixels/pkg/http/room/routes"
@@ -25,10 +27,11 @@ import (
 const development = "development"
 
 // registerPublic registers routes that do not require authentication.
-func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, websocket *ws.Adapter) {
+func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, websocket *ws.Adapter, currencies currencyservice.Reader, translations i18n.Translator) {
 	app.Get("/status", statusHandler(config, info))
 	app.Get("/ws", websocketGate, fiberws.New(websocket.Handle))
 	app.Get("/docs", docsHandler(config))
+	clientconfig.Register(app, currencies, translations)
 }
 
 // registerPrivate registers private authenticated fallback routes.

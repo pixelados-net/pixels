@@ -159,9 +159,9 @@ func testApp(t *testing.T, environment string) *fiber.App {
 	service := testSSO(t)
 	registry := netconn.NewRegistry()
 	config := testConfig(environment)
-	adapter := ws.New(ws.Config{}, config.App, registry, realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New()), zap.NewNop(), config.Logger)
+	adapter := ws.New(ws.Config{}, config.App, registry, realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil), zap.NewNop(), config.Logger)
 
-	return New(zap.NewNop(), config, testInfo(), service, adapter, registry, testPlayers(), testRooms(), testRoomRuntime(), testNavigator(), testTranslations())
+	return New(zap.NewNop(), config, testInfo(), service, adapter, registry, testPlayers(), testRooms(), testRoomRuntime(), testNavigator(), testCurrencies(), testTranslations())
 }
 
 // testConfig creates composed configuration for route tests.

@@ -8,7 +8,10 @@
       "session.bubble.furniture.no_rights": "No tienes permiso para hacer eso.",
       "session.bubble.furniture.item_not_in_inventory": "Ese objeto no está en tu inventario.",
       "session.bubble.furniture.item_not_found": "No se encontró ese objeto.",
-      "admin.notification.default": "Mensaje del hotel."
+      "admin.notification.default": "Mensaje del hotel.",
+      "currency.name.credits": "Créditos",
+      "currency.name.duckets": "Duckets",
+      "currency.name.diamonds": "Diamantes"
     },
     "en": {
       "session.bubble.furniture.invalid_move": "You cannot place that there.",
@@ -17,7 +20,10 @@
       "session.bubble.furniture.no_rights": "You do not have permission to do that.",
       "session.bubble.furniture.item_not_in_inventory": "That item is not in your inventory.",
       "session.bubble.furniture.item_not_found": "That item was not found.",
-      "admin.notification.default": "Hotel message."
+      "admin.notification.default": "Hotel message.",
+      "currency.name.credits": "Credits",
+      "currency.name.duckets": "Duckets",
+      "currency.name.diamonds": "Diamonds"
     }
   }
 }
