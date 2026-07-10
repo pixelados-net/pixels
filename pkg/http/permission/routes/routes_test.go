@@ -204,3 +204,21 @@ func jsonBody(t *testing.T, response *http.Response, target any) {
 		t.Fatalf("decode response: %v", err)
 	}
 }
+
+// BenchmarkPermissionCheckRoute measures the protected route handler core.
+func BenchmarkPermissionCheckRoute(b *testing.B) {
+	app := fiber.New()
+	Register(app, Dependencies{Permissions: &fakeManager{allowed: true}})
+	b.ReportAllocs()
+	for b.Loop() {
+		request, err := http.NewRequest(http.MethodGet, basePath+"/players/3/check?node=catalog.admin.manage", nil)
+		if err != nil {
+			b.Fatalf("create request: %v", err)
+		}
+		response, err := app.Test(request)
+		if err != nil || response.StatusCode != http.StatusOK {
+			b.Fatalf("unexpected response=%#v err=%v", response, err)
+		}
+		response.Body.Close()
+	}
+}

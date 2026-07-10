@@ -2,12 +2,34 @@ package cache
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"time"
 
 	permissionmodel "github.com/niflaot/pixels/internal/permission/model"
 	"go.uber.org/zap"
 )
+
+// keyKind identifies one permission cache fragment family.
+type keyKind uint8
+
+const (
+	// playerNodesKind identifies direct player grants.
+	playerNodesKind keyKind = iota + 1
+	// playerGroupsKind identifies player group memberships.
+	playerGroupsKind
+	// groupKind identifies one permission group record.
+	groupKind
+	// groupNodesKind identifies one group's grants.
+	groupNodesKind
+)
+
+// cacheKey identifies one local permission cache fragment without allocation.
+type cacheKey struct {
+	// kind identifies the fragment family.
+	kind keyKind
+	// id identifies the player or group.
+	id int64
+}
 
 // PlayerNodes returns cached direct player grants.
 func (cache *Cache) PlayerNodes(ctx context.Context, playerID int64, loader func(context.Context) ([]permissionmodel.Grant, error)) ([]permissionmodel.Grant, error) {
@@ -34,66 +56,76 @@ func (cache *Cache) GroupNodes(ctx context.Context, groupID int64, loader func(c
 	return load(ctx, cache, groupNodesKey(groupID), loader)
 }
 
-// find reads one local or shared serialized value.
-func (cache *Cache) find(ctx context.Context, key string) ([]byte, bool) {
-	cache.mutex.RLock()
-	local, found := cache.local[key]
-	cache.mutex.RUnlock()
-	if found && time.Now().Before(local.expiresAt) {
-		return append([]byte{}, local.value...), true
-	}
-	if found {
-		cache.removeLocal(key)
-	}
+// findShared reads one shared serialized value.
+func (cache *Cache) findShared(ctx context.Context, key cacheKey) ([]byte, bool) {
 	if cache.redis == nil {
 		return nil, false
 	}
 
-	data, found, err := cache.redis.Find(ctx, key)
+	sharedKey := key.shared()
+	data, found, err := cache.redis.Find(ctx, sharedKey)
 	if err != nil {
-		cache.log.Warn("permission shared cache read failed", zap.String("key", key), zap.Error(err))
+		cache.log.Warn("permission shared cache read failed", zap.String("key", sharedKey), zap.Error(err))
 		return nil, false
-	}
-	if found {
-		cache.storeLocal(key, data)
 	}
 
 	return data, found
 }
 
-// store writes one local and best-effort shared value.
-func (cache *Cache) store(ctx context.Context, key string, value []byte) {
-	cache.storeLocal(key, value)
-	if cache.redis != nil {
-		if err := cache.redis.Set(ctx, key, value, cache.sharedTTL); err != nil {
-			cache.log.Warn("permission shared cache write failed", zap.String("key", key), zap.Error(err))
+// storeLocal writes one process-local value.
+func (cache *Cache) storeLocal(key cacheKey, value any) {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+	now := time.Now()
+	cache.local[key] = entry{value: value, expiresAt: now.Add(cache.localTTL)}
+	cache.writes++
+	if cache.writes%localSweepInterval == 0 {
+		cache.sweepExpired(now)
+	}
+}
+
+// sweepExpired removes expired entries while the cache mutex is held.
+func (cache *Cache) sweepExpired(now time.Time) {
+	for key, local := range cache.local {
+		if !now.Before(local.expiresAt) {
+			delete(cache.local, key)
 		}
 	}
 }
 
-// storeLocal writes one process-local value.
-func (cache *Cache) storeLocal(key string, value []byte) {
-	cache.mutex.Lock()
-	defer cache.mutex.Unlock()
-	cache.local[key] = entry{value: append([]byte{}, value...), expiresAt: time.Now().Add(cache.localTTL)}
-}
-
 // playerNodesKey returns the direct player grants cache key.
-func playerNodesKey(playerID int64) string {
-	return fmt.Sprintf("permission:player:%d:nodes", playerID)
+func playerNodesKey(playerID int64) cacheKey {
+	return cacheKey{kind: playerNodesKind, id: playerID}
 }
 
 // playerGroupsKey returns the player memberships cache key.
-func playerGroupsKey(playerID int64) string {
-	return fmt.Sprintf("permission:player:%d:groups", playerID)
+func playerGroupsKey(playerID int64) cacheKey {
+	return cacheKey{kind: playerGroupsKind, id: playerID}
 }
 
 // groupKey returns the group record cache key.
-func groupKey(groupID int64) string {
-	return fmt.Sprintf("permission:group:%d", groupID)
+func groupKey(groupID int64) cacheKey {
+	return cacheKey{kind: groupKind, id: groupID}
 }
 
 // groupNodesKey returns the group grants cache key.
-func groupNodesKey(groupID int64) string {
-	return fmt.Sprintf("permission:group:%d:nodes", groupID)
+func groupNodesKey(groupID int64) cacheKey {
+	return cacheKey{kind: groupNodesKind, id: groupID}
+}
+
+// shared returns the Redis representation of one cache key.
+func (key cacheKey) shared() string {
+	id := strconv.FormatInt(key.id, 10)
+	switch key.kind {
+	case playerNodesKind:
+		return "permission:player:" + id + ":nodes"
+	case playerGroupsKind:
+		return "permission:player:" + id + ":groups"
+	case groupKind:
+		return "permission:group:" + id
+	case groupNodesKind:
+		return "permission:group:" + id + ":nodes"
+	default:
+		return "permission:unknown:" + id
+	}
 }

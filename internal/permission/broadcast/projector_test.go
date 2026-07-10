@@ -136,3 +136,49 @@ func TestBroadcasterIgnoresForeignEvents(t *testing.T) {
 		t.Fatalf("expected foreign event to be ignored, got %v", err)
 	}
 }
+
+// BenchmarkProjectorPackets measures live permission protocol projection.
+func BenchmarkProjectorPackets(b *testing.B) {
+	permissions := &fakePermissions{allowed: map[permission.Node]bool{testPerkNode: true}, group: permissionmodel.Group{Weight: 100}}
+	projector := NewProjector(permissions)
+	ctx := context.Background()
+	b.ReportAllocs()
+	for b.Loop() {
+		packets, err := projector.Packets(ctx, 3)
+		if err != nil || len(packets) != 2 {
+			b.Fatalf("unexpected packets=%#v err=%v", packets, err)
+		}
+	}
+}
+
+// BenchmarkBroadcasterHandle measures one live player permission refresh.
+func BenchmarkBroadcasterHandle(b *testing.B) {
+	permissions := &fakePermissions{allowed: map[permission.Node]bool{testPerkNode: true}}
+	players := playerlive.NewRegistry()
+	peer, err := playerlive.NewSessionPeer("connection-1", "websocket", time.Now())
+	if err != nil {
+		b.Fatalf("create peer: %v", err)
+	}
+	player, err := playerlive.NewPlayer(playerlive.Snapshot{ID: 3, Username: "demo"}, peer)
+	if err != nil {
+		b.Fatalf("create player: %v", err)
+	}
+	if err := players.Add(player); err != nil {
+		b.Fatalf("register player: %v", err)
+	}
+	connections := netconn.NewRegistry()
+	connection := &fakeConnection{packets: make([]codec.Packet, 0, 2)}
+	if err := connections.Register(connection); err != nil {
+		b.Fatalf("register connection: %v", err)
+	}
+	broadcaster := New(NewProjector(permissions), permissions, players, connections)
+	event := bus.Event{Name: permissionchanged.Name, Payload: permissionchanged.Payload{PlayerID: 3}}
+	ctx := context.Background()
+	b.ReportAllocs()
+	for b.Loop() {
+		connection.packets = connection.packets[:0]
+		if err := broadcaster.Handle(ctx, event); err != nil || len(connection.packets) != 2 {
+			b.Fatalf("unexpected packets=%d err=%v", len(connection.packets), err)
+		}
+	}
+}

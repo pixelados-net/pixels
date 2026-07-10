@@ -1,7 +1,9 @@
 // Package permissions contains the USER_PERMISSIONS outbound packet.
 package permissions
 
-import "github.com/niflaot/pixels/networking/codec"
+import (
+	"github.com/niflaot/pixels/networking/codec"
+)
 
 const (
 	// Header is the USER_PERMISSIONS packet identifier.
@@ -17,9 +19,11 @@ var Definition = codec.Definition{
 
 // Encode creates a USER_PERMISSIONS packet.
 func Encode(clubLevel int32, securityLevel int32, ambassador bool) (codec.Packet, error) {
-	return codec.NewPacket(Header, Definition,
+	payload, err := codec.AppendPayload(make([]byte, 0, 9), Definition,
 		codec.Int32(clubLevel),
 		codec.Int32(securityLevel),
 		codec.Bool(ambassador),
 	)
+
+	return codec.Packet{Header: Header, Payload: payload}, err
 }

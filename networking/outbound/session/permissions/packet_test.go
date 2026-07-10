@@ -20,3 +20,14 @@ func TestEncodeWritesPermissionFields(t *testing.T) {
 		t.Fatalf("unexpected permission values %#v", values)
 	}
 }
+
+// BenchmarkEncode measures USER_PERMISSIONS packet encoding.
+func BenchmarkEncode(b *testing.B) {
+	b.ReportAllocs()
+	for b.Loop() {
+		packet, err := Encode(0, 100, true)
+		if err != nil || packet.Header != Header {
+			b.Fatalf("unexpected packet=%#v err=%v", packet, err)
+		}
+	}
+}

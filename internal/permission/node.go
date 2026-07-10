@@ -17,15 +17,18 @@ func (node Node) Valid() bool {
 	if value == Wildcard {
 		return true
 	}
-	if value == "" || strings.HasPrefix(value, ".") || strings.HasSuffix(value, ".") {
+	if value == "" || value[0] == '.' || value[len(value)-1] == '.' {
 		return false
 	}
-
-	segments := strings.Split(value, ".")
-	for index, segment := range segments {
-		if segment == "" || (segment == Wildcard && index != len(segments)-1) || !validSegment(segment) {
+	segmentStart := 0
+	for index := 0; index <= len(value); index++ {
+		if index < len(value) && value[index] != '.' {
+			continue
+		}
+		if !validSegment(value, segmentStart, index, index == len(value)) {
 			return false
 		}
+		segmentStart = index + 1
 	}
 
 	return true
@@ -58,19 +61,24 @@ func (node Node) Specificity(query Node) int {
 		return 0
 	}
 
-	return len(strings.Split(strings.TrimSuffix(string(node), "."+Wildcard), "."))
+	value := strings.TrimSuffix(string(node), "."+Wildcard)
+	return strings.Count(value, ".") + 1
 }
 
 // validSegment reports whether a dotted node segment is accepted.
-func validSegment(segment string) bool {
-	if segment == Wildcard {
-		return true
+func validSegment(value string, start int, end int, last bool) bool {
+	if start == end {
+		return false
 	}
-	for _, character := range segment {
+	if end-start == 1 && value[start] == '*' {
+		return last
+	}
+	for index := start; index < end; index++ {
+		character := value[index]
 		if (character < 'a' || character > 'z') && (character < '0' || character > '9') && character != '_' && character != '-' {
 			return false
 		}
 	}
 
-	return segment != ""
+	return true
 }

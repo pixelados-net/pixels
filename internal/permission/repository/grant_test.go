@@ -63,3 +63,15 @@ func TestGrantPersistenceWrapsMutationFailures(t *testing.T) {
 		t.Fatalf("expected wrapped mutation failure, got %v", err)
 	}
 }
+
+// BenchmarkPermissionGrantMutation measures repository command preparation.
+func BenchmarkPermissionGrantMutation(b *testing.B) {
+	repository := New(&fakeExecutor{})
+	ctx := context.Background()
+	b.ReportAllocs()
+	for b.Loop() {
+		if err := repository.UpsertGroupNode(ctx, 2, "catalog.admin.manage", true); err != nil {
+			b.Fatalf("upsert group node: %v", err)
+		}
+	}
+}

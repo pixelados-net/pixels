@@ -34,10 +34,15 @@ var EntryDefinition = codec.Definition{
 
 // Encode creates a USER_PERKS packet.
 func Encode(entries []Entry) (codec.Packet, error) {
-	payload := make([]byte, 0, 4+(len(entries)*12))
+	size := 4
+	for _, entry := range entries {
+		size += 5 + len(entry.Code) + len(entry.Error)
+	}
+	payload := make([]byte, 0, size)
 	payload = binary.BigEndian.AppendUint32(payload, uint32(len(entries)))
 	for _, entry := range entries {
-		encoded, err := codec.AppendPayload(nil, EntryDefinition,
+		var err error
+		payload, err = codec.AppendPayload(payload, EntryDefinition,
 			codec.String(entry.Code),
 			codec.String(entry.Error),
 			codec.Bool(entry.Allowed),
@@ -45,7 +50,6 @@ func Encode(entries []Entry) (codec.Packet, error) {
 		if err != nil {
 			return codec.Packet{}, err
 		}
-		payload = append(payload, encoded...)
 	}
 
 	return codec.Packet{Header: Header, Payload: payload}, nil

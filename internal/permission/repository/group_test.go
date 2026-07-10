@@ -65,3 +65,15 @@ func TestGroupPersistenceWrapsFailures(t *testing.T) {
 		t.Fatalf("expected wrapped query failure, got %v", err)
 	}
 }
+
+// BenchmarkScanPermissionGroup measures durable group row projection.
+func BenchmarkScanPermissionGroup(b *testing.B) {
+	row := fakeRow{values: groupValues()}
+	b.ReportAllocs()
+	for b.Loop() {
+		group, err := scanGroup(row)
+		if err != nil || group.ID != 2 {
+			b.Fatalf("unexpected group=%#v err=%v", group, err)
+		}
+	}
+}

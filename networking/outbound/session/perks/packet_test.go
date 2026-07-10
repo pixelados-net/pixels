@@ -27,3 +27,15 @@ func TestEncodeWritesPerkCollection(t *testing.T) {
 		t.Fatalf("unexpected perk values %#v", values)
 	}
 }
+
+// BenchmarkEncode measures USER_PERKS packet encoding.
+func BenchmarkEncode(b *testing.B) {
+	entries := []Entry{{Code: "CAMERA", Allowed: true}, {Code: "HEIGHTMAP_EDITOR_BETA", Allowed: true}, {Code: "USE_GUIDE_TOOL"}}
+	b.ReportAllocs()
+	for b.Loop() {
+		packet, err := Encode(entries)
+		if err != nil || packet.Header != Header {
+			b.Fatalf("unexpected packet=%#v err=%v", packet, err)
+		}
+	}
+}

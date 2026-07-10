@@ -162,12 +162,12 @@ func TestServiceRejectsInvalidInputs(t *testing.T) {
 }
 
 // newTestService creates a currency service test subject.
-func newTestService(t *testing.T, store *fakeStore) *Service {
+func newTestService(t testing.TB, store *fakeStore) *Service {
 	return newTestServiceWithPublisher(t, store, nil)
 }
 
 // newTestServiceWithPublisher creates a currency service with event publishing.
-func newTestServiceWithPublisher(t *testing.T, store *fakeStore, publisher bus.Publisher) *Service {
+func newTestServiceWithPublisher(t testing.TB, store *fakeStore, publisher bus.Publisher) *Service {
 	t.Helper()
 	catalog, err := currency.NewCatalog([]currencymodel.Definition{
 		{Type: -1, Key: "credits"}, {Type: 0, Key: "duckets"}, {Type: 5, Key: "diamonds"},

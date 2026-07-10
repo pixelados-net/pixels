@@ -167,6 +167,9 @@ minimum manual checks expected when touching it.
 - Test after changes:
   - `go test ./internal/permission/... ./pkg/http/permission/...`
   - `go test ./networking/outbound/session/permissions ./networking/outbound/session/perks`
+  - `go test ./internal/permission/... -run '^$' -bench . -benchmem`
+  - Keep warmed local cache hits and normal permission resolution at zero
+    allocations; explain and benchmark any regression before merging it.
   - Open `/docs` and verify the `Admin Permissions` route group.
   - Assign and revoke a group/direct node while a player is online and verify
     `USER_PERMISSIONS` and `USER_PERKS` are projected immediately.

@@ -34,6 +34,82 @@ func TestServiceInspectionReadsGroupsAndAffectedPlayers(t *testing.T) {
 	}
 }
 
+// BenchmarkHasPermissionDirect measures a warmed direct override lookup.
+func BenchmarkHasPermissionDirect(b *testing.B) {
+	service := newTestService(storeWithDirect(true), nil)
+	benchmarkPermission(b, service, testAction, true)
+}
+
+// BenchmarkHasPermissionInherited measures a warmed three-level group lookup.
+func BenchmarkHasPermissionInherited(b *testing.B) {
+	service := newTestService(storeWithDeepInheritance(), nil)
+	benchmarkPermission(b, service, testAction, true)
+}
+
+// BenchmarkHasPermissionNoMatch measures a warmed default-deny lookup.
+func BenchmarkHasPermissionNoMatch(b *testing.B) {
+	service := newTestService(storeWithNoMatch(), nil)
+	benchmarkPermission(b, service, testAction, false)
+}
+
+// BenchmarkHasPermissionLongInheritance measures the guarded deep-tree fallback.
+func BenchmarkHasPermissionLongInheritance(b *testing.B) {
+	service := newTestService(storeWithLongInheritance(20, false), nil)
+	benchmarkPermission(b, service, testAction, true)
+}
+
+// BenchmarkHasPermissionParallel measures concurrent warmed resolution.
+func BenchmarkHasPermissionParallel(b *testing.B) {
+	service := newTestService(storeWithDeepInheritance(), nil)
+	if _, err := service.HasPermission(context.Background(), 7, testAction); err != nil {
+		b.Fatalf("warm permission cache: %v", err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(parallel *testing.PB) {
+		for parallel.Next() {
+			allowed, err := service.HasPermission(context.Background(), 7, testAction)
+			if err != nil || !allowed {
+				b.Fatalf("unexpected allowed=%v err=%v", allowed, err)
+			}
+		}
+	})
+}
+
+// BenchmarkEffectiveNodes measures the administration permission projection.
+func BenchmarkEffectiveNodes(b *testing.B) {
+	service := newTestService(storeWithDeepInheritance(), nil)
+	ctx := context.Background()
+	if _, err := service.EffectiveNodes(ctx, 7); err != nil {
+		b.Fatalf("warm permission cache: %v", err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		nodes, err := service.EffectiveNodes(ctx, 7)
+		if err != nil || len(nodes) == 0 {
+			b.Fatalf("unexpected nodes=%#v err=%v", nodes, err)
+		}
+	}
+}
+
+// benchmarkPermission measures one warmed permission resolution shape.
+func benchmarkPermission(b *testing.B, service *Service, node permission.Node, expected bool) {
+	b.Helper()
+	ctx := context.Background()
+	if _, err := service.HasPermission(ctx, 7, node); err != nil {
+		b.Fatalf("warm permission cache: %v", err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		allowed, err := service.HasPermission(ctx, 7, node)
+		if err != nil || allowed != expected {
+			b.Fatalf("unexpected allowed=%v err=%v", allowed, err)
+		}
+	}
+}
+
 // storeWithDirect creates a direct override fixture.
 func storeWithDirect(allowed bool) *fakeStore {
 	store := storeWithDeepInheritance()

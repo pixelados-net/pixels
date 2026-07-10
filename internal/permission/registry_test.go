@@ -49,3 +49,14 @@ func TestRegisterNodeRejectsInvalidSyntax(t *testing.T) {
 		t.Fatal("expected invalid registration panic")
 	}
 }
+
+// BenchmarkRegisteredNodeLookup measures registry read cost.
+func BenchmarkRegisteredNodeLookup(b *testing.B) {
+	node := RegisterNode("benchmark.registry.lookup", "")
+	b.ReportAllocs()
+	for b.Loop() {
+		if !Registered(node) {
+			b.Fatal("expected registered node")
+		}
+	}
+}

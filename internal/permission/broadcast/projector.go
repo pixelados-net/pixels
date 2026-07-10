@@ -22,11 +22,21 @@ const (
 type Projector struct {
 	// permissions resolves player permission state.
 	permissions permissionservice.Manager
+	// clientPerks stores immutable client perk node groups.
+	clientPerks []perkRegistration
 }
 
 // NewProjector creates a permission protocol projector.
 func NewProjector(permissions permissionservice.Manager) *Projector {
-	return &Projector{permissions: permissions}
+	return &Projector{permissions: permissions, clientPerks: registeredPerks()}
+}
+
+// perkRegistration groups nodes that unlock the same client perk.
+type perkRegistration struct {
+	// code identifies the Nitro perk.
+	code string
+	// nodes stores permission nodes mapped to the perk.
+	nodes []permission.Node
 }
 
 // Packets builds one player's permission protocol state.
@@ -63,26 +73,41 @@ func (projector *Projector) Packets(ctx context.Context, playerID int64) ([]code
 
 // perks resolves every registered client perk into one allowance.
 func (projector *Projector) perks(ctx context.Context, playerID int64) ([]outperks.Entry, error) {
-	allowances := make(map[string]bool)
+	entries := make([]outperks.Entry, len(projector.clientPerks))
+	for index, perk := range projector.clientPerks {
+		allowed := false
+		for _, node := range perk.nodes {
+			current, err := projector.permissions.HasPermission(ctx, playerID, node)
+			if err != nil {
+				return nil, err
+			}
+			allowed = allowed || current
+		}
+		entries[index] = outperks.Entry{Code: perk.code, Allowed: allowed}
+	}
+
+	return entries, nil
+}
+
+// registeredPerks snapshots registered client perk mappings in stable order.
+func registeredPerks() []perkRegistration {
+	indices := make(map[string]int)
+	perks := make([]perkRegistration, 0)
 	for _, registration := range permission.RegisteredNodes() {
 		if registration.PerkName == "" {
 			continue
 		}
-		allowed, err := projector.permissions.HasPermission(ctx, playerID, registration.Node)
-		if err != nil {
-			return nil, err
+		index, found := indices[registration.PerkName]
+		if !found {
+			index = len(perks)
+			indices[registration.PerkName] = index
+			perks = append(perks, perkRegistration{code: registration.PerkName})
 		}
-		allowances[registration.PerkName] = allowances[registration.PerkName] || allowed
+		perks[index].nodes = append(perks[index].nodes, registration.Node)
 	}
-	codes := make([]string, 0, len(allowances))
-	for code := range allowances {
-		codes = append(codes, code)
-	}
-	sort.Strings(codes)
-	entries := make([]outperks.Entry, 0, len(codes))
-	for _, code := range codes {
-		entries = append(entries, outperks.Entry{Code: code, Allowed: allowances[code]})
-	}
+	sort.Slice(perks, func(left int, right int) bool {
+		return perks[left].code < perks[right].code
+	})
 
-	return entries, nil
+	return perks
 }

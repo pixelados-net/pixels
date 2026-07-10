@@ -48,3 +48,26 @@ func TestNodeMatchingAndSpecificity(t *testing.T) {
 		}
 	}
 }
+
+// BenchmarkNodeValidation measures concrete node syntax validation.
+func BenchmarkNodeValidation(b *testing.B) {
+	node := Node("room.moderation.any.kick")
+	b.ReportAllocs()
+	for b.Loop() {
+		if !node.Valid() {
+			b.Fatal("expected valid node")
+		}
+	}
+}
+
+// BenchmarkNodeSpecificity measures wildcard matching and specificity.
+func BenchmarkNodeSpecificity(b *testing.B) {
+	grant := Node("room.moderation.*")
+	query := Node("room.moderation.any.kick")
+	b.ReportAllocs()
+	for b.Loop() {
+		if grant.Specificity(query) != 2 {
+			b.Fatal("unexpected specificity")
+		}
+	}
+}

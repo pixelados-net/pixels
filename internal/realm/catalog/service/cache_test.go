@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"testing"
 
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
@@ -49,6 +51,24 @@ func BenchmarkCachePageItems(b *testing.B) {
 	for b.Loop() {
 		if len(cache.pageItems(1)) != 100 {
 			b.Fatal("unexpected cached item count")
+		}
+	}
+}
+
+// BenchmarkCatalogPagePermission measures one cached page policy check.
+func BenchmarkCatalogPagePermission(b *testing.B) {
+	node := permission.Node("catalog.benchmark.access")
+	cache := newCache()
+	cache.replace([]catalogmodel.Page{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}},
+		Name: "staff", Visible: true, Enabled: true, RequiredNode: &node}}, nil, nil)
+	service := &Service{cache: cache, permissions: fixedChecker(true)}
+	ctx := context.Background()
+	b.ReportAllocs()
+	for b.Loop() {
+		page, found := cache.page(1)
+		allowed, err := service.pageAccessible(ctx, page, 7, false)
+		if err != nil || !found || !allowed {
+			b.Fatalf("unexpected allowed=%v found=%v err=%v", allowed, found, err)
 		}
 	}
 }

@@ -75,6 +75,19 @@ func TestHasPermissionValidatesInput(t *testing.T) {
 	}
 }
 
+// TestHasPermissionResolvesLongInheritance verifies fallback cycle tracking.
+func TestHasPermissionResolvesLongInheritance(t *testing.T) {
+	service := newTestService(storeWithLongInheritance(20, false), nil)
+	allowed, err := service.HasPermission(context.Background(), 7, testAction)
+	if err != nil || !allowed {
+		t.Fatalf("expected long inheritance allow=%v err=%v", allowed, err)
+	}
+	service = newTestService(storeWithLongInheritance(20, true), nil)
+	if _, err := service.HasPermission(context.Background(), 7, testAction); err != ErrInheritanceCycle {
+		t.Fatalf("expected long inheritance cycle, got %v", err)
+	}
+}
+
 // fakeStore stores permission service fixtures.
 type fakeStore struct {
 	// groups stores groups by id.
@@ -91,6 +104,30 @@ type fakeStore struct {
 func newFakeStore() *fakeStore {
 	return &fakeStore{groups: make(map[int64]permissionmodel.Group), memberships: make(map[int64][]int64),
 		groupNodes: make(map[int64][]permissionmodel.Grant), playerNodes: make(map[int64][]permissionmodel.Grant)}
+}
+
+// storeWithLongInheritance creates a configurable deep inheritance fixture.
+func storeWithLongInheritance(count int64, cycle bool) *fakeStore {
+	store := newFakeStore()
+	for groupID := int64(1); groupID <= count; groupID++ {
+		var parentID *int64
+		if groupID > 1 {
+			parent := groupID - 1
+			parentID = &parent
+		}
+		store.groups[groupID] = groupForTest(groupID, "deep", int32(groupID), parentID)
+	}
+	if cycle {
+		parent := count
+		group := store.groups[1]
+		group.ParentGroupID = &parent
+		store.groups[1] = group
+	} else {
+		store.groupNodes[1] = []permissionmodel.Grant{{Node: testAction, Allowed: true}}
+	}
+	store.memberships[7] = []int64{count}
+
+	return store
 }
 
 // ListGroups lists fixture groups.

@@ -69,3 +69,19 @@ func TestInfiniteBalancePropagatesPermissionFailures(t *testing.T) {
 		t.Fatalf("expected permission failure, got %v", err)
 	}
 }
+
+// BenchmarkInfiniteBalanceDeduction measures permission-aware free purchases.
+func BenchmarkInfiniteBalanceDeduction(b *testing.B) {
+	store := &fakeStore{balances: []currencymodel.Balance{{PlayerID: 7, CurrencyType: -1, Amount: 25}}}
+	service := newTestService(b, store)
+	service.permissions = &fakeChecker{allowed: true}
+	params := GrantParams{PlayerID: 7, CurrencyType: -1, Amount: -5, ActorKind: ActorPlayer}
+	ctx := context.Background()
+	b.ReportAllocs()
+	for b.Loop() {
+		amount, err := service.Grant(ctx, params)
+		if err != nil || amount != 25 {
+			b.Fatalf("unexpected amount=%d err=%v", amount, err)
+		}
+	}
+}

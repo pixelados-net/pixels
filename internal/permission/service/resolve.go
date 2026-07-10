@@ -50,7 +50,7 @@ func (service *Service) resolve(ctx context.Context, playerID int64, node permis
 		return decision{}, err
 	}
 	for _, group := range groups {
-		resolved, resolveErr := service.resolveGroup(ctx, group, node, make(map[int64]struct{}), 0)
+		resolved, resolveErr := service.resolveGroup(ctx, group, node)
 		if resolveErr != nil {
 			return decision{}, resolveErr
 		}
@@ -64,34 +64,48 @@ func (service *Service) resolve(ctx context.Context, playerID int64, node permis
 }
 
 // resolveGroup resolves grants inside one group inheritance chain.
-func (service *Service) resolveGroup(ctx context.Context, group permissionmodel.Group, node permission.Node, visited map[int64]struct{}, depth int) (decision, error) {
-	if _, found := visited[group.ID]; found {
-		return decision{}, ErrInheritanceCycle
-	}
-	visited[group.ID] = struct{}{}
+func (service *Service) resolveGroup(ctx context.Context, group permissionmodel.Group, node permission.Node) (decision, error) {
+	var visited [16]int64
+	var overflow map[int64]struct{}
+	best := decision{specificity: -1}
+	for depth := 0; ; depth++ {
+		if depth < len(visited) {
+			for index := 0; index < depth; index++ {
+				if visited[index] == group.ID {
+					return decision{}, ErrInheritanceCycle
+				}
+			}
+			visited[depth] = group.ID
+		} else {
+			if overflow == nil {
+				overflow = make(map[int64]struct{}, len(visited)+1)
+				for _, groupID := range visited {
+					overflow[groupID] = struct{}{}
+				}
+			}
+			if _, found := overflow[group.ID]; found {
+				return decision{}, ErrInheritanceCycle
+			}
+			overflow[group.ID] = struct{}{}
+		}
 
-	grants, err := service.groupNodes(ctx, group.ID)
-	if err != nil {
-		return decision{}, err
+		grants, err := service.groupNodes(ctx, group.ID)
+		if err != nil {
+			return decision{}, err
+		}
+		best = preferable(best, bestGrant(grants, node, depth, group.Name))
+		if group.ParentGroupID == nil {
+			return best, nil
+		}
+		parent, found, err := service.group(ctx, *group.ParentGroupID)
+		if err != nil {
+			return decision{}, err
+		}
+		if !found {
+			return decision{}, ErrGroupNotFound
+		}
+		group = parent
 	}
-	best := bestGrant(grants, node, depth, group.Name)
-	if group.ParentGroupID == nil {
-		return best, nil
-	}
-
-	parent, found, err := service.group(ctx, *group.ParentGroupID)
-	if err != nil {
-		return decision{}, err
-	}
-	if !found {
-		return decision{}, ErrGroupNotFound
-	}
-	parentDecision, err := service.resolveGroup(ctx, parent, node, visited, depth+1)
-	if err != nil {
-		return decision{}, err
-	}
-
-	return preferable(best, parentDecision), nil
 }
 
 // bestGrant selects the most specific matching grant, preferring deny on ties.
@@ -145,17 +159,20 @@ func (service *Service) playerNodes(ctx context.Context, playerID int64) ([]perm
 
 // playerGroups loads cached player memberships in stable priority order.
 func (service *Service) playerGroups(ctx context.Context, playerID int64) ([]permissionmodel.Group, error) {
-	groups, err := service.cache.PlayerGroups(ctx, playerID, func(ctx context.Context) ([]permissionmodel.Group, error) {
-		return service.store.ListGroupsByPlayer(ctx, playerID)
-	})
-	sort.SliceStable(groups, func(left int, right int) bool {
-		if groups[left].Weight == groups[right].Weight {
-			return groups[left].ID < groups[right].ID
+	return service.cache.PlayerGroups(ctx, playerID, func(ctx context.Context) ([]permissionmodel.Group, error) {
+		groups, err := service.store.ListGroupsByPlayer(ctx, playerID)
+		if err != nil {
+			return nil, err
 		}
-		return groups[left].Weight > groups[right].Weight
-	})
+		sort.SliceStable(groups, func(left int, right int) bool {
+			if groups[left].Weight == groups[right].Weight {
+				return groups[left].ID < groups[right].ID
+			}
+			return groups[left].Weight > groups[right].Weight
+		})
 
-	return groups, err
+		return groups, nil
+	})
 }
 
 // group loads one cached permission group.
