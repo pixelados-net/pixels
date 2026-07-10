@@ -33,6 +33,12 @@ type Granter interface {
 	Grant(ctx context.Context, params GrantParams) ([]furnituremodel.Item, error)
 }
 
+// DefinitionGranter reads definitions and creates furniture inventory instances.
+type DefinitionGranter interface {
+	DefinitionFinder
+	Granter
+}
+
 // Manager reads and mutates furniture persistence state.
 type Manager interface {
 	DefinitionFinder
@@ -53,3 +59,6 @@ var managerAssertion Manager = (*Service)(nil)
 
 // granterAssertion verifies Service implements Granter.
 var granterAssertion Granter = (*Service)(nil)
+
+// definitionGranterAssertion verifies Service implements DefinitionGranter.
+var definitionGranterAssertion DefinitionGranter = (*Service)(nil)

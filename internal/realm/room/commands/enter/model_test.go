@@ -44,6 +44,17 @@ func TestSendModelSendsEntryTileBeforeScaledHeightmap(t *testing.T) {
 	}
 }
 
+// TestSendGeometryOmitsModelName verifies model requests cannot retrigger Nitro's request loop.
+func TestSendGeometryOmitsModelName(t *testing.T) {
+	connection, sent := sessionConnectionForTest(t)
+	if err := SendGeometry(context.Background(), connection, layoutForTest()); err != nil {
+		t.Fatalf("send geometry: %v", err)
+	}
+	if len(*sent) != 2 || (*sent)[0].Header != outentrytile.Header || (*sent)[1].Header != outmodel.Header {
+		t.Fatalf("expected entry tile and heightmap only, got %#v", *sent)
+	}
+}
+
 // TestSendModelReturnsTransportError verifies model packet send failures.
 func TestSendModelReturnsTransportError(t *testing.T) {
 	connection, sendErr := failingModelConnectionForTest(t)

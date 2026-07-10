@@ -118,5 +118,8 @@ func (handler Handler) publish(ctx context.Context, name bus.Name, payload any) 
 
 // roomSnapshot maps persistent rooms to runtime snapshots.
 func roomSnapshot(room roommodel.Room) roomlive.Snapshot {
-	return roomlive.Snapshot{ID: room.ID, CategoryID: room.CategoryID, MaxUsers: room.MaxUsers}
+	return roomlive.Snapshot{
+		ID: room.ID, OwnerPlayerID: room.OwnerPlayerID,
+		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers,
+	}
 }

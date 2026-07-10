@@ -106,6 +106,21 @@ func TestPlayerNavigatorLifecycle(t *testing.T) {
 	}
 }
 
+// TestPlayerCatalogLifecycle verifies lazy catalog viewer composition.
+func TestPlayerCatalogLifecycle(t *testing.T) {
+	player := mustPlayer(t, 1, "catalog-user")
+	viewer := player.OpenCatalog()
+	viewer.SetPage(3)
+	current, found := player.Catalog()
+	if !found || current != viewer {
+		t.Fatal("expected composed catalog viewer")
+	}
+	closed, found := player.CloseCatalog()
+	if !found || closed != viewer {
+		t.Fatal("expected catalog viewer removal")
+	}
+}
+
 // TestPlayerInventoryLifecycle verifies embedded inventory holder behavior.
 func TestPlayerInventoryLifecycle(t *testing.T) {
 	player := mustPlayer(t, 10, "ian")

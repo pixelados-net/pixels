@@ -98,6 +98,9 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if !found {
 		return nil
 	}
+	if !active.CanManageFurniture(player.ID()) {
+		return handler.handleSoftError(ctx, envelope.Command, roomlive.ErrNoFurnitureRights)
+	}
 
 	item, found, err := handler.Furniture.FindItemByID(ctx, envelope.Command.ItemID)
 	if err != nil {

@@ -16,6 +16,9 @@ type Reader interface {
 	// Page returns one visible page and its enabled offers.
 	Page(ctx context.Context, pageID int64, rank int32, hasClub bool) (catalogmodel.Page, []catalogmodel.Item, error)
 
+	// Definition returns cached furniture metadata for one catalog offer.
+	Definition(ctx context.Context, definitionID int64) (furnituremodel.Definition, bool, error)
+
 	// SanitizeList returns definitions without an enabled active offer.
 	SanitizeList(ctx context.Context) ([]furnituremodel.Definition, error)
 }

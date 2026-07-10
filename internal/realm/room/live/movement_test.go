@@ -198,8 +198,11 @@ func TestRoomTickCancelsPathWhenFixturesChangeMidWalk(t *testing.T) {
 	}
 
 	movements := room.Tick()
-	if len(movements) != 0 {
-		t.Fatalf("expected canceled movement, got %#v", movements)
+	if len(movements) != 1 || movements[0].Moved || !movements[0].Settled || movements[0].Unit.Moving {
+		t.Fatalf("expected neutral stop movement, got %#v", movements)
+	}
+	if hasStatus(movements[0].Unit.Statuses, worldunit.StatusMove) {
+		t.Fatalf("expected move status cleared, got %#v", movements[0].Unit.Statuses)
 	}
 
 	units := room.Units()

@@ -7,6 +7,7 @@
 
     <include file="development/0001_default_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0002_default_furniture_items.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0003_interaction_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_furniture_items.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

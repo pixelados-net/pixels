@@ -241,9 +241,16 @@ minimum manual checks expected when touching it.
 - Provides room layouts, categories, tags, persistent room metadata, runtime room
   registry, occupancy events, entry commands, model/heightmap packets, and tag
   packets.
+- Initial room entry sends the model name once; subsequent room-model requests
+  send only door and heightmap geometry so Nitro cannot enter a request loop.
+- Path cancellation caused by furniture or fixture changes must broadcast a
+  neutral final unit status without `mv`; silent cancellation leaves clients
+  animating movement indefinitely.
 - Test after changes:
   - `go test ./internal/realm/room/...`
   - Click a room from navigator, enter it, and verify empty room model renders.
+  - Enter the same room repeatedly and verify packet `2300` does not loop.
+  - Change furniture during a walk and verify the unit stops on its current tile.
   - Fill a runtime room to capacity and verify `room.entry_error`.
   - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
 
@@ -259,6 +266,46 @@ minimum manual checks expected when touching it.
   - `POST /api/admin/rooms/:id/close` closes active runtime rooms.
   - `POST /api/admin/rooms/:id/forward` sends `room.forward` to active occupants.
   - `GET /api/admin/navigator/categories` and `/api/admin/navigator/lifted`.
+
+### FEATURE: Catalog Realm
+
+- Owns `internal/realm/catalog`, catalog packets under `networking`, and
+  `pkg/http/catalog/routes`.
+- Provides cached page trees, furniture offer projection, credits/points and
+  numbered LTD purchases, embedded player catalog viewers, and command-driven
+  packet handlers.
+- Successful furniture purchases send Nitro's unseen-item marker before the
+  purchase confirmation and then invalidate the inventory list.
+- Provides protected catalog page/offer CRUD, cache publication, sanitize-list,
+  OpenAPI documentation, localized Nitro external texts, and development seed
+  data.
+- Test after changes:
+  - `go test ./internal/realm/catalog/... ./networking/... ./pkg/http/catalog/...`
+  - Open Nitro catalog and verify the base and interaction seed pages.
+  - Buy a regular offer and verify wallet deduction, the inventory novelty
+    count, and immediate inventory refresh.
+  - Buy the LTD sofa and verify remaining stock and sold-out behavior.
+  - Call `/api/admin/catalog/refresh` and verify connected clients re-fetch.
+
+### FEATURE: Furniture Inventory Synchronization
+
+- Owns furniture inventory packets under `networking/outbound/inventory` and
+  inventory projections under `internal/realm/furniture/commands/inventory`.
+- Encodes floor and wall furniture, including wallpaper, floor paint, and
+  landscape inventory categories.
+- Purchases and pickups mark returned items unseen and send an inventory
+  refresh; room pickup broadcasts remain limited to current room occupants.
+- Active room furniture management is owner-only through
+  `room.CanManageFurniture`; place, move, and pickup commands must check it
+  before persistence or world mutation. Extend that capability when room rights
+  are introduced instead of adding handler-local permission policies.
+- Test after changes:
+  - `go test ./networking/outbound/inventory/... ./internal/realm/furniture/...`
+  - Buy an item and verify Nitro shows the inventory novelty count.
+  - Pick up a placed item with inventory open and verify it appears without a
+    client reload.
+  - Enter another player's room and verify place, move, and pickup return a
+    localized no-rights bubble without changing inventory or room state.
 
 ## SDK Rules
 

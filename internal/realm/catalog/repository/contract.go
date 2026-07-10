@@ -58,6 +58,9 @@ type LimitedWriter interface {
 	// CreateLimitedUnits creates numbered units for an LTD offer.
 	CreateLimitedUnits(ctx context.Context, catalogItemID int64, quantity int32) error
 
+	// SyncLimitedUnits reconciles unsold numbered units with an LTD stack size.
+	SyncLimitedUnits(ctx context.Context, catalogItemID int64, quantity int32) error
+
 	// ReserveLimitedUnit atomically reserves the lowest available LTD number.
 	ReserveLimitedUnit(ctx context.Context, catalogItemID int64, playerID int64) (int32, bool, error)
 

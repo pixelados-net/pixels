@@ -9,13 +9,14 @@ import (
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
+	catalogroutes "github.com/niflaot/pixels/pkg/http/catalog/routes"
 	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	"go.uber.org/zap"
 )
 
 // New creates the Fiber application.
-func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies) *fiber.App {
+func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Service, websocket *ws.Adapter, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler:          errorHandler,
@@ -29,7 +30,7 @@ func New(log *zap.Logger, config config.AppConfig, info build.Info, sso *sso.Ser
 
 	registerPublic(app, config, info, websocket, currencyAdmin.Currencies, currencyAdmin.Translations)
 	app.Use(auth(config.App.AccessKey))
-	registerPrivate(app, sso, rooms, runtime, navigator, currencyAdmin)
+	registerPrivate(app, sso, rooms, runtime, navigator, currencyAdmin, catalogAdmin)
 
 	return app
 }

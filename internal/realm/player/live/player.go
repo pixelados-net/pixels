@@ -3,6 +3,7 @@ package live
 import (
 	"sync"
 
+	catalogviewer "github.com/niflaot/pixels/internal/realm/catalog/viewer/live"
 	inventoryviewer "github.com/niflaot/pixels/internal/realm/furniture/viewer/live"
 	currencyholder "github.com/niflaot/pixels/internal/realm/inventory/currency/holder"
 	navviewer "github.com/niflaot/pixels/internal/realm/navigator/viewer/live"
@@ -21,6 +22,9 @@ type Player struct {
 
 	// navigator stores navigator UI state when opened.
 	navigator *navviewer.Viewer
+
+	// catalog stores catalog UI state when opened.
+	catalog *catalogviewer.Viewer
 
 	// inventory stores furniture inventory viewer state when opened.
 	inventory *inventoryviewer.Holder

@@ -22,7 +22,7 @@ type Service struct {
 	currencies currencyservice.Granter
 
 	// furniture grants purchased inventory instances.
-	furniture furnitureservice.Granter
+	furniture furnitureservice.DefinitionGranter
 
 	// cache stores one immutable catalog generation.
 	cache *catalogCache
@@ -35,7 +35,7 @@ type Service struct {
 }
 
 // New creates a catalog service.
-func New(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.Granter, events bus.Publisher, log *zap.Logger) *Service {
+func New(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, events bus.Publisher, log *zap.Logger) *Service {
 	if log == nil {
 		log = zap.NewNop()
 	}
@@ -53,10 +53,21 @@ func (service *Service) Refresh(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("refresh catalog items: %w", err)
 	}
+	definitions, err := service.furniture.ListDefinitions(ctx)
+	if err != nil {
+		return fmt.Errorf("refresh catalog furniture definitions: %w", err)
+	}
 
-	service.cache.replace(pages, items)
+	service.cache.replace(pages, items, definitions)
 
 	return nil
+}
+
+// Definition returns cached furniture metadata for one catalog offer.
+func (service *Service) Definition(_ context.Context, definitionID int64) (furnituremodel.Definition, bool, error) {
+	definition, found := service.cache.definition(definitionID)
+
+	return definition, found, nil
 }
 
 // Pages returns pages visible to one player capability set.

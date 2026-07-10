@@ -17,6 +17,28 @@ type Translator interface {
 	T(Locale, Key, ...Params) string
 	// Default resolves a key for the configured default locale.
 	Default(Key, ...Params) string
+	// Entries returns one locale's resolved translation entries.
+	Entries(Locale) map[Key]string
+}
+
+// Entries returns one locale's resolved translation entries.
+func (catalog *Catalog) Entries(locale Locale) map[Key]string {
+	if catalog == nil {
+		return map[Key]string{}
+	}
+	if locale == "" {
+		locale = catalog.defaultLocale
+	}
+	values := catalog.entries[locale]
+	if values == nil {
+		values = catalog.entries[catalog.fallbackLocale]
+	}
+	entries := make(map[Key]string, len(values))
+	for key, value := range values {
+		entries[key] = value
+	}
+
+	return entries
 }
 
 // Catalog stores immutable translation entries.

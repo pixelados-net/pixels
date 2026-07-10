@@ -13,6 +13,7 @@ import (
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
+	catalogroutes "github.com/niflaot/pixels/pkg/http/catalog/routes"
 	"github.com/niflaot/pixels/pkg/http/clientconfig"
 	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
 	notificationroutes "github.com/niflaot/pixels/pkg/http/notification/routes"
@@ -34,12 +35,13 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies) {
+func registerPrivate(app *fiber.App, sso *sso.Service, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies) {
 	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
 	wsroutes.Register(app, currencyAdmin.Connections)
 	roomroutes.Register(app, rooms, runtime, currencyAdmin.Connections, navigator)
 	notificationroutes.Register(app, currencyAdmin.Players, currencyAdmin.Connections, currencyAdmin.Translations)
 	currencyroutes.Register(app, currencyAdmin)
+	catalogroutes.Register(app, catalogAdmin)
 	app.Use(notFoundHandler)
 }
 

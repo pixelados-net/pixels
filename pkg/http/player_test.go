@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 
+	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
@@ -13,6 +14,7 @@ import (
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	catalogroutes "github.com/niflaot/pixels/pkg/http/catalog/routes"
 	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"go.uber.org/zap"
@@ -24,6 +26,17 @@ func testCurrencyDependencies(registry *netconn.Registry, log *zap.Logger) curre
 		Finder: testFinder{}, Players: testPlayers(), Connections: registry,
 		Currencies: testCurrencies(), Translations: testTranslations(), Log: log,
 	}
+}
+
+// testCatalogDependencies composes HTTP catalog route test dependencies.
+func testCatalogDependencies(registry *netconn.Registry, log *zap.Logger) catalogroutes.Dependencies {
+	return catalogroutes.Dependencies{Catalog: testCatalogAdmin{}, Connections: registry, Log: log}
+}
+
+// testCatalogAdmin supplies unused catalog administration behavior.
+type testCatalogAdmin struct {
+	// Manager supplies catalog methods outside existing HTTP route tests.
+	catalogadmin.Manager
 }
 
 // testCurrencies returns public client currency definitions.

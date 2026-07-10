@@ -50,5 +50,5 @@ func testAppWithLogger(t *testing.T, environment string, log *zap.Logger) *fiber
 	config := testConfig(environment)
 	adapter := ws.New(ws.Config{}, config.App, registry, connection.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil), zap.NewNop(), config.Logger)
 
-	return New(log, config, testInfo(), service, adapter, testRooms(), testRoomRuntime(), testNavigator(), testCurrencyDependencies(registry, log))
+	return New(log, config, testInfo(), service, adapter, testRooms(), testRoomRuntime(), testNavigator(), testCurrencyDependencies(registry, log), testCatalogDependencies(registry, log))
 }

@@ -21,12 +21,13 @@ import (
 func TestRoomSnapshotMapsRuntimeFields(t *testing.T) {
 	categoryID := int64(3)
 	snapshot := roomSnapshot(roommodel.Room{
-		Base:       sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}},
-		CategoryID: &categoryID,
-		MaxUsers:   25,
+		Base:          sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}},
+		OwnerPlayerID: 7,
+		CategoryID:    &categoryID,
+		MaxUsers:      25,
 	})
 
-	if snapshot.ID != 9 || snapshot.CategoryID == nil || *snapshot.CategoryID != 3 || snapshot.MaxUsers != 25 {
+	if snapshot.ID != 9 || snapshot.OwnerPlayerID != 7 || snapshot.CategoryID == nil || *snapshot.CategoryID != 3 || snapshot.MaxUsers != 25 {
 		t.Fatalf("unexpected snapshot %#v", snapshot)
 	}
 }

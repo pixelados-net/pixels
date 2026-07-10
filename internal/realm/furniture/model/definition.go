@@ -13,6 +13,9 @@ type Kind string
 const (
 	// KindFloor marks a floor-placed furniture definition.
 	KindFloor Kind = "floor"
+
+	// KindWall marks a wall-placed furniture definition.
+	KindWall Kind = "wall"
 )
 
 // Definition contains durable furniture definition metadata.

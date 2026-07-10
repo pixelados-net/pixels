@@ -138,6 +138,25 @@ type fakeFurniture struct {
 
 	// err stores an optional grant failure.
 	err error
+
+	// definitions stores furniture metadata fixtures.
+	definitions []furnituremodel.Definition
+}
+
+// FindDefinitionByID finds one furniture metadata fixture.
+func (furniture *fakeFurniture) FindDefinitionByID(_ context.Context, id int64) (furnituremodel.Definition, bool, error) {
+	for _, definition := range furniture.definitions {
+		if definition.ID == id {
+			return definition, true, nil
+		}
+	}
+
+	return furnituremodel.Definition{}, false, nil
+}
+
+// ListDefinitions lists furniture metadata fixtures.
+func (furniture *fakeFurniture) ListDefinitions(context.Context) ([]furnituremodel.Definition, error) {
+	return append([]furnituremodel.Definition{}, furniture.definitions...), nil
 }
 
 // Grant creates fake inventory items.
@@ -179,7 +198,9 @@ func newServiceFixture(t *testing.T, item model.Item) serviceFixture {
 	t.Helper()
 	store := &fakeStore{pages: []model.Page{pageForTest()}, items: []model.Item{item}, available: true}
 	currency := &fakeCurrency{balance: 100}
-	furniture := &fakeFurniture{}
+	furniture := &fakeFurniture{definitions: []furnituremodel.Definition{{
+		Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: item.DefinitionID}}, SpriteID: 1, Name: item.Name,
+	}}}
 	service := New(store, currency, furniture, nil, zap.NewNop())
 	if err := service.Refresh(context.Background()); err != nil {
 		t.Fatalf("refresh fixture: %v", err)

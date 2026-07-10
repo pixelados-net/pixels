@@ -35,7 +35,7 @@ func uiConfigHandler(currencies currencyservice.Reader) fiber.Handler {
 	}
 }
 
-// externalTextsHandler serves localized Nitro currency names.
+// externalTextsHandler serves localized Nitro external texts.
 func externalTextsHandler(currencies currencyservice.Reader, translations i18n.Translator) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		definitions, err := currencies.Types(ctx.Context())
@@ -43,7 +43,11 @@ func externalTextsHandler(currencies currencyservice.Reader, translations i18n.T
 			return err
 		}
 		locale := i18n.Locale(ctx.Params("locale"))
-		texts := make(ExternalTextsResponse, len(definitions))
+		entries := translations.Entries(locale)
+		texts := make(ExternalTextsResponse, len(entries)+len(definitions))
+		for key, value := range entries {
+			texts[string(key)] = value
+		}
 		for _, definition := range definitions {
 			texts["purse.seasonal.currency."+currencyTypeString(definition.Type)] = translations.T(
 				locale,

@@ -52,6 +52,19 @@ func TestHandleSendsEmptyFragmentForEmptyInventory(t *testing.T) {
 	}
 }
 
+// TestInventoryCategoryMapsRoomEffects verifies special room consumable categories.
+func TestInventoryCategoryMapsRoomEffects(t *testing.T) {
+	tests := map[string]outlist.Category{
+		"chair": outlist.CategoryDefault, "wallpaper": outlist.CategoryWallpaper,
+		"floor": outlist.CategoryFloor, "landscape": outlist.CategoryLandscape,
+	}
+	for name, expected := range tests {
+		if actual := inventoryCategory(name); actual != expected {
+			t.Fatalf("inventoryCategory(%q) = %d, want %d", name, actual, expected)
+		}
+	}
+}
+
 // TestHandleSendsMultipleFragmentsForLargeInventory verifies pagination beyond 1000 items.
 func TestHandleSendsMultipleFragmentsForLargeInventory(t *testing.T) {
 	connection, sent := connectionForTest(t)

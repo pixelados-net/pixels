@@ -88,6 +88,12 @@ func (room *Room) Tick() []Movement {
 		if roomUnit.Moving() {
 			if err := roomUnit.ValidatePath(room.world.resolver); err != nil {
 				roomUnit.ClearPath()
+				if section, sectionErr := room.world.resolver.TopSection(roomUnit.Position().Point); sectionErr == nil {
+					roomUnit.SetHeight(section.Z())
+				}
+				movements = append(movements, Movement{
+					PlayerID: playerID, Unit: unitSnapshot(playerID, roomUnit), Settled: true,
+				})
 
 				continue
 			}

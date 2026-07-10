@@ -12,6 +12,13 @@ const (
 	// createLimitedUnitsSQL creates one numbered LTD series.
 	createLimitedUnitsSQL = `insert into catalog_item_limited_units (catalog_item_id, unit_number) select $1, value from generate_series(1, $2) as value`
 
+	// syncLimitedUnitsSQL reconciles unsold LTD units while preserving completed sales.
+	syncLimitedUnitsSQL = `with removed as (
+	delete from catalog_item_limited_units where catalog_item_id=$1 and owner_player_id is null and unit_number>$2
+	)
+	insert into catalog_item_limited_units (catalog_item_id, unit_number)
+	select $1, value from generate_series(1, $2) as value on conflict (catalog_item_id, unit_number) do nothing`
+
 	// reserveLimitedUnitSQL atomically claims the lowest available LTD unit.
 	reserveLimitedUnitSQL = `update catalog_item_limited_units set owner_player_id=$2, sold_at=now()
 where id=(select id from catalog_item_limited_units where catalog_item_id=$1 and owner_player_id is null order by unit_number for update skip locked limit 1)
@@ -33,6 +40,16 @@ func (repository *Repository) CreateLimitedUnits(ctx context.Context, catalogIte
 	_, err := repository.executorFor(ctx).Exec(ctx, createLimitedUnitsSQL, catalogItemID, quantity)
 	if err != nil {
 		return fmt.Errorf("create %d limited units for catalog item %d: %w", quantity, catalogItemID, err)
+	}
+
+	return nil
+}
+
+// SyncLimitedUnits reconciles unsold numbered units with an LTD stack size.
+func (repository *Repository) SyncLimitedUnits(ctx context.Context, catalogItemID int64, quantity int32) error {
+	_, err := repository.executorFor(ctx).Exec(ctx, syncLimitedUnitsSQL, catalogItemID, quantity)
+	if err != nil {
+		return fmt.Errorf("sync %d limited units for catalog item %d: %w", quantity, catalogItemID, err)
 	}
 
 	return nil

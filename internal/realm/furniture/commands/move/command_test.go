@@ -384,7 +384,7 @@ func handlerForTest(t *testing.T) (Handler, *netconn.Registry) {
 	}
 
 	runtime := roomlive.NewRegistry(nil)
-	room, err := runtime.Activate(roomlive.Snapshot{ID: 9, MaxUsers: 10})
+	room, err := runtime.Activate(roomlive.Snapshot{ID: 9, OwnerPlayerID: 7, MaxUsers: 10})
 	if err != nil {
 		t.Fatalf("activate room: %v", err)
 	}

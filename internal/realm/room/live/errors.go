@@ -36,4 +36,7 @@ var (
 
 	// ErrCannotStack reports a footprint tile that does not accept stacking.
 	ErrCannotStack = errors.New("furniture placement cannot stack")
+
+	// ErrNoFurnitureRights reports furniture management without room rights.
+	ErrNoFurnitureRights = errors.New("player has no furniture rights in room")
 )

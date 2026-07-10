@@ -69,6 +69,8 @@ func bubbleErrorKey(err error) (string, bool) {
 		return "session.bubble.furniture.cant_stack", true
 	case errors.Is(err, furnitureservice.ErrNotItemOwner):
 		return "session.bubble.furniture.no_rights", true
+	case errors.Is(err, roomlive.ErrNoFurnitureRights):
+		return "session.bubble.furniture.no_rights", true
 	case errors.Is(err, furnitureservice.ErrItemNotInInventory):
 		return "session.bubble.furniture.item_not_in_inventory", true
 	case errors.Is(err, furnitureservice.ErrItemNotFound),

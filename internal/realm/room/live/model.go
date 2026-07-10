@@ -22,6 +22,9 @@ type Snapshot struct {
 	// ID identifies the room.
 	ID int64
 
+	// OwnerPlayerID identifies the player with furniture management rights.
+	OwnerPlayerID int64
+
 	// CategoryID optionally identifies the room category.
 	CategoryID *int64
 
@@ -168,6 +171,14 @@ func WithTickInterval(interval time.Duration) RegistryOption {
 // Valid reports whether the snapshot can back an active room.
 func (snapshot Snapshot) Valid() bool {
 	return snapshot.ID > 0 && snapshot.MaxUsers > 0
+}
+
+// CanManageFurniture reports whether a player may place, move, or pick up room furniture.
+func (room *Room) CanManageFurniture(playerID int64) bool {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	return playerID > 0 && room.snapshot.OwnerPlayerID == playerID
 }
 
 // Valid reports whether the occupant can join a room.

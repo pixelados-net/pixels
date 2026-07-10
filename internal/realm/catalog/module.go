@@ -4,6 +4,7 @@ package catalog
 import (
 	"context"
 
+	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
 	catalogrepo "github.com/niflaot/pixels/internal/realm/catalog/repository"
 	catalogservice "github.com/niflaot/pixels/internal/realm/catalog/service"
 	"github.com/niflaot/pixels/pkg/postgres"
@@ -18,13 +19,20 @@ var Module = fx.Module(
 		catalogservice.New,
 		NewManager,
 		NewReader,
+		catalogadmin.New,
+		NewAdminManager,
 	),
-	fx.Invoke(RegisterLifecycle),
+	fx.Invoke(RegisterLifecycle, RegisterConnectionHandlers),
 )
 
 // NewStore creates catalog persistence behavior.
 func NewStore(pool *postgres.Pool) catalogrepo.Store {
 	return catalogrepo.New(pool)
+}
+
+// NewAdminManager exposes catalog administration behavior.
+func NewAdminManager(service *catalogadmin.Service) catalogadmin.Manager {
+	return service
 }
 
 // NewManager exposes catalog management behavior.

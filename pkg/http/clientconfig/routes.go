@@ -1,4 +1,4 @@
-// Package clientconfig serves data-driven Nitro currency configuration.
+// Package clientconfig serves data-driven Nitro client configuration.
 package clientconfig
 
 import (

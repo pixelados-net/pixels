@@ -69,5 +69,5 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return roomservice.ErrLayoutNotAvailable
 	}
 
-	return entercommand.SendModel(ctx, envelope.Command.Handler, room, roomLayout)
+	return entercommand.SendGeometry(ctx, envelope.Command.Handler, roomLayout)
 }

@@ -13,6 +13,17 @@ func TestNewRoomRejectsInvalidSnapshot(t *testing.T) {
 	}
 }
 
+// TestCanManageFurnitureAllowsOnlyOwner verifies the current owner-only room policy.
+func TestCanManageFurnitureAllowsOnlyOwner(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, OwnerPlayerID: 7, MaxUsers: 1})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	if !room.CanManageFurniture(7) || room.CanManageFurniture(8) || room.CanManageFurniture(0) {
+		t.Fatal("expected furniture management to be restricted to the room owner")
+	}
+}
+
 // TestRoomJoinRejectsInvalidOccupant verifies occupant validation.
 func TestRoomJoinRejectsInvalidOccupant(t *testing.T) {
 	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 1})

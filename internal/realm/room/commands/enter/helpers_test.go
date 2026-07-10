@@ -121,10 +121,11 @@ func sessionConnectionForTest(t *testing.T) (netconn.Context, *[]codec.Packet) {
 // roomForTest creates a persistent room.
 func roomForTest() roommodel.Room {
 	return roommodel.Room{
-		Base:      sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}},
-		Name:      "Room",
-		ModelName: "model_a",
-		MaxUsers:  25,
+		Base:          sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}},
+		OwnerPlayerID: 7,
+		Name:          "Room",
+		ModelName:     "model_a",
+		MaxUsers:      25,
 	}
 }
 

@@ -17,7 +17,7 @@ const (
 	DefaultWallHeight int32 = 0
 )
 
-// SendModel sends room model name and heightmap packets.
+// SendModel sends the initial room model name and geometry packets.
 func SendModel(ctx context.Context, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout) error {
 	namePacket, err := outmodelname.Encode(room.ModelName, int32(room.ID))
 	if err != nil {
@@ -27,6 +27,11 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 		return err
 	}
 
+	return SendGeometry(ctx, connection, roomLayout)
+}
+
+// SendGeometry sends entry tile and heightmap packets without retriggering Nitro's model request.
+func SendGeometry(ctx context.Context, connection netconn.Context, roomLayout layout.Layout) error {
 	if err := SendEntryTile(ctx, connection, roomLayout); err != nil {
 		return err
 	}

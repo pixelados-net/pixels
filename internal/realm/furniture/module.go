@@ -16,6 +16,7 @@ var Module = fx.Module(
 		service.New,
 		NewManager,
 		NewGranter,
+		NewDefinitionGranter,
 	),
 	fx.Invoke(RegisterConnectionHandlers),
 )
@@ -32,5 +33,10 @@ func NewManager(furnitureService *service.Service) service.Manager {
 
 // NewGranter exposes furniture inventory creation behavior.
 func NewGranter(furnitureService *service.Service) service.Granter {
+	return furnitureService
+}
+
+// NewDefinitionGranter exposes furniture definition and creation behavior.
+func NewDefinitionGranter(furnitureService *service.Service) service.DefinitionGranter {
 	return furnitureService
 }

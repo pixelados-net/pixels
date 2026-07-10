@@ -7,7 +7,6 @@ import (
 
 	"github.com/niflaot/pixels/internal/command"
 	furnituresession "github.com/niflaot/pixels/internal/realm/furniture/commands/session"
-	pickedupevent "github.com/niflaot/pixels/internal/realm/furniture/events/pickedup"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -18,7 +17,8 @@ import (
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
-	outinvadd "github.com/niflaot/pixels/networking/outbound/inventory/furniture/add"
+	outrefresh "github.com/niflaot/pixels/networking/outbound/inventory/furniture/refresh"
+	outunseen "github.com/niflaot/pixels/networking/outbound/inventory/unseen"
 	outremove "github.com/niflaot/pixels/networking/outbound/room/furniture/remove"
 	outbubble "github.com/niflaot/pixels/networking/outbound/session/bubblealert"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -92,6 +92,9 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if !found {
 		return nil
 	}
+	if !active.CanManageFurniture(player.ID()) {
+		return handler.handleSoftError(ctx, envelope.Command, roomlive.ErrNoFurnitureRights)
+	}
 
 	picked, err := handler.Furniture.Pickup(ctx, furnitureservice.PickupParams{
 		ItemID:        envelope.Command.ItemID,
@@ -114,7 +117,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err := handler.broadcastHeightMapUpdate(ctx, active, picked); err != nil {
 		return err
 	}
-	if err := handler.sendInventoryAdd(ctx, envelope.Command.Handler, picked.ID); err != nil {
+	if err := handler.sendInventoryUpdate(ctx, envelope.Command.Handler, picked.ID); err != nil {
 		return err
 	}
 
@@ -176,26 +179,21 @@ func (handler Handler) broadcastHeightMapUpdate(ctx context.Context, active *roo
 	return broadcast.RoomHeightMapUpdate(ctx, handler.Connections, active, points, 0)
 }
 
-// sendInventoryAdd notifies the actor that the picked up item returned to their inventory.
-func (handler Handler) sendInventoryAdd(ctx context.Context, connection netconn.Context, itemID int64) error {
-	packet, err := outinvadd.Encode(itemID)
+// sendInventoryUpdate marks a picked up item unseen and invalidates inventory data.
+func (handler Handler) sendInventoryUpdate(ctx context.Context, connection netconn.Context, itemID int64) error {
+	packet, err := outunseen.EncodeOwned([]int64{itemID})
+	if err != nil {
+		return err
+	}
+	if err := connection.Send(ctx, packet); err != nil {
+		return err
+	}
+	packet, err = outrefresh.Encode()
 	if err != nil {
 		return err
 	}
 
 	return connection.Send(ctx, packet)
-}
-
-// publish emits furniture pickup completion.
-func (handler Handler) publish(ctx context.Context, playerID int64, itemID int64, roomID int64) error {
-	if handler.Events == nil {
-		return nil
-	}
-
-	return handler.Events.Publish(ctx, bus.Event{
-		Name:    pickedupevent.Name,
-		Payload: pickedupevent.Payload{PlayerID: playerID, ItemID: itemID, RoomID: roomID},
-	})
 }
 
 // handleSoftError logs a rejected pickup attempt with context and sends a bubble alert when the
@@ -235,6 +233,8 @@ func (handler Handler) sendBubbleAlert(ctx context.Context, connection netconn.C
 func bubbleErrorKey(err error) (string, bool) {
 	switch {
 	case errors.Is(err, furnitureservice.ErrNotItemOwner):
+		return "session.bubble.furniture.no_rights", true
+	case errors.Is(err, roomlive.ErrNoFurnitureRights):
 		return "session.bubble.furniture.no_rights", true
 	case errors.Is(err, furnitureservice.ErrItemNotFound),
 		errors.Is(err, furnitureservice.ErrItemNotPlaced):

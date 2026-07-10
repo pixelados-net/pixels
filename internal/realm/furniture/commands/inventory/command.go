@@ -123,10 +123,35 @@ func fragmentRecords(items []furnituremodel.Item, definitions map[int64]furnitur
 		records = append(records, outlist.Item{
 			ID:                  item.ID,
 			SpriteID:            definition.SpriteID,
+			Kind:                inventoryKind(definition.Kind),
+			Category:            inventoryCategory(definition.Name),
 			ExtraData:           item.ExtraData,
 			AllowInventoryStack: definition.AllowInventoryStack,
 		})
 	}
 
 	return records
+}
+
+// inventoryCategory maps room-effect definitions to Nitro inventory categories.
+func inventoryCategory(name string) outlist.Category {
+	switch name {
+	case "wallpaper":
+		return outlist.CategoryWallpaper
+	case "floor":
+		return outlist.CategoryFloor
+	case "landscape":
+		return outlist.CategoryLandscape
+	default:
+		return outlist.CategoryDefault
+	}
+}
+
+// inventoryKind maps persistent furniture kinds to inventory packet kinds.
+func inventoryKind(kind furnituremodel.Kind) outlist.Kind {
+	if kind == furnituremodel.KindWall {
+		return outlist.KindWall
+	}
+
+	return outlist.KindFloor
 }

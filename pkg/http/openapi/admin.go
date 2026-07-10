@@ -25,7 +25,29 @@ func adminOperations() []operation {
 		adminCurrencyAction("/api/admin/currencies/grant", "Grant player currency"),
 		adminCurrencyAction("/api/admin/currencies/deduct", "Deduct player currency"),
 		adminCurrencyAction("/api/admin/currencies/set", "Set player currency balance"),
+		adminCatalog(http.MethodGet, "/api/admin/catalog/pages", "List catalog pages", &APIKeyRequest{}, &CatalogPagesResponse{}),
+		adminCatalog(http.MethodPost, "/api/admin/catalog/pages", "Create catalog page", &CatalogPageRequest{}, &CatalogPageResponse{}),
+		adminCatalog(http.MethodPatch, "/api/admin/catalog/pages/{id}", "Update catalog page", &CatalogPagePatchRequest{}, &CatalogPageResponse{}),
+		adminCatalog(http.MethodGet, "/api/admin/catalog/items", "List catalog offers", &CatalogItemsRequest{}, &CatalogItemsResponse{}),
+		adminCatalog(http.MethodPost, "/api/admin/catalog/items", "Create catalog offer", &CatalogItemRequest{}, &CatalogItemResponse{}),
+		adminCatalog(http.MethodPatch, "/api/admin/catalog/items/{id}", "Update catalog offer", &CatalogItemPatchRequest{}, &CatalogItemResponse{}),
+		adminCatalog(http.MethodDelete, "/api/admin/catalog/items/{id}", "Delete catalog offer", &CatalogIDRequest{}, nil),
+		adminCatalog(http.MethodPost, "/api/admin/catalog/refresh", "Refresh and publish catalog", &APIKeyRequest{}, &CatalogRefreshResponse{}),
+		adminCatalog(http.MethodGet, "/api/admin/catalog/sanitize-list", "List definitions without offers", &APIKeyRequest{}, &CatalogDefinitionsResponse{}),
 	}
+}
+
+// adminCatalog creates a catalog administration operation.
+func adminCatalog(method string, path string, summary string, request any, body any) operation {
+	responses := errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError)
+	if body == nil {
+		responses = append([]response{emptyResponse(http.StatusNoContent, summary+".")}, responses...)
+	} else {
+		responses = append([]response{jsonResponse(http.StatusOK, body, summary+".")}, responses...)
+	}
+
+	return operation{method: method, path: path, tag: "Admin Catalog", summary: summary,
+		description: summary + ".", request: request, responses: responses, secured: true}
 }
 
 // adminRead creates a read-only admin operation.
