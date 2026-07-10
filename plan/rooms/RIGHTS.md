@@ -4,7 +4,7 @@ Este plan implementa completamente la **Parte 4** de `plan/REMAINING-ROOMS.md` (
 
 **Nota sobre fuentes**: el diseño de duraciones/persistencia de kick/mute/ban se basa exclusivamente en la investigación de Arcturus ya volcada y vetada en `plan/REMAINING-ROOMS.md` Parte 4 (código Java real ya auditado en este proyecto) — no en artículos externos sobre el cliente oficial moderno de Habbo, que corre un protocolo y un cliente distintos a los que Pixels emula. Donde el research existente no confirma algo (ej. un campo de razón en los packets de moderación), este plan lo dice explícitamente en vez de inventarlo.
 
-Es un plan solamente — no se escribió código Go todavía.
+Estado: implementado completamente en RM1-RM8. Este documento conserva las decisiones y límites del feature.
 
 ---
 
@@ -22,7 +22,7 @@ Es un plan solamente — no se escribió código Go todavía.
 | Columnas `moderation_mute`, `moderation_kick`, `moderation_ban` (`smallint`) | `internal/realm/room/database/migrations/0002_create_room_records.sql` | Existen en Postgres, **no están ni en `model.Room` ni en `roomColumns`/`scanRoom`** — confirmado, gap real. `REMAINING-ROOMS.md` 4.3 ya señaló que Arcturus las persiste pero nunca las lee; acá se cierra ese hueco definiendo el enum concreto que faltaba decidir (Parte 2.5). |
 | Ninguna tabla `room_rights`/`room_bans`/`room_mutes`/tabla de auditoría | grep sin resultados en todo `internal/` | Completamente greenfield — ni siquiera hay una migración a medio empezar. |
 | Ningún paquete `internal/realm/room/{rights,moderation,audit}` | `find internal/realm/room/commands` | Tampoco existen los comandos `rights/*`/`moderation/*`. Greenfield. |
-| `currency_ledger_entries` — plantilla de auditoría ya establecida | `internal/realm/inventory/currency/model/ledger.go`, `repository/query.go` | `LedgerEntry{PlayerID, Delta, BalanceAfter, Reason, ActorKind, ActorID *int64, CreatedAt}` — append-only, un `insertLedger` por mutación, nunca update/delete. **Hoy solo se escribe, no hay ningún endpoint ni método para leerlo** — este plan sí construye la capa de lectura completa (Parte 3), algo que ni siquiera `currency` tiene todavía; se toma el mismo shape de columnas (`ActorKind`/`ActorID`/`Reason`/`CreatedAt`) como base, no se reinventa. |
+| `currency_ledger_entries` — plantilla de auditoría ya establecida | `internal/realm/inventory/currency/model/ledger.go`, `repository/query.go` | `LedgerEntry{PlayerID, Delta, BalanceAfter, Reason, ActorKind, ActorID *int64, CreatedAt}` — append-only, un `insertLedger` por mutación, nunca update/delete. **Hoy solo se escribe, no hay ningún endpoint ni método para leerlo** — este plan sí construye la capa de lectura completa (Parte 3), algo que ni siquiera `currency` tiene todavía; se toma el shape `ActorKind`/`ActorID`/`CreatedAt` como base, no se reinventa — **salvo `Reason`**, que este plan no adopta (ver 2.7: sin campo de razón en moderación de rooms). |
 | `leave.Handler` ya reusable para expulsar a un jugador de su room activo | `internal/realm/room/commands/leave/command.go`, ya reusado por `enter/runtime.go:leavePreviousRoom` | El kick de este plan reusa exactamente el mismo mecanismo (construir un `leavecmd.Command{PlayerID: targetID}` y llamarlo), en vez de reimplementar la salida de un jugador. |
 | Research ya vetado de Arcturus sobre kick/mute/ban (`plan/REMAINING-ROOMS.md` Parte 4.1-4.3) | — | **Kick**: sin persistencia, efecto inmediato, dueño/rights-holder/staff. **Mute**: `Room.mutedHabbos`, en memoria con **TTL en minutos** (valor libre, no un enum fijo de opciones) — Arcturus lo pierde si el room se descarga, hallazgo que `REMAINING-ROOMS.md` 4.2 ya decidió NO replicar (Pixels persiste). **Ban**: persistido, **tres duraciones fijas** (hora/día/permanente ≈10 años). **Ningún campo de razón/mensaje** aparece en el research de los packets de moderación ejecutados por el dueño de la sala — no se encontró evidencia de esto en el código Java auditado. |
 
@@ -105,7 +105,7 @@ Autorización dentro del propio service (no en el comando — mismo criterio que
 | Outbound | `rights/level` | `level int32` (`NONE=0/RIGHTS=1/OWNER=2` — simplificado respecto al enum completo de Arcturus, `GUILD_RIGHTS`/`GUILD_ADMIN` se agregan el día que exista un realm de grupos, mismo criterio ya fijado en `REMAINING-ROOMS.md` 4.1), mandado al jugador afectado tras cada cambio |
 | Outbound | `rights/list` | lista de `(playerId, username)` actualmente con derechos, respuesta a `rights/list` |
 
-Todos los headers quedan `TBD — a confirmar contra Nitro real`, mismo criterio que el resto de esta serie de planes.
+Los headers fueron confirmados contra Nitro real durante RM2 y están enumerados en la Parte 2.7.
 
 ### 1.5 Eventos
 
@@ -122,7 +122,7 @@ type Payload struct {
     RoomID   int64
     PlayerID int64
     ActorID  int64
-    Reason   RevokeReason // Explicit | RevokedAll | Relinquished
+    Action   RevokeAction // Explicit | RevokedAll | Relinquished — nunca texto libre
 }
 ```
 
@@ -148,24 +148,26 @@ Publicados por `rights.Service` tras cada mutación exitosa, vía `bus.Publisher
 
 ## Parte 2 — Moderación (`internal/realm/room/moderation`)
 
-### 2.1 Kick — efímero, sin estado persistido
+### 2.1 Kick — sin estado propio, pero siempre logueado/persistido en la auditoría
 
-Sin tabla propia — el kick no tiene "estado" que dure en el tiempo (a diferencia de mute/ban), es un efecto inmediato: el jugador sale del room activo ahora mismo, sin ninguna consecuencia futura. `internal/realm/room/commands/moderation/kick` reusa exactamente `leavecmd.Handler` (mismo mecanismo que `enter/runtime.go:leavePreviousRoom` ya usa para cambiar de room) para sacar al objetivo del `roomlive.Registry`, en vez de reimplementar esa lógica.
+**No tiene tabla de estado propia** — a diferencia de mute/ban, un kick no tiene nada que "siga vigente" con el correr del tiempo (no hay un `ends_at` que expire): es un efecto inmediato, el jugador sale del room activo ahora mismo, y puede volver a entrar de inmediato si el room lo permite (mismo comportamiento confirmado en `REMAINING-ROOMS.md` 4.2). `internal/realm/room/commands/moderation/kick` reusa exactamente `leavecmd.Handler` (mismo mecanismo que `enter/runtime.go:leavePreviousRoom` ya usa para cambiar de room) para sacar al objetivo del `roomlive.Registry`, en vez de reimplementar esa lógica.
 
-La única persistencia real de un kick es su **rastro de auditoría** (Parte 3) — se inserta una fila en `room_moderation_actions` con `action_type = 'kick'`, `duration_seconds = null`, `expires_at = null` (no hay nada que expire).
+**Pero SÍ queda persistido/logueado como acción de moderación** — "sin estado propio" no significa "sin rastro": cada kick exitoso inserta, sin excepción, una fila en `room_moderation_actions` (`action_type = 'kick'`, `duration_seconds = null`, `expires_at = null`, Parte 3) exactamente igual que un mute o un ban. Esto es lo que permite responder después "¿quién kickeó a quién, de qué room, y cuándo" con la misma consulta de historial que ya cubre mute/ban (Parte 3.3) — un kick nunca es una acción invisible para la auditoría, aunque no deje ningún estado vigente en `room_bans`/`room_mutes`.
 
 ### 2.2 Mute — persistido (decisión ya tomada en `REMAINING-ROOMS.md` 4.2, se ejecuta acá)
 
 ```sql
 create table room_mutes (
-    id bigint generated always as identity primary key,
     room_id bigint not null references rooms(id) on delete cascade,
-    player_id bigint not null references players(id),
+    player_id bigint not null references players(id) on delete cascade,
     ends_at timestamptz not null,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (room_id, player_id)
 );
 
-create index room_mutes_room_player_active_idx on room_mutes (room_id, player_id) where ends_at > now();
+create index room_mutes_room_active_idx on room_mutes (room_id, ends_at desc);
+create index room_mutes_player_active_idx on room_mutes (player_id, ends_at desc);
 ```
 
 **Duración**: `durationMinutes int32`, validado server-side contra `Config.MinMuteMinutes`/`Config.MaxMuteMinutes` (ej. 1-1440) — **no** un enum fijo de 2/5/10 minutos. El research ya vetado en `REMAINING-ROOMS.md` 4.2 confirma que Arcturus guarda un TTL en minutos como valor libre en `Room.mutedHabbos`, no tres opciones fijas — cualquier restricción a un puñado de valores fijos sería una decisión de **UI del cliente** (un dropdown puede ofrecer solo 3 valores), no una restricción de protocolo/servidor, y este plan no la impone del lado servidor sin evidencia real de que el protocolo la exija.
@@ -176,14 +178,16 @@ A diferencia de Arcturus (mute en memoria, se pierde si el room se descarga — 
 
 ```sql
 create table room_bans (
-    id bigint generated always as identity primary key,
     room_id bigint not null references rooms(id) on delete cascade,
-    player_id bigint not null references players(id),
+    player_id bigint not null references players(id) on delete cascade,
     ends_at timestamptz not null,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (room_id, player_id)
 );
 
-create index room_bans_room_player_active_idx on room_bans (room_id, player_id) where ends_at > now();
+create index room_bans_room_active_idx on room_bans (room_id, ends_at desc);
+create index room_bans_player_active_idx on room_bans (player_id, ends_at desc);
 ```
 
 ```go
@@ -284,61 +288,50 @@ if protected {
 ```
 Mismo patrón que `acc_unkickable` en Arcturus (confirmado en `REMAINING-ROOMS.md` 1.6/4.2) — se chequea sobre el **objetivo**, nunca sobre quien ejecuta la acción, y gana incluso sobre un actor autorizado por la fórmula de arriba (staff incluido, salvo que el propio actor también tenga algún nodo que explícitamente lo exima — este plan no agrega ese escape hatch por defecto; se deja anotado en "Milestones futuros confirmados" si en la práctica hace falta un "puedo moderar incluso a alguien unkickable").
 
-### 2.6 Reason — diseño explícito de protocolo (lo que pidió el usuario: "si admiten razón o no")
+### 2.6 Comandos
 
-El research ya vetado de `REMAINING-ROOMS.md` Parte 4 (código Java real de Arcturus, no fuentes externas) **no encontró ningún campo de razón/mensaje** en los packets de kick/mute/ban ejecutados desde las herramientas de moderación de un dueño de sala. `Reason` es una adición **nueva** de Pixels, pensada específicamente para alimentar la auditoría de la Parte 3, no una réplica de algo que ya exista en el protocolo de referencia.
+`internal/realm/room/commands/moderation/{kick,mute,unmute,ban,unban,listbans}`. `ListMutes` existe como lectura tipada del service y en HTTP admin; no se inventa un comando de protocolo sin un packet real que lo consuma.
 
-Diseño concreto:
-- Los packets **inbound** de mute/ban (y, por consistencia, también kick) llevan `reason` como `codec.Optional(codec.StringField)` (`networking/codec`, ya existe la función `Optional(field Field) Field`) — si el cliente Nitro real no manda este campo, la decodificación no falla, simplemente queda vacío. Esto evita romper la superficie de protocolo por un campo que quizás el cliente real nunca completa.
-- Los endpoints **HTTP admin** (Parte 3.4) — que no dependen en absoluto de qué mande el cliente Nitro, son un canal 100% controlado por Pixels — sí piden `reason` como campo esperado (no estrictamente obligatorio a nivel de validación, pero la convención de uso para staff es siempre justificar la acción).
-- `Reason` se persiste tanto en la tabla de auditoría (`room_moderation_actions.reason`, `not null default ''`) como, opcionalmente, en el motivo mostrado al jugador afectado — a decidir en implementación si el kick/mute/ban packet de salida al afectado incluye el motivo (depende de si el packet de salida real de Nitro tiene espacio para eso; **a confirmar contra Nitro real**, mismo criterio que el resto de estos planes).
-
-### 2.7 Comandos
-
-`internal/realm/room/commands/moderation/{kick,mute,unmute,ban,unban,listbans,listmutes}`.
-
-### 2.8 Packets
+### 2.7 Packets
 
 | Dirección | Paquete | Contenido |
 | --- | --- | --- |
-| Inbound | `moderation/kick` | `playerId int32`, `reason Optional(string)` |
-| Inbound | `moderation/mute` | `playerId int32`, `durationMinutes int32`, `reason Optional(string)` |
+| Inbound | `moderation/kick` | `playerId int32` |
+| Inbound | `moderation/mute` | `playerId int32`, `durationMinutes int32` |
 | Inbound | `moderation/unmute` | `playerId int32` |
-| Inbound | `moderation/ban` | `playerId int32`, `duration byte` (`BanDuration`), `reason Optional(string)` |
+| Inbound | `moderation/ban` | `playerId int32`, `duration byte` (`BanDuration`) |
 | Inbound | `moderation/unban` | `playerId int32` |
 | Inbound | `moderation/listbans` | sin campos |
-| Inbound | `moderation/listmutes` | sin campos |
 | Outbound | `moderation/kicked` | mandado al objetivo (motivo de salida) |
 | Outbound | `moderation/muted` | mandado al objetivo, `endsAt`/`remainingSeconds` |
 | Outbound | `moderation/banlist` | respuesta a `listbans` |
-| Outbound | `moderation/mutelist` | respuesta a `listmutes` |
 
-Headers `TBD — a confirmar contra Nitro real`.
+Headers confirmados contra Nitro: rights give `808`, remove `2064`, remove-all `2683`, relinquish `3182`, list request `3385`; kick `1320`, mute/unmute `3485`, ban `1477`, unban `992`, ban-list request `2267`; rights level `780`, owner `339`, rights list `1284`, add `2088`, remove `1327`, clear `2392`; remaining mute `826`, ban list `1869`, unbanned `3429`. **Sin campo de razón/mensaje** — el protocolo auditado no lo incluye y Pixels no lo inventa.
 
-### 2.9 Eventos
+### 2.8 Eventos
 
 ```
-moderation/kicked   {RoomID, TargetPlayerID, ActorID, Reason}
-moderation/muted    {RoomID, TargetPlayerID, ActorID, Reason, DurationSeconds, ExpiresAt}
+moderation/kicked   {RoomID, TargetPlayerID, ActorID}
+moderation/muted    {RoomID, TargetPlayerID, ActorID, DurationSeconds, ExpiresAt}
 moderation/unmuted  {RoomID, TargetPlayerID, ActorID}
-moderation/banned   {RoomID, TargetPlayerID, ActorID, Reason, DurationSeconds, ExpiresAt}
+moderation/banned   {RoomID, TargetPlayerID, ActorID, DurationSeconds, ExpiresAt}
 moderation/unbanned {RoomID, TargetPlayerID, ActorID}
 ```
-Mismos dos consumidores independientes que en 1.5: un broadcaster (avisa al objetivo si está online, y fuerza su salida vía `leavecmd.Handler` en el caso de kick/ban) y el subscriber de auditoría de la Parte 3.5.
+Mismos dos consumidores independientes que en 1.5: un broadcaster (avisa al objetivo si está online, y fuerza su salida vía `leavecmd.Handler` en el caso de kick/ban) y el subscriber de auditoría de la Parte 3.5 — **`moderation/kicked` se audita exactamente igual que los otros cuatro**, ver 2.1: el kick no deja estado propio, pero sí deja su fila en `room_moderation_actions` como cualquier otra acción de moderación.
 
-### 2.10 `IsBanned` / `IsMuted`
+### 2.9 `IsBanned` / `IsMuted`
 
 `IsBanned(ctx, roomID, playerID) (bool, error)` — `exists(select 1 from room_bans where room_id = $1 and player_id = $2 and ends_at > now())`. Tiene exactamente la firma de `entry.BanChecker` — se pasa directo a `entry.Service.WithBans(moderationService)` sin adapter (Parte 5).
 
 `IsMuted(ctx, roomID, playerID) (bool, error)` — mismo shape de query contra `room_mutes`. **Sin ningún consumidor todavía** (el chat no existe en Pixels — mismo criterio ya usado en `plan/PERMISSIONS.md` con el `// TODO(chat): ...` para el color de grupo primario): se implementa igual en este plan porque la tabla/servicio ya están, pero queda como `// TODO(chat): enganchar IsMuted al pipeline de envío de mensajes una vez exista el realm de chat`.
 
-### 2.11 Wiring
+### 2.10 Wiring
 
 `entry.Service.WithBans(moderationService)` — mismo módulo que 1.6, ver Parte 5 para el detalle conjunto.
 
-### 2.12 Tests
+### 2.11 Tests
 
-- Kick remueve al objetivo del room activo sin dejar ninguna fila de estado (solo la de auditoría).
+- Kick remueve al objetivo del room activo sin dejar ninguna fila de **estado** — pero SÍ inserta una fila persistida en `room_moderation_actions` (`action_type = 'kick'`), verificable consultando el historial inmediatamente después: un kick es tan trazable como un ban o un mute, solo que no tiene contraparte de "estado vigente".
 - Mute con `durationMinutes` fuera de rango (`< Min` o `> Max`) rechaza sin persistir nada.
 - Mute persiste con el `ends_at` correcto, y `IsMuted` refleja `true` hasta expirar.
 - Ban con cada una de las 3 `BanDuration` persiste con el `ends_at` correcto (`Hour`/`Day`/`Permanent`).
@@ -351,7 +344,7 @@ Mismos dos consumidores independientes que en 1.5: un broadcaster (avisa al obje
   - Rights-holder, sala con política `OwnerOnly` → **no** autorizado, aunque tenga el nodo `Own`.
   - Rights-holder con nodo `Own` revocado, sala con política `OwnerAndRights` → **no** autorizado.
   - Objetivo con `Unkickable` → **nunca** autorizado, incluso para un actor staff con nodo `Any`.
-- Cada acción exitosa publica el evento correspondiente con `Reason`/`DurationSeconds`/`ExpiresAt` correctos.
+- Cada acción exitosa publica el evento correspondiente con `DurationSeconds`/`ExpiresAt` correctos (mute/ban) — el kick publica el suyo igual, sin duración, y también termina auditado (ver primer bullet de esta sección).
 - `IsBanned`/`HasRights` integrados en un test end-to-end contra `entry.Service.Authorize` (confirma el acople real de la Parte 5, no solo el método aislado).
 
 ---
@@ -389,7 +382,6 @@ create table room_moderation_actions (
     actor_kind text not null default 'player',
     actor_id bigint null references players(id),
     action_type text not null,
-    reason text not null default '',
     duration_seconds integer null,
     expires_at timestamptz null,
     created_at timestamptz not null default now(),
@@ -480,7 +472,7 @@ Todos paginados con `limit` (default 50, tope 200) + `before` (id, keyset descen
 
 ### 3.5 Quién escribe en las tablas de auditoría
 
-Un subscriber de bus dedicado, `internal/realm/room/audit/subscriber.go`, suscripto a los 4 eventos de rights (1.5) y los 5 de moderación (2.9) — **nunca** `rights.Service`/`moderation.Service` insertando directo en `room_rights_audit`/`room_moderation_actions`. Mismo principio de desacople que ya usa el resto del proyecto para efectos secundarios (`currency/broadcast` reacciona a mutaciones de currency sin que `currency.Service` sepa que existe): permite agregar mañana OTRO consumidor del mismo evento (ej. un futuro sistema de detección de abuso de moderación, o una integración con un bot de Discord de staff) sin tocar `rights`/`moderation` para nada.
+Un subscriber de bus dedicado, `internal/realm/room/audit/subscriber.go`, suscripto a los 4 eventos de rights (1.5) y los 5 de moderación (2.8, kick incluido) — **nunca** `rights.Service`/`moderation.Service` insertando directo en `room_rights_audit`/`room_moderation_actions`. Mismo principio de desacople que ya usa el resto del proyecto para efectos secundarios (`currency/broadcast` reacciona a mutaciones de currency sin que `currency.Service` sepa que existe): permite agregar mañana OTRO consumidor del mismo evento (ej. un futuro sistema de detección de abuso de moderación, o una integración con un bot de Discord de staff) sin tocar `rights`/`moderation` para nada.
 
 ```go
 // internal/realm/room/audit/subscriber.go
@@ -553,11 +545,10 @@ Esto es, específicamente, "terminar la parte de `ENTRY.md`" que quedó abierta:
 
 ## Parte 6 — Hot paths, allocations, benchmarks
 
-- **`IsBanned` corre en TODO intento de entrada**, incluso a rooms `Open` (`entry.Service.checkBan` se llama primero en `Authorize`, antes del branch por `DoorMode`) — es el chequeo más caliente de todo este plan. El índice parcial `where ends_at > now()` en `room_bans`/`room_mutes` es la pieza clave: mantiene el índice acotado solo a sanciones vigentes, así que no crece sin límite con años de baneos ya vencidos — una sala con miles de baneos históricos no vuelve más lenta la consulta de "¿está baneado AHORA?".
+- **`IsBanned` corre en TODO intento de entrada**, incluso a rooms `Open` (`entry.Service.checkBan` se llama primero en `Authorize`, antes del branch por `DoorMode`) — es el chequeo más caliente de todo este plan. La PK `(room_id, player_id)` resuelve el lookup puntual y `ends_at > now` filtra la única fila de estado actual. PostgreSQL no permite `now()` en el predicado de un índice parcial porque no es inmutable; por eso se usan índices `(room_id, ends_at desc)` y `(player_id, ends_at desc)` para listas activas.
 - **`HasRights` corre en cada entrada a `DoorModeInvisible`/`DoorModeDoorbell`, y en cada acción de moderación** (2.5) — mismo criterio, PK compuesta `(room_id, player_id)` ya cubre el acceso directo sin necesitar un índice adicional.
-- **Sin cache adicional por ahora** — Postgres con los índices de arriba resuelve esto en el orden de submilisegundos; no se agrega una capa de cache (Redis u otra) sin evidencia real de que haga falta, mismo criterio de no construir para hipotéticos ya aplicado en el resto del proyecto (`ENTRY.md` Parte 6 razona exactamente igual sobre el lockout de contraseña).
-- **El subscriber de auditoría (3.5) nunca bloquea la respuesta al jugador**: `pkg/bus.Publisher.Publish` no espera a que cada subscriber termine antes de que el comando que publicó el evento retorne (mismo comportamiento ya usado por el resto del proyecto) — un insert de auditoría lento (o momentáneamente caído) nunca demora el kick/mute/ban que el moderador está ejecutando en tiempo real.
-- **`Reason string` opcional nunca se alloca de más**: `codec.Optional(codec.StringField)` decodifica a `""` cuando el campo está ausente, sin ninguna allocation extra respecto a un campo presente vacío.
+- **Cache solo donde existe un hot path real** — entrada y autorización durable consultan PostgreSQL; al activarse una room, sus rights se proyectan en un map embebido dentro de `live.Room`. Furniture place/move/pickup consulta ese map en `O(1)` y los eventos grant/revoke lo mantienen actualizado después del commit. No existe un registry paralelo ni cache Redis.
+- **La auditoría es síncrona y atómica**: `pkg/bus.Publisher.Publish` ejecuta subscribers localmente. El subscriber de auditoría tiene prioridad alta y usa el executor transaccional compartido; si el insert de auditoría falla, la mutación hace rollback. Los broadcasters de packets/runtime registran callbacks `postgres.AfterCommit`, de modo que nunca proyectan una mutación abortada.
 
 Benchmarks nuevos (mismo patrón ya establecido por `internal/realm/room/world/grid/benchmark_test.go`/`world/furniture/benchmark_test.go`):
 
@@ -599,7 +590,7 @@ func BenchmarkAuditInsert(b *testing.B) { ... }
 - Tests de repository reales contra Postgres de test para las 5 tablas nuevas (`room_rights`, `room_bans`, `room_mutes`, `room_rights_audit`, `room_moderation_actions`) — mismo patrón ya usado por `internal/realm/room/repository/repository_test.go`.
 - Reloj inyectable (`func() time.Time`) en `moderation.Service` para testear expiración de mute/ban sin `time.Sleep` real — mismo criterio ya fijado en `ENTRY.md` Parte 7.
 - Test de integración explícito: `entry.Service` con `WithRights`/`WithBans` reales (no fakes) resolviendo un caso de ban activo y un caso de rights activo de punta a punta — confirma el acople de la Parte 5, no solo cada pieza aislada.
-- Test de humo del subscriber de auditoría (3.5): publicar cada uno de los 9 eventos (4 de rights + 5 de moderación) contra un `bus` real de test y confirmar que cada uno termina como una fila en la tabla correspondiente, con `actor_kind`/`actor_id`/`reason` correctos.
+- Test de humo del subscriber de auditoría (3.5): publicar cada uno de los 9 eventos (4 de rights + 5 de moderación, kick incluido) contra un `bus` real de test y confirmar que cada uno termina como una fila en la tabla correspondiente, con `actor_kind`/`actor_id`/`action_type` correctos.
 
 ---
 
@@ -607,7 +598,7 @@ func BenchmarkAuditInsert(b *testing.B) { ... }
 
 1. **RM1 — Esquema completo**: migraciones de `room_rights`, `room_bans`, `room_mutes`, `room_rights_audit`, `room_moderation_actions`; agregar `ModerationMute/Kick/Ban ModerationPolicy` a `model.Room` + su scan (columnas ya existentes en Postgres, hoy sin leer).
 2. **RM2 — `internal/realm/room/rights`**: repository, `Service`/`HasRights`, comandos `grant/revoke/revokeall/list/relinquish`, packets, eventos, broadcaster — Parte 1 completa.
-3. **RM3 — `internal/realm/room/moderation`**: repository, `Service`/`IsBanned`/`IsMuted`, la fórmula de autorización combinada (2.5), comandos `kick/mute/unmute/ban/unban/listbans/listmutes`, packets, eventos, broadcaster — Parte 2 completa. Depende de RM2 (la fórmula de 2.5 necesita `rights.Service.HasRights` para el caso "rights-holder").
+3. **RM3 — `internal/realm/room/moderation`**: repository, `Service`/`IsBanned`/`IsMuted`/`ListMutes`, la fórmula de autorización combinada (2.5), comandos y packets Nitro confirmados, eventos y broadcaster — Parte 2 completa. Depende de RM2 (la fórmula de 2.5 necesita `rights.Service.HasRights` para el caso "rights-holder").
 4. **RM4 — Nodos de permiso**: agregar los 11 nodos de la Parte 4 a `internal/realm/room/permissions.go` — puede correr en paralelo a RM2/RM3, ambos lo consumen.
 5. **RM5 — `internal/realm/room/audit`**: `Manager`/`Query` de consulta (3.3), subscriber (3.5) — depende de RM2/RM3 (necesita que los eventos ya existan).
 6. **RM6 — HTTP admin de historial**: los 6 endpoints de la Parte 3.4 — depende de RM5.
@@ -618,5 +609,4 @@ func BenchmarkAuditInsert(b *testing.B) { ... }
 
 - **`IsMuted` enganchado al pipeline de chat** — el servicio y la tabla ya existen desde RM3, pero no hay ningún consumidor real hasta que exista un realm de chat (`// TODO(chat)`, mismo criterio ya usado en `plan/PERMISSIONS.md`).
 - **Excepción explícita a `Unkickable`** ("puedo moderar incluso a alguien unkickable si además tengo tal nodo") — no se agrega en este plan por falta de un caso real que lo justifique; se evalúa si en la práctica hace falta.
-- **Reason mostrado al jugador afectado en el packet de salida** (2.6) — depende de confirmar contra el Nitro real si el packet de kick/mute/ban al objetivo tiene espacio para un mensaje; hasta entonces, `Reason` se persiste igual en la auditoría, solo queda pendiente si además se le muestra al propio afectado en el momento.
 - **Sistema de detección de abuso de moderación** (ej. alertar si un moderador puntual ejecuta un volumen anómalo de bans en poco tiempo) — mencionado en 3.5 como un consumidor futuro plausible del mismo bus de eventos; no se construye sin una necesidad real confirmada.

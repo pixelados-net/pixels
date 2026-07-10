@@ -4,11 +4,18 @@ import (
 	"testing"
 
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
+	bannedevent "github.com/niflaot/pixels/internal/realm/room/events/banned"
 	roomcreated "github.com/niflaot/pixels/internal/realm/room/events/created"
 	roomdeleted "github.com/niflaot/pixels/internal/realm/room/events/deleted"
 	roomentered "github.com/niflaot/pixels/internal/realm/room/events/entered"
+	kickedevent "github.com/niflaot/pixels/internal/realm/room/events/kicked"
 	roomleft "github.com/niflaot/pixels/internal/realm/room/events/left"
+	mutedevent "github.com/niflaot/pixels/internal/realm/room/events/muted"
 	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
+	rightsgranted "github.com/niflaot/pixels/internal/realm/room/events/rightsgranted"
+	rightsrevoked "github.com/niflaot/pixels/internal/realm/room/events/rightsrevoked"
+	unbannedevent "github.com/niflaot/pixels/internal/realm/room/events/unbanned"
+	unmutedevent "github.com/niflaot/pixels/internal/realm/room/events/unmuted"
 	roomupdated "github.com/niflaot/pixels/internal/realm/room/events/updated"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	"github.com/niflaot/pixels/internal/realm/room/service"
@@ -25,6 +32,13 @@ func TestEventNames(t *testing.T) {
 		string(roomoccupancy.Name),
 		string(roomentered.Name),
 		string(roomleft.Name),
+		string(rightsgranted.Name),
+		string(rightsrevoked.Name),
+		string(kickedevent.Name),
+		string(mutedevent.Name),
+		string(unmutedevent.Name),
+		string(bannedevent.Name),
+		string(unbannedevent.Name),
 	}
 
 	for _, event := range events {
@@ -38,6 +52,17 @@ func TestEventNames(t *testing.T) {
 func TestEntryPermissionNodes(t *testing.T) {
 	if EnterAny != "room.enter.any" || EnterFull != "room.enter.full" {
 		t.Fatalf("unexpected entry nodes enterAny=%q enterFull=%q", EnterAny, EnterFull)
+	}
+	nodes := []string{
+		string(ModerationOwnKick), string(ModerationOwnMute), string(ModerationOwnBan),
+		string(ModerationAnyKick), string(ModerationAnyMute), string(ModerationAnyBan),
+		string(RightsOwnGrant), string(RightsOwnRevoke), string(RightsAnyGrant),
+		string(RightsAnyRevoke), string(Unkickable),
+	}
+	for _, node := range nodes {
+		if node == "" {
+			t.Fatal("expected registered room control node")
+		}
 	}
 }
 

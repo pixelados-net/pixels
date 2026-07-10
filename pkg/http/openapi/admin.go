@@ -22,6 +22,12 @@ func adminOperations() []operation {
 		adminRoomAction("/api/admin/rooms/{id}/close", "Close active room", &RoomIDRequest{}),
 		adminRoomAction("/api/admin/rooms/{id}/forward", "Forward active room occupants", &RoomForwardRequest{}),
 		adminRoomAction("/api/admin/rooms/players/{playerId}/teleport", "Teleport one live player", &RoomTeleportRequest{}),
+		adminRoomAudit("/api/admin/rooms/{id}/rights/history", "Read room rights history", &RoomAuditRequest{}, &RoomRightsAuditResponse{}),
+		adminRoomAudit("/api/admin/rooms/{id}/moderation/history", "Read room moderation history", &RoomAuditRequest{}, &RoomModerationAuditResponse{}),
+		adminRoomAudit("/api/admin/rooms/{id}/bans", "List active room bans", &RoomAuditRequest{}, &RoomSanctionResponse{}),
+		adminRoomAudit("/api/admin/rooms/{id}/mutes", "List active room mutes", &RoomAuditRequest{}, &RoomSanctionResponse{}),
+		adminRoomAudit("/api/admin/players/{playerId}/moderation/history", "Read moderation received by player", &PlayerAuditRequest{}, &RoomModerationAuditResponse{}),
+		adminRoomAudit("/api/admin/players/{playerId}/moderation/actions", "Read moderation performed by player", &PlayerAuditRequest{}, &RoomModerationAuditResponse{}),
 		adminNavigatorRead("/api/admin/navigator/categories", "List navigator categories", &APIKeyRequest{}, &CategoryListResponse{}),
 		adminNavigatorRead("/api/admin/navigator/lifted", "List navigator lifted rooms", &APIKeyRequest{}, &LiftedListResponse{}),
 		adminNotificationAction("/api/admin/notifications/send", "Send localized player notification", &NotificationRequest{}),
@@ -51,6 +57,17 @@ func adminOperations() []operation {
 		adminPermission(http.MethodDelete, "/api/admin/permissions/players/{playerId}/nodes/{node}", "Revoke direct player permission node", &permissionapi.PlayerNodeDeleteRequest{}, nil, http.StatusNoContent),
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/effective", "List effective player permissions", &permissionapi.PlayerRequest{}, &permissionapi.EffectiveResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/check", "Check player permission", &permissionapi.CheckRequest{}, &permissionapi.CheckResponse{}, http.StatusOK),
+	}
+}
+
+// adminRoomAudit creates a protected room audit read operation.
+func adminRoomAudit(path string, summary string, request any, body any) operation {
+	return operation{
+		method: http.MethodGet, path: path, tag: "Admin Room Audit", summary: summary,
+		description: summary + ".", request: request,
+		responses: append([]response{jsonResponse(http.StatusOK, body, summary+".")},
+			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusInternalServerError)...),
+		secured: true,
 	}
 }
 

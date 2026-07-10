@@ -286,10 +286,9 @@ minimum manual checks expected when touching it.
   doorbell approval queues, timeout cleanup on the existing room tick, localized
   human durations, global `room.enter.any`, `room.enter.full`, and
   `room.doorbell.answer.any` nodes, and one-time admin entry bypasses.
-- Room-scoped rights are not persistent yet. Owners and global doorbell responders
-  may answer waiting requests; owners bypass password, doorbell, and invisible
-  modes. Future room-rights persistence must use the existing
-  `entry.RightsChecker` boundary.
+- Persistent room-right holders and global doorbell responders may answer
+  waiting requests. Owners and room-right holders bypass password, doorbell,
+  and invisible modes through the `entry.RightsChecker` boundary.
 - Test after changes:
   - `go test ./internal/realm/room/entry ./internal/realm/room/doorbell/...`
   - `go test ./internal/realm/room/commands/doorbell/... ./networking/...`
@@ -340,10 +339,9 @@ minimum manual checks expected when touching it.
   landscape inventory categories.
 - Purchases and pickups mark returned items unseen and send an inventory
   refresh; room pickup broadcasts remain limited to current room occupants.
-- Active room furniture management is owner-only through
-  `room.CanManageFurniture`; place, move, and pickup commands must check it
-  before persistence or world mutation. Extend that capability when room rights
-  are introduced instead of adding handler-local permission policies.
+- Active room furniture management is resolved through
+  `room.CanManageFurniture`; owners and the room's embedded rights projection may
+  place, move, and pick up furniture without handler-local permission policies.
 - Test after changes:
   - `go test ./networking/outbound/inventory/... ./internal/realm/furniture/...`
   - Buy an item and verify Nitro shows the inventory novelty count.
@@ -351,6 +349,31 @@ minimum manual checks expected when touching it.
     client reload.
   - Enter another player's room and verify place, move, and pickup return a
     localized no-rights bubble without changing inventory or room state.
+
+### FEATURE: Room Rights, Moderation, and Audit
+
+- Owns `internal/realm/room/rights`, `internal/realm/room/moderation`,
+  `internal/realm/room/audit`, their room packets, and room audit HTTP routes.
+- Persists build rights, current mutes and bans, append-only rights history, and
+  append-only moderation history. Kick has no current-state row but is audited.
+- Rights are projected into each active `live.Room`; do not add a separate
+  rights registry. Furniture checks must remain an in-memory `O(1)` lookup.
+- Audit subscribers run inside the mutation transaction. Runtime projections,
+  packet broadcasts, kicks, and bans run only after a successful commit.
+- Expected permission and validation denials are localized soft gameplay
+  errors. Database, codec, and unexpected errors remain explicit failures.
+- Nitro has no confirmed room mute-list inbound packet. Read active mutes through
+  the moderation service or protected HTTP route; do not invent packet headers.
+- Test after changes:
+  - `go test ./internal/realm/room/rights/... ./internal/realm/room/moderation/... ./internal/realm/room/audit/...`
+  - `go test ./networking/inbound/room/... ./networking/outbound/room/... ./pkg/http/room/routes`
+  - Run room rights and moderation benchmarks with `-benchmem`.
+  - Grant and revoke rights in Nitro; verify furniture controls and the rights
+    level update immediately for every occupant.
+  - Kick, mute, unmute, ban, and unban owner, rights-holder, moderator, protected,
+    offline, and ordinary-player cases.
+  - Verify bans block entry, rights bypass closed-room gates, and all successful
+    mutations appear in the protected audit endpoints.
 
 ## SDK Rules
 

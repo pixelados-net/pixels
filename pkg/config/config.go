@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/logger"
@@ -32,6 +33,9 @@ type AppConfig struct {
 
 	// RoomEntry contains closed-room entry settings.
 	RoomEntry roomentry.Config
+
+	// RoomModeration contains room moderation duration limits.
+	RoomModeration roommoderation.Config
 
 	// Postgres contains PostgreSQL storage settings.
 	Postgres postgres.Config
@@ -74,6 +78,11 @@ func Load(paths ...string) (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	roomModeration, err := roommoderation.LoadConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	postgres, err := postgres.LoadConfig()
 	if err != nil {
 		return AppConfig{}, err
@@ -90,14 +99,15 @@ func Load(paths ...string) (AppConfig, error) {
 	}
 
 	return AppConfig{
-		App:       app,
-		Logger:    log,
-		I18N:      translations,
-		Currency:  currency,
-		RoomEntry: roomEntry,
-		Postgres:  postgres,
-		Redis:     redis,
-		SSO:       sso,
+		App:            app,
+		Logger:         log,
+		I18N:           translations,
+		Currency:       currency,
+		RoomEntry:      roomEntry,
+		RoomModeration: roomModeration,
+		Postgres:       postgres,
+		Redis:          redis,
+		SSO:            sso,
 	}, nil
 }
 

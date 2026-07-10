@@ -8,6 +8,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/logger"
@@ -34,6 +35,8 @@ func TestLoadUsesEnvironment(t *testing.T) {
 	t.Setenv("REDIS_ADDRESS", "localhost:6380")
 	t.Setenv("SSO_DEFAULT_TTL", "10m")
 	t.Setenv("SSO_KEY", "secret-sso-key")
+	t.Setenv("PIXELS_ROOM_MODERATION_MIN_MUTE_MINUTES", "2")
+	t.Setenv("PIXELS_ROOM_MODERATION_MAX_MUTE_MINUTES", "120")
 
 	config, err := Load()
 	if err != nil {
@@ -77,6 +80,9 @@ func TestLoadUsesEnvironment(t *testing.T) {
 
 	if config.SSO.Key != "secret-sso-key" {
 		t.Fatalf("expected SSO key from environment, got %q", config.SSO.Key)
+	}
+	if config.RoomModeration.MinMuteMinutes != 2 || config.RoomModeration.MaxMuteMinutes != 120 {
+		t.Fatalf("unexpected room moderation config %#v", config.RoomModeration)
 	}
 }
 
@@ -159,7 +165,7 @@ func TestModuleProvidesConfig(t *testing.T) {
 	app := fxtest.New(
 		t,
 		Module,
-		fx.Invoke(func(config AppConfig, app appconfig.Config, log logger.Config, translations i18n.Config, currency currencyconfig.Config, entry roomentry.Config, postgres postgres.Config, redis redis.Config, sso sso.Config) {
+		fx.Invoke(func(config AppConfig, app appconfig.Config, log logger.Config, translations i18n.Config, currency currencyconfig.Config, entry roomentry.Config, moderation roommoderation.Config, postgres postgres.Config, redis redis.Config, sso sso.Config) {
 			invoked = true
 
 			if config.App != app {
@@ -178,6 +184,9 @@ func TestModuleProvidesConfig(t *testing.T) {
 			}
 			if config.RoomEntry != entry {
 				t.Fatalf("expected room entry config provider to match composed config")
+			}
+			if config.RoomModeration != moderation {
+				t.Fatalf("expected room moderation config provider to match composed config")
 			}
 
 			if config.Postgres != postgres {

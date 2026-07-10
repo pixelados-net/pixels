@@ -20,6 +20,9 @@ type Room struct {
 	// occupants stores occupants by player id.
 	occupants map[int64]Occupant
 
+	// rights stores persistent build-right holders while the room is active.
+	rights map[int64]struct{}
+
 	// doorbell stores waiting entry requests and remains nil until first use.
 	doorbell atomic.Pointer[roomdoorbell.Queue]
 
@@ -153,6 +156,7 @@ func (room *Room) CloseWithDoorbell() (Occupancy, []roomdoorbell.Expired) {
 	room.mutex.Lock()
 	room.closed = true
 	room.occupants = make(map[int64]Occupant)
+	room.rights = nil
 	if room.world != nil {
 		room.world.clearUnits()
 	}
@@ -166,6 +170,57 @@ func (room *Room) CloseWithDoorbell() (Occupancy, []roomdoorbell.Expired) {
 	}
 
 	return occupancy, queue.Drain(roomdoorbell.ExpiredRoomClosed)
+}
+
+// ReplaceRights replaces the active room build-right projection.
+func (room *Room) ReplaceRights(playerIDs []int64) {
+	rights := make(map[int64]struct{}, len(playerIDs))
+	for _, playerID := range playerIDs {
+		if playerID > 0 {
+			rights[playerID] = struct{}{}
+		}
+	}
+
+	room.mutex.Lock()
+	room.rights = rights
+	room.mutex.Unlock()
+}
+
+// GrantRights adds a player to the active build-right projection.
+func (room *Room) GrantRights(playerID int64) {
+	if playerID <= 0 {
+		return
+	}
+
+	room.mutex.Lock()
+	if room.rights == nil {
+		room.rights = make(map[int64]struct{})
+	}
+	room.rights[playerID] = struct{}{}
+	room.mutex.Unlock()
+}
+
+// RevokeRights removes a player from the active build-right projection.
+func (room *Room) RevokeRights(playerID int64) {
+	room.mutex.Lock()
+	delete(room.rights, playerID)
+	room.mutex.Unlock()
+}
+
+// HasRights reports whether a player owns or holds active build rights.
+func (room *Room) HasRights(playerID int64) bool {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+
+	if playerID <= 0 {
+		return false
+	}
+	if room.snapshot.OwnerPlayerID == playerID {
+		return true
+	}
+	_, found := room.rights[playerID]
+
+	return found
 }
 
 // IdleSince returns when the room became empty.

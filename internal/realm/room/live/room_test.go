@@ -155,3 +155,20 @@ func TestRoomCloseDrainsDoorbell(t *testing.T) {
 		t.Fatalf("unexpected close drain %#v", expired)
 	}
 }
+
+// TestRoomRightsProjectionControlsFurniture verifies embedded runtime rights mutations.
+func TestRoomRightsProjectionControlsFurniture(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, OwnerPlayerID: 1, MaxUsers: 2})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	room.ReplaceRights([]int64{2})
+	if !room.CanManageFurniture(1) || !room.CanManageFurniture(2) || room.CanManageFurniture(3) {
+		t.Fatalf("unexpected furniture rights owner=%v holder=%v guest=%v", room.CanManageFurniture(1), room.CanManageFurniture(2), room.CanManageFurniture(3))
+	}
+	room.RevokeRights(2)
+	room.GrantRights(3)
+	if room.HasRights(2) || !room.HasRights(3) {
+		t.Fatalf("unexpected projected rights revoked=%v granted=%v", room.HasRights(2), room.HasRights(3))
+	}
+}

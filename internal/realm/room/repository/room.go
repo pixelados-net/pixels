@@ -11,7 +11,7 @@ import (
 
 const (
 	// roomColumns contains the shared room select list.
-	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, staff_picked, public_room, created_at, updated_at, deleted_at, version`
+	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban, staff_picked, public_room, created_at, updated_at, deleted_at, version`
 
 	// createRoomSQL inserts a room record.
 	createRoomSQL = `

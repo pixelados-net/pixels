@@ -205,10 +205,7 @@ func (snapshot Snapshot) Valid() bool {
 
 // CanManageFurniture reports whether a player may place, move, or pick up room furniture.
 func (room *Room) CanManageFurniture(playerID int64) bool {
-	room.mutex.RLock()
-	defer room.mutex.RUnlock()
-
-	return playerID > 0 && room.snapshot.OwnerPlayerID == playerID
+	return room.HasRights(playerID)
 }
 
 // Valid reports whether the occupant can join a room.

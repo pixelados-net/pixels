@@ -14,6 +14,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -75,6 +76,8 @@ type Handler struct {
 	Events bus.Publisher
 	// Entry decides closed-room access.
 	Entry *roomentry.Service
+	// Rights manages persistent room build rights.
+	Rights roomrights.Manager
 }
 
 // CommandName returns the stable command name.
@@ -125,7 +128,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return err
 	}
 
-	if err := handler.sendEntered(ctx, envelope.Command.Handler, room, roomLayout, active); err != nil {
+	if err := handler.sendEntered(ctx, envelope.Command.Handler, room, roomLayout, active, player.ID()); err != nil {
 		return err
 	}
 
@@ -177,7 +180,7 @@ func (handler Handler) loadRoom(ctx context.Context, roomID int64) (roommodel.Ro
 }
 
 // sendEntered sends the initial room entry packets.
-func (handler Handler) sendEntered(ctx context.Context, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout, active *roomlive.Room) error {
+func (handler Handler) sendEntered(ctx context.Context, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout, active *roomlive.Room, playerID int64) error {
 	packet, err := outentered.Encode()
 	if err != nil {
 		return err
@@ -197,7 +200,11 @@ func (handler Handler) sendEntered(ctx context.Context, connection netconn.Conte
 		return err
 	}
 
-	return handler.sendRoomState(ctx, connection, active, 0)
+	if err := handler.sendRoomState(ctx, connection, active, 0); err != nil {
+		return err
+	}
+
+	return handler.sendRights(ctx, connection, room, active, playerID)
 }
 
 // sendEntryError sends a room entry error when possible.
@@ -229,18 +236,4 @@ func (handler Handler) sendEntryError(ctx context.Context, connection netconn.Co
 	}
 
 	return connection.Send(ctx, packet)
-}
-
-// entryErrorCode maps internal entry errors to protocol codes.
-func entryErrorCode(err error) (int32, bool) {
-	switch {
-	case errors.Is(err, roomlive.ErrRoomFull):
-		return ErrorRoomFull, true
-	case errors.Is(err, roomentry.ErrBanned):
-		return ErrorBanned, true
-	case errors.Is(err, roomentry.ErrAccessDenied):
-		return ErrorAccessDenied, true
-	default:
-		return 0, false
-	}
 }

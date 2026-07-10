@@ -79,7 +79,7 @@ func TestTeleportHandlerForwardsAndGrantsOneBypass(t *testing.T) {
 	connections := netconn.NewRegistry()
 	sent := registerTeleportConnection(t, connections)
 	app := fiber.New()
-	Register(app, teleportRooms{room: room}, roomlive.NewRegistry(nil), connections, nil, players, entry)
+	Register(app, teleportRooms{room: room}, roomlive.NewRegistry(nil), connections, nil, players, entry, Dependencies{})
 	request := httptest.NewRequest(http.MethodPost, "/api/admin/rooms/players/8/teleport", strings.NewReader(`{"targetRoomId":9,"bypass":true}`))
 	request.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	response, err := app.Test(request)

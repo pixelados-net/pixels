@@ -150,8 +150,11 @@ func TestHandleJoinsRoomWithFurnitureSendsFloorItemsPacket(t *testing.T) {
 	if err != nil {
 		t.Fatalf("handle command: %v", err)
 	}
-	if len(*sent) != 8 {
+	if len(*sent) != 10 {
 		t.Fatalf("expected entered, model, floor items, height map, and room state packets, got %#v", *sent)
+	}
+	if (*sent)[8].Header != 339 || (*sent)[9].Header != 780 {
+		t.Fatalf("expected owner and room rights bootstrap packets, got %#v", (*sent)[8:])
 	}
 
 	active, found := handler.Runtime.Find(9)

@@ -83,3 +83,109 @@ type RoomActionResponse struct {
 	// Errors stores failed packet sends.
 	Errors int `json:"errors" required:"true"`
 }
+
+// RoomAuditRequest contains room audit filters.
+type RoomAuditRequest struct {
+	RoomIDRequest
+	// Before stores an optional descending id cursor.
+	Before int64 `query:"before,omitempty" minimum:"1"`
+	// Limit caps returned history rows.
+	Limit int `query:"limit,omitempty" minimum:"1" maximum:"200"`
+	// Type optionally filters comma-separated moderation actions.
+	Type string `query:"type,omitempty"`
+}
+
+// PlayerAuditRequest contains player audit filters.
+type PlayerAuditRequest struct {
+	APIKeyRequest
+	// PlayerID identifies the affected or acting player.
+	PlayerID int64 `path:"playerId" required:"true" minimum:"1"`
+	// RoomID optionally restricts one room.
+	RoomID int64 `query:"roomId,omitempty" minimum:"1"`
+	// Before stores an optional descending id cursor.
+	Before int64 `query:"before,omitempty" minimum:"1"`
+	// Limit caps returned history rows.
+	Limit int `query:"limit,omitempty" minimum:"1" maximum:"200"`
+	// Type optionally filters comma-separated moderation actions.
+	Type string `query:"type,omitempty"`
+}
+
+// RoomRightsAuditEntry describes one rights history row.
+type RoomRightsAuditEntry struct {
+	// ID identifies the audit row.
+	ID int64 `json:"id" required:"true"`
+	// RoomID identifies the room.
+	RoomID int64 `json:"roomId" required:"true"`
+	// PlayerID identifies the affected player.
+	PlayerID int64 `json:"playerId" required:"true"`
+	// ActorKind identifies the source family.
+	ActorKind string `json:"actorKind" required:"true"`
+	// ActorID optionally identifies the acting player.
+	ActorID *int64 `json:"actorId,omitempty"`
+	// Action identifies the rights mutation.
+	Action string `json:"action" required:"true"`
+	// CreatedAt stores the mutation time.
+	CreatedAt string `json:"createdAt" required:"true" format:"date-time"`
+}
+
+// RoomModerationAuditEntry describes one moderation history row.
+type RoomModerationAuditEntry struct {
+	// ID identifies the audit row.
+	ID int64 `json:"id" required:"true"`
+	// RoomID identifies the room.
+	RoomID int64 `json:"roomId" required:"true"`
+	// TargetPlayerID identifies the affected player.
+	TargetPlayerID int64 `json:"targetPlayerId" required:"true"`
+	// ActorKind identifies the source family.
+	ActorKind string `json:"actorKind" required:"true"`
+	// ActorID optionally identifies the acting player.
+	ActorID *int64 `json:"actorId,omitempty"`
+	// Action identifies the moderation action.
+	Action string `json:"action" required:"true"`
+	// DurationSeconds optionally stores sanction duration.
+	DurationSeconds *int64 `json:"durationSeconds,omitempty"`
+	// ExpiresAt optionally stores sanction expiry.
+	ExpiresAt *string `json:"expiresAt,omitempty" format:"date-time"`
+	// CreatedAt stores the action time.
+	CreatedAt string `json:"createdAt" required:"true" format:"date-time"`
+}
+
+// RoomSanction describes one active room ban or mute.
+type RoomSanction struct {
+	// RoomID identifies the room.
+	RoomID int64 `json:"roomId" required:"true"`
+	// PlayerID identifies the affected player.
+	PlayerID int64 `json:"playerId" required:"true"`
+	// Username stores the current username.
+	Username string `json:"username" required:"true"`
+	// EndsAt stores sanction expiry.
+	EndsAt string `json:"endsAt" required:"true" format:"date-time"`
+	// CreatedAt stores sanction creation time.
+	CreatedAt string `json:"createdAt" required:"true" format:"date-time"`
+	// UpdatedAt stores sanction update time.
+	UpdatedAt string `json:"updatedAt" required:"true" format:"date-time"`
+}
+
+// RoomRightsAuditResponse contains room rights history.
+type RoomRightsAuditResponse struct {
+	// Total stores returned rows.
+	Total int `json:"total" required:"true"`
+	// Items stores rights audit rows.
+	Items []RoomRightsAuditEntry `json:"items" required:"true"`
+}
+
+// RoomModerationAuditResponse contains moderation history.
+type RoomModerationAuditResponse struct {
+	// Total stores returned rows.
+	Total int `json:"total" required:"true"`
+	// Items stores moderation rows.
+	Items []RoomModerationAuditEntry `json:"items" required:"true"`
+}
+
+// RoomSanctionResponse contains current sanctions.
+type RoomSanctionResponse struct {
+	// Total stores returned rows.
+	Total int `json:"total" required:"true"`
+	// Items stores current sanctions.
+	Items []RoomSanction `json:"items" required:"true"`
+}

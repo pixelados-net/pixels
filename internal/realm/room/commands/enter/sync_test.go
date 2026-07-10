@@ -43,8 +43,11 @@ func TestHandleBroadcastsSecondPlayerToFirst(t *testing.T) {
 	if len(*firstSent) != firstCount+2 {
 		t.Fatalf("expected first player to receive second spawn, got %#v", *firstSent)
 	}
-	if len(*secondSent) != 7 {
+	if len(*secondSent) != 8 {
 		t.Fatalf("expected second player room snapshot, got %#v", *secondSent)
+	}
+	if (*secondSent)[7].Header != 780 {
+		t.Fatalf("expected room rights level bootstrap, got %#v", (*secondSent)[7:])
 	}
 }
 

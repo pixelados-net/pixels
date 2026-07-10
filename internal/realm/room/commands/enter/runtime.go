@@ -36,6 +36,9 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		return nil, err
 	}
 	if !active.WorldLoaded() {
+		if err := handler.loadRights(ctx, active, room.ID); err != nil {
+			return nil, err
+		}
 		if err := handler.loadWorld(ctx, active, room, roomLayout); err != nil {
 			return nil, err
 		}
@@ -66,6 +69,25 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 	}
 
 	return active, handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID})
+}
+
+// loadRights projects persistent build rights into an active room.
+func (handler Handler) loadRights(ctx context.Context, room *roomlive.Room, roomID int64) error {
+	if handler.Rights == nil {
+		room.ReplaceRights(nil)
+		return nil
+	}
+	rights, err := handler.Rights.ListRights(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	playerIDs := make([]int64, len(rights))
+	for index := range rights {
+		playerIDs[index] = rights[index].PlayerID
+	}
+	room.ReplaceRights(playerIDs)
+
+	return nil
 }
 
 // requestDoorbell queues a player and notifies every authorized responder.

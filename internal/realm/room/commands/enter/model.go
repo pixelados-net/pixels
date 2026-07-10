@@ -2,14 +2,19 @@ package enter
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
+	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
 	"github.com/niflaot/pixels/internal/realm/room/layout"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outentrytile "github.com/niflaot/pixels/networking/outbound/room/entrytile"
 	outmodel "github.com/niflaot/pixels/networking/outbound/room/model"
 	outmodelname "github.com/niflaot/pixels/networking/outbound/room/modelname"
+	outrightslevel "github.com/niflaot/pixels/networking/outbound/room/rights/level"
+	outrightsowner "github.com/niflaot/pixels/networking/outbound/room/rights/owner"
 )
 
 const (
@@ -28,6 +33,43 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 	}
 
 	return SendGeometry(ctx, connection, roomLayout)
+}
+
+// entryErrorCode maps internal entry errors to protocol codes.
+func entryErrorCode(err error) (int32, bool) {
+	switch {
+	case errors.Is(err, roomlive.ErrRoomFull):
+		return ErrorRoomFull, true
+	case errors.Is(err, roomentry.ErrBanned):
+		return ErrorBanned, true
+	case errors.Is(err, roomentry.ErrAccessDenied):
+		return ErrorAccessDenied, true
+	default:
+		return 0, false
+	}
+}
+
+// sendRights sends the current room control level to an entering player.
+func (handler Handler) sendRights(ctx context.Context, connection netconn.Context, room roommodel.Room, active *roomlive.Room, playerID int64) error {
+	level := outrightslevel.None
+	if room.OwnerPlayerID == playerID {
+		packet, err := outrightsowner.Encode()
+		if err != nil {
+			return err
+		}
+		if err := connection.Send(ctx, packet); err != nil {
+			return err
+		}
+		level = outrightslevel.Owner
+	} else if active.HasRights(playerID) {
+		level = outrightslevel.Rights
+	}
+	packet, err := outrightslevel.Encode(level)
+	if err != nil {
+		return err
+	}
+
+	return connection.Send(ctx, packet)
 }
 
 // SendGeometry sends entry tile and heightmap packets without retriggering Nitro's model request.

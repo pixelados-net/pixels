@@ -34,6 +34,23 @@ const (
 	TradeModeAllowed TradeMode = 2
 )
 
+// ModerationPolicy describes which room-scoped actors may moderate.
+type ModerationPolicy int16
+
+const (
+	// ModerationPolicyOwnerOnly allows only the room owner.
+	ModerationPolicyOwnerOnly ModerationPolicy = 0
+	// ModerationPolicyOwnerAndRights allows the owner and rights holders.
+	ModerationPolicyOwnerAndRights ModerationPolicy = 1
+	// ModerationPolicyOwnerRightsAndStaff retains the full protocol policy range.
+	ModerationPolicyOwnerRightsAndStaff ModerationPolicy = 2
+)
+
+// Valid reports whether the moderation policy is supported.
+func (policy ModerationPolicy) Valid() bool {
+	return policy >= ModerationPolicyOwnerOnly && policy <= ModerationPolicyOwnerRightsAndStaff
+}
+
 // Room contains durable room metadata and settings.
 type Room struct {
 	// Base contains shared durable record fields.
@@ -104,6 +121,15 @@ type Room struct {
 
 	// ChatProtection stores room chat flood protection.
 	ChatProtection int16
+
+	// ModerationMute controls room-scoped mute authorization.
+	ModerationMute ModerationPolicy
+
+	// ModerationKick controls room-scoped kick authorization.
+	ModerationKick ModerationPolicy
+
+	// ModerationBan controls room-scoped ban authorization.
+	ModerationBan ModerationPolicy
 
 	// StaffPicked reports whether staff highlighted the room.
 	StaffPicked bool

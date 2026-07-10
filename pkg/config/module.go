@@ -4,6 +4,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/logger"
@@ -22,6 +23,7 @@ var Module = fx.Module(
 		I18N,
 		Currency,
 		RoomEntry,
+		RoomModeration,
 		Postgres,
 		Redis,
 		SSO,
@@ -56,6 +58,11 @@ func Currency(config AppConfig) currencyconfig.Config {
 // RoomEntry extracts closed-room entry settings from composed configuration.
 func RoomEntry(config AppConfig) roomentry.Config {
 	return config.RoomEntry
+}
+
+// RoomModeration extracts room moderation settings from composed configuration.
+func RoomModeration(config AppConfig) roommoderation.Config {
+	return config.RoomModeration
 }
 
 // Postgres extracts PostgreSQL settings from composed configuration.
