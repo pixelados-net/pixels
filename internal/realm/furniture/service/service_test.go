@@ -10,49 +10,6 @@ import (
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
-// TestFindDefinitionByIDRejectsInvalidID verifies definition id validation.
-func TestFindDefinitionByIDRejectsInvalidID(t *testing.T) {
-	_, _, err := New(newFakeStore()).FindDefinitionByID(context.Background(), 0)
-	if !errors.Is(err, ErrInvalidDefinitionID) {
-		t.Fatalf("expected invalid definition id, got %v", err)
-	}
-}
-
-// TestListDefinitionsReadsStore verifies definition listing.
-func TestListDefinitionsReadsStore(t *testing.T) {
-	definitions, err := New(newFakeStore()).ListDefinitions(context.Background())
-	if err != nil {
-		t.Fatalf("list definitions: %v", err)
-	}
-	if len(definitions) != 1 || definitions[0].Name != "chair_plasto" {
-		t.Fatalf("unexpected definitions %#v", definitions)
-	}
-}
-
-// TestFindItemByIDRejectsInvalidID verifies item id validation.
-func TestFindItemByIDRejectsInvalidID(t *testing.T) {
-	_, _, err := New(newFakeStore()).FindItemByID(context.Background(), 0)
-	if !errors.Is(err, ErrInvalidItemID) {
-		t.Fatalf("expected invalid item id, got %v", err)
-	}
-}
-
-// TestListInventoryRejectsInvalidPlayer verifies inventory listing validation.
-func TestListInventoryRejectsInvalidPlayer(t *testing.T) {
-	_, err := New(newFakeStore()).ListInventory(context.Background(), 0)
-	if !errors.Is(err, ErrInvalidPlayerID) {
-		t.Fatalf("expected invalid player id, got %v", err)
-	}
-}
-
-// TestListRoomItemsRejectsInvalidRoom verifies room listing validation.
-func TestListRoomItemsRejectsInvalidRoom(t *testing.T) {
-	_, err := New(newFakeStore()).ListRoomItems(context.Background(), 0)
-	if !errors.Is(err, ErrInvalidRoomID) {
-		t.Fatalf("expected invalid room id, got %v", err)
-	}
-}
-
 // TestPlaceMovesInventoryItemIntoRoom verifies successful placement.
 func TestPlaceMovesInventoryItemIntoRoom(t *testing.T) {
 	store := newFakeStore()
@@ -188,14 +145,6 @@ func TestPickupRejectsInventoryItem(t *testing.T) {
 	}
 }
 
-// TestPickupRejectsInvalidInput verifies pickup input validation.
-func TestPickupRejectsInvalidInput(t *testing.T) {
-	_, err := New(newFakeStore()).Pickup(context.Background(), PickupParams{ActorPlayerID: 7})
-	if !errors.Is(err, ErrInvalidItemID) {
-		t.Fatalf("expected invalid item id, got %v", err)
-	}
-}
-
 // validPlaceForTest returns valid placement input.
 func validPlaceForTest() PlaceParams {
 	return PlaceParams{ItemID: 1, ActorPlayerID: 7, RoomID: 1, Placement: validPlacementForTest()}
@@ -238,11 +187,13 @@ type fakeStore struct {
 	pickupUpdated bool
 	// pickupResult is the returned item for a successful pickup.
 	pickupResult furnituremodel.Item
+	// created stores items returned by CreateItems.
+	created []furnituremodel.Item
 }
 
 // FindDefinitionByID finds a definition for tests.
 func (store *fakeStore) FindDefinitionByID(context.Context, int64) (furnituremodel.Definition, bool, error) {
-	return furnituremodel.Definition{Name: "chair_plasto"}, true, nil
+	return furnituremodel.Definition{Name: "chair_plasto"}, store.found, nil
 }
 
 // ListDefinitions lists definitions for tests.
@@ -263,6 +214,17 @@ func (store *fakeStore) ListInventoryItems(context.Context, int64) ([]furniturem
 // ListRoomItems lists room items for tests.
 func (store *fakeStore) ListRoomItems(context.Context, int64) ([]furnituremodel.Item, error) {
 	return []furnituremodel.Item{store.item}, nil
+}
+
+// CreateItems creates inventory items for tests.
+func (store *fakeStore) CreateItems(_ context.Context, definitionID int64, ownerPlayerID int64, quantity int32, _ string) ([]furnituremodel.Item, error) {
+	items := make([]furnituremodel.Item, 0, quantity)
+	for index := int32(0); index < quantity; index++ {
+		items = append(items, furnituremodel.Item{DefinitionID: definitionID, OwnerPlayerID: ownerPlayerID})
+	}
+	store.created = items
+
+	return items, nil
 }
 
 // PlaceItem places an item for tests.

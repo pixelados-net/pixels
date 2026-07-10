@@ -9,6 +9,7 @@ import (
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
 	currencyrepo "github.com/niflaot/pixels/internal/realm/inventory/currency/repository"
 	"github.com/niflaot/pixels/pkg/bus"
+	"github.com/niflaot/pixels/pkg/postgres"
 	"go.uber.org/zap"
 )
 
@@ -167,6 +168,17 @@ func setMutation(params SetParams, ledger bool) currencyrepo.Mutation {
 
 // publish emits a committed currency change without rolling back persistence on projection failure.
 func (service *Service) publish(ctx context.Context, playerID int64, currencyType int32, amount int64, delta int64, actorKind string) {
+	if postgres.AfterCommit(ctx, func(commitCtx context.Context) {
+		service.publishNow(commitCtx, playerID, currencyType, amount, delta, actorKind)
+	}) {
+		return
+	}
+
+	service.publishNow(ctx, playerID, currencyType, amount, delta, actorKind)
+}
+
+// publishNow emits one committed currency fact.
+func (service *Service) publishNow(ctx context.Context, playerID int64, currencyType int32, amount int64, delta int64, actorKind string) {
 	if service.events == nil {
 		return
 	}

@@ -7,6 +7,21 @@ import (
 	"github.com/niflaot/pixels/internal/realm/furniture/repository"
 )
 
+// GrantParams contains input for creating player inventory items.
+type GrantParams struct {
+	// DefinitionID identifies the furniture definition.
+	DefinitionID int64
+
+	// OwnerPlayerID identifies the receiving player.
+	OwnerPlayerID int64
+
+	// Quantity stores the number of instances to create.
+	Quantity int32
+
+	// ExtraData stores the initial protocol-facing state.
+	ExtraData string
+}
+
 // PlaceParams contains input for placing an inventory item into a room.
 type PlaceParams struct {
 	// ItemID identifies the furniture item.
@@ -41,6 +56,29 @@ type PickupParams struct {
 
 	// ActorPlayerID identifies the player requesting the pickup.
 	ActorPlayerID int64
+}
+
+// Grant creates inventory items for a player from one definition.
+func (service *Service) Grant(ctx context.Context, params GrantParams) ([]furnituremodel.Item, error) {
+	if params.DefinitionID <= 0 {
+		return nil, ErrInvalidDefinitionID
+	}
+	if params.OwnerPlayerID <= 0 {
+		return nil, ErrInvalidPlayerID
+	}
+	if params.Quantity <= 0 {
+		return nil, ErrInvalidQuantity
+	}
+
+	_, found, err := service.store.FindDefinitionByID(ctx, params.DefinitionID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, ErrDefinitionNotFound
+	}
+
+	return service.store.CreateItems(ctx, params.DefinitionID, params.OwnerPlayerID, params.Quantity, params.ExtraData)
 }
 
 // FindItemByID finds a furniture item by id.

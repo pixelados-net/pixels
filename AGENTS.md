@@ -184,6 +184,19 @@ minimum manual checks expected when touching it.
   - Authenticate with a seeded SSO ticket and verify user info bootstrap.
   - Enter and leave a room and verify live player room presence updates.
 
+### FEATURE: Catalog Core
+
+- Owns `internal/realm/catalog` plus catalog-backed furniture grants.
+- Provides catalog page/offer/LTD persistence, immutable cache generations,
+  rank and club visibility gates, atomic purchases, and orphan-definition
+  sanitation. Protocol packets and HTTP administration begin in K4 and K5.
+- Catalog purchases share one PostgreSQL transaction across catalog, currency,
+  and furniture repositories; currency events run only after commit.
+- Test after changes:
+  - `go test -race ./internal/realm/catalog/...`
+  - `go test ./internal/realm/furniture/... ./internal/realm/inventory/...`
+  - Run Liquibase `validate` after changing catalog migrations.
+
 ### FEATURE: Inventory Currencies
 
 - Owns `internal/realm/inventory/currency`, currency packets under

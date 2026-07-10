@@ -3,6 +3,7 @@ package main
 
 import (
 	"github.com/niflaot/pixels/internal/auth/sso"
+	realmcatalog "github.com/niflaot/pixels/internal/realm/catalog"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	realmfurniture "github.com/niflaot/pixels/internal/realm/furniture"
 	realminventory "github.com/niflaot/pixels/internal/realm/inventory"
@@ -35,7 +36,7 @@ func newApp() *fx.App {
 
 // options returns the dependency graph options.
 func options() []fx.Option {
-	options := make([]fx.Option, 0, 19)
+	options := make([]fx.Option, 0, 20)
 	options = append(options, build.Module)
 	options = append(options, config.Module)
 	options = append(options, netconn.Module)
@@ -43,6 +44,7 @@ func options() []fx.Option {
 	options = append(options, i18n.Module)
 	options = append(options, pixelhttp.Module)
 	options = append(options, realmconn.Module)
+	options = append(options, realmcatalog.Module)
 	options = append(options, realmfurniture.Module)
 	options = append(options, realminventory.Module)
 	options = append(options, realmnavigator.Module)

@@ -22,6 +22,12 @@ const (
 	// listRoomItemsSQL reads active items placed in a room.
 	listRoomItemsSQL = `select ` + itemColumns + ` from furniture_items where room_id = $1 and deleted_at is null order by id asc`
 
+	// createItemsSQL creates inventory items in one statement.
+	createItemsSQL = `
+insert into furniture_items (definition_id, owner_player_id, extra_data)
+select $1, $2, $4 from generate_series(1, $3)
+returning ` + itemColumns
+
 	// placeItemSQL moves an owned inventory item into a room.
 	placeItemSQL = `
 update furniture_items
@@ -80,6 +86,17 @@ type PickupItemParams struct {
 	OwnerPlayerID int64
 }
 
+// CreateItems creates inventory items for one owner and definition.
+func (repository *Repository) CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string) ([]furnituremodel.Item, error) {
+	rows, err := repository.executorFor(ctx).Query(ctx, createItemsSQL, definitionID, ownerPlayerID, quantity, extraData)
+	if err != nil {
+		return nil, fmt.Errorf("create %d furniture items for player %d: %w", quantity, ownerPlayerID, err)
+	}
+	defer rows.Close()
+
+	return scanItems(rows)
+}
+
 // FindItemByID finds an active furniture item by id.
 func (repository *Repository) FindItemByID(ctx context.Context, id int64) (furnituremodel.Item, bool, error) {
 	return repository.queryItem(ctx, findItemByIDSQL, id)
@@ -112,7 +129,7 @@ func (repository *Repository) PickupItem(ctx context.Context, params PickupItemP
 
 // queryItem runs one row-returning query and reports whether a row was found.
 func (repository *Repository) queryItem(ctx context.Context, query string, arguments ...any) (furnituremodel.Item, bool, error) {
-	item, err := scanItem(repository.executor.QueryRow(ctx, query, arguments...))
+	item, err := scanItem(repository.executorFor(ctx).QueryRow(ctx, query, arguments...))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return furnituremodel.Item{}, false, nil
 	}
@@ -125,7 +142,7 @@ func (repository *Repository) queryItem(ctx context.Context, query string, argum
 
 // listItems lists furniture items with a query.
 func (repository *Repository) listItems(ctx context.Context, query string, argument any) ([]furnituremodel.Item, error) {
-	rows, err := repository.executor.Query(ctx, query, argument)
+	rows, err := repository.executorFor(ctx).Query(ctx, query, argument)
 	if err != nil {
 		return nil, fmt.Errorf("list furniture items: %w", err)
 	}

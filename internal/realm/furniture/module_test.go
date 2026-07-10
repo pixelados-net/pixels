@@ -16,4 +16,7 @@ func TestProvidersExposeContracts(t *testing.T) {
 	if NewManager(furnitureService) == nil {
 		t.Fatal("expected furniture manager")
 	}
+	if NewGranter(furnitureService) == nil {
+		t.Fatal("expected furniture granter")
+	}
 }

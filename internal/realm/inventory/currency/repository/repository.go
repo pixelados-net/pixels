@@ -27,6 +27,9 @@ func New(pool *postgres.Pool) *Repository {
 	return &Repository{
 		executor: pool,
 		withinTx: func(ctx context.Context, work func(context.Context, postgres.Executor) error) error {
+			if executor, ok := postgres.ScopedExecutor(ctx); ok {
+				return work(ctx, executor)
+			}
 			return postgres.WithinTx(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 				return work(ctx, tx)
 			})

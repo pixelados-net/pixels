@@ -22,7 +22,7 @@ const (
 
 // FindDefinitionByID finds an active furniture definition by id.
 func (repository *Repository) FindDefinitionByID(ctx context.Context, id int64) (furnituremodel.Definition, bool, error) {
-	definition, err := scanDefinition(repository.executor.QueryRow(ctx, findDefinitionByIDSQL, id))
+	definition, err := scanDefinition(repository.executorFor(ctx).QueryRow(ctx, findDefinitionByIDSQL, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return furnituremodel.Definition{}, false, nil
 	}
@@ -35,7 +35,7 @@ func (repository *Repository) FindDefinitionByID(ctx context.Context, id int64) 
 
 // ListDefinitions lists active furniture definitions.
 func (repository *Repository) ListDefinitions(ctx context.Context) ([]furnituremodel.Definition, error) {
-	rows, err := repository.executor.Query(ctx, listDefinitionsSQL)
+	rows, err := repository.executorFor(ctx).Query(ctx, listDefinitionsSQL)
 	if err != nil {
 		return nil, fmt.Errorf("list furniture definitions: %w", err)
 	}

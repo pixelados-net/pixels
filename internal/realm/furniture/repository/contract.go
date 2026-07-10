@@ -29,6 +29,9 @@ type ItemReader interface {
 
 // ItemWriter writes furniture item records.
 type ItemWriter interface {
+	// CreateItems creates inventory items for one owner and definition.
+	CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string) ([]furnituremodel.Item, error)
+
 	// PlaceItem moves an owned inventory item into a room.
 	PlaceItem(ctx context.Context, params PlaceItemParams) (furnituremodel.Item, bool, error)
 

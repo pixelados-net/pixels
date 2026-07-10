@@ -15,6 +15,7 @@ var Module = fx.Module(
 		NewStore,
 		service.New,
 		NewManager,
+		NewGranter,
 	),
 	fx.Invoke(RegisterConnectionHandlers),
 )
@@ -26,5 +27,10 @@ func NewStore(pool *postgres.Pool) repository.Store {
 
 // NewManager exposes the furniture management contract.
 func NewManager(furnitureService *service.Service) service.Manager {
+	return furnitureService
+}
+
+// NewGranter exposes furniture inventory creation behavior.
+func NewGranter(furnitureService *service.Service) service.Granter {
 	return furnitureService
 }

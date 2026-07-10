@@ -27,6 +27,12 @@ type ItemFinder interface {
 	ListRoomItems(ctx context.Context, roomID int64) ([]furnituremodel.Item, error)
 }
 
+// Granter creates new furniture inventory instances.
+type Granter interface {
+	// Grant creates inventory items for a player from one definition.
+	Grant(ctx context.Context, params GrantParams) ([]furnituremodel.Item, error)
+}
+
 // Manager reads and mutates furniture persistence state.
 type Manager interface {
 	DefinitionFinder
@@ -44,3 +50,6 @@ type Manager interface {
 
 // managerAssertion verifies Service implements Manager.
 var managerAssertion Manager = (*Service)(nil)
+
+// granterAssertion verifies Service implements Granter.
+var granterAssertion Granter = (*Service)(nil)

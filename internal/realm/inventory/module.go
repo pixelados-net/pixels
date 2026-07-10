@@ -22,6 +22,7 @@ var Module = fx.Module(
 		currencyservice.New,
 		currencybroadcast.New,
 		NewCurrencyManager,
+		NewCurrencyGranter,
 		NewCurrencyReader,
 		NewCurrencyRequest,
 	),
@@ -38,6 +39,11 @@ func NewCurrencyStore(pool *postgres.Pool) currencyrepo.Store {
 
 // NewCurrencyManager exposes currency management behavior.
 func NewCurrencyManager(service *currencyservice.Service) currencyservice.Manager {
+	return service
+}
+
+// NewCurrencyGranter exposes signed currency mutation behavior.
+func NewCurrencyGranter(service *currencyservice.Service) currencyservice.Granter {
 	return service
 }
 

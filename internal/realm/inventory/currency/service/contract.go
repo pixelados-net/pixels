@@ -30,12 +30,16 @@ type Reader interface {
 	Types(ctx context.Context) ([]currencymodel.Definition, error)
 }
 
+// Granter applies signed player currency mutations.
+type Granter interface {
+	// Grant applies a signed currency delta.
+	Grant(ctx context.Context, params GrantParams) (int64, error)
+}
+
 // Manager reads and mutates player currency balances.
 type Manager interface {
 	Reader
-
-	// Grant applies a signed currency delta.
-	Grant(ctx context.Context, params GrantParams) (int64, error)
+	Granter
 
 	// Set replaces a currency balance with an absolute amount.
 	Set(ctx context.Context, params SetParams) (int64, error)

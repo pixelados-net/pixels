@@ -15,11 +15,17 @@ var (
 	// ErrInvalidDefinitionID reports a malformed furniture definition id.
 	ErrInvalidDefinitionID = errors.New("invalid furniture definition id")
 
+	// ErrInvalidQuantity reports a non-positive furniture grant quantity.
+	ErrInvalidQuantity = errors.New("invalid furniture quantity")
+
 	// ErrInvalidPlacement reports malformed floor placement input.
 	ErrInvalidPlacement = errors.New("invalid furniture placement")
 
 	// ErrItemNotFound reports a missing furniture item.
 	ErrItemNotFound = errors.New("furniture item not found")
+
+	// ErrDefinitionNotFound reports a missing furniture definition.
+	ErrDefinitionNotFound = errors.New("furniture definition not found")
 
 	// ErrNotItemOwner reports an actor that does not own the furniture item.
 	ErrNotItemOwner = errors.New("actor does not own furniture item")
