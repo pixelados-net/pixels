@@ -1,6 +1,7 @@
 package room
 
 import (
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -63,6 +64,8 @@ type HandlerDeps struct {
 	Entry *roomentry.Service
 	// Rights manages persistent room build rights.
 	Rights *roomrights.Service
+	// Permissions resolves global room control capabilities.
+	Permissions permissionservice.Checker
 	// Moderation manages room sanctions and kicks.
 	Moderation *roommoderation.Service
 	// Translations resolves end-user room control messages.
@@ -77,20 +80,12 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	registerRightsHandlers(handlers.Inbound, deps)
 	registerModerationHandlers(handlers.Inbound, deps)
 
-	enterhandler.Register(handlers.Inbound, enterhandler.New(entercmd.Handler{
-		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
-		Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
-		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
-		Entry: deps.Entry, Rights: deps.Rights,
-	}, deps.Log))
+	enterCommand := newEnterCommand(deps)
+	enterhandler.Register(handlers.Inbound, enterhandler.New(enterCommand, deps.Log))
 	respondhandler.Register(handlers.Inbound, respondhandler.New(respondcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Entry: deps.Entry,
-		Enter: entercmd.Handler{
-			Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
-			Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
-			Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events, Entry: deps.Entry, Rights: deps.Rights,
-		},
+		Enter: enterCommand,
 	}, deps.Log))
 	modelhandler.Register(handlers.Inbound, modelhandler.New(modelcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Layouts: deps.Layouts,
@@ -111,4 +106,20 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log))
+}
+
+// newEnterCommand composes room entry behavior and its controller projection.
+func newEnterCommand(deps HandlerDeps) entercmd.Handler {
+	return entercmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
+		Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
+		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
+		Entry: deps.Entry, Rights: deps.Rights,
+		Control: entercmd.ControlPolicy{
+			Permissions:    deps.Permissions,
+			RightsAnyGrant: RightsAnyGrant, RightsAnyRevoke: RightsAnyRevoke,
+			ModerationAnyKick: ModerationAnyKick, ModerationAnyMute: ModerationAnyMute,
+			ModerationAnyBan: ModerationAnyBan,
+		},
+	}
 }

@@ -10,8 +10,12 @@ import (
 	rightsgranted "github.com/niflaot/pixels/internal/realm/room/events/rightsgranted"
 	rightsrevoked "github.com/niflaot/pixels/internal/realm/room/events/rightsrevoked"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outstatus "github.com/niflaot/pixels/networking/outbound/room/entities/status"
 	"github.com/niflaot/pixels/pkg/bus"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"go.uber.org/fx/fxtest"
@@ -64,6 +68,7 @@ func TestBroadcasterProjectsRightsIntoActiveRoom(t *testing.T) {
 	if err != nil {
 		t.Fatalf("activate room: %v", err)
 	}
+	loadWorldForRightsBroadcastTest(t, active)
 	connections, sent := connectionForTest(t)
 	if _, err := runtime.Join(context.Background(), 9, roomlive.Occupant{PlayerID: 2, Username: "Alice", ConnectionID: "conn", ConnectionKind: "websocket"}); err != nil {
 		t.Fatalf("join room: %v", err)
@@ -75,8 +80,24 @@ func TestBroadcasterProjectsRightsIntoActiveRoom(t *testing.T) {
 	if err := broadcaster.Revoked(context.Background(), 9, 2); err != nil || active.HasRights(2) {
 		t.Fatalf("revoke projection rights=%v err=%v", active.HasRights(2), err)
 	}
-	if len(*sent) != 4 {
-		t.Fatalf("expected add, level, remove, level packets, got %#v", *sent)
+	if len(*sent) != 6 || (*sent)[1].Header != outstatus.Header || (*sent)[4].Header != outstatus.Header {
+		t.Fatalf("expected list, status, and level packets for both mutations, got %#v", *sent)
+	}
+}
+
+// loadWorldForRightsBroadcastTest loads the minimum world needed for avatar status projection.
+func loadWorldForRightsBroadcastTest(t *testing.T, active *roomlive.Room) {
+	t.Helper()
+	roomGrid, err := grid.Parse("0", grid.WithDoor(0, 0))
+	if err != nil {
+		t.Fatalf("parse room grid: %v", err)
+	}
+	err = active.LoadWorld(roomlive.WorldConfig{
+		Grid: roomGrid, Door: worldpath.Position{Point: grid.MustPoint(0, 0)},
+		Body: worldunit.RotationSouth, Head: worldunit.RotationSouth, Rules: worldpath.DefaultRules(),
+	})
+	if err != nil {
+		t.Fatalf("load room world: %v", err)
 	}
 }
 

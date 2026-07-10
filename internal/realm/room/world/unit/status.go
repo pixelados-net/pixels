@@ -11,6 +11,9 @@ const (
 
 	// StatusLay stores lay status key.
 	StatusLay = "lay"
+
+	// StatusFlatControl stores room controller level status.
+	StatusFlatControl = "flatctrl"
 )
 
 // Status stores one unit status value.

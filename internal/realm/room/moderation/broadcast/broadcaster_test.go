@@ -12,6 +12,7 @@ import (
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outdesktop "github.com/niflaot/pixels/networking/outbound/session/desktop"
 	"github.com/niflaot/pixels/pkg/bus"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
@@ -38,6 +39,34 @@ func TestBroadcasterBanUsesStandardRoomLeave(t *testing.T) {
 	}
 	if active.Occupancy().Count != 0 {
 		t.Fatalf("expected empty room, got %#v", active.Occupancy())
+	}
+}
+
+// TestBroadcasterForcedRemovalReturnsTargetToDesktop verifies complete kick and ban teardown.
+func TestBroadcasterForcedRemovalReturnsTargetToDesktop(t *testing.T) {
+	tests := []struct {
+		// name stores the case name.
+		name string
+		// remove executes the forced removal.
+		remove func(*Broadcaster) error
+	}{
+		{name: "kick", remove: func(broadcaster *Broadcaster) error { return broadcaster.Kick(context.Background(), 9, 2) }},
+		{name: "ban", remove: func(broadcaster *Broadcaster) error { return broadcaster.Ban(context.Background(), 9, 2) }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			runtime, active := occupiedRoomForTest(t)
+			connections, sent := moderationConnectionForTest(t)
+			if err := test.remove(New(nil, nil, runtime, connections, nil)); err != nil {
+				t.Fatalf("forced removal: %v", err)
+			}
+			if active.Occupancy().Count != 0 {
+				t.Fatalf("expected empty room, got %#v", active.Occupancy())
+			}
+			if len(*sent) != 2 || (*sent)[1].Header != outdesktop.Header {
+				t.Fatalf("expected notice followed by desktop view, got %#v", *sent)
+			}
+		})
 	}
 }
 

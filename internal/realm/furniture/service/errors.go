@@ -35,4 +35,7 @@ var (
 
 	// ErrItemNotPlaced reports an item that is not available to move or pick up.
 	ErrItemNotPlaced = errors.New("furniture item not placed")
+
+	// ErrItemNotInRoom reports an item outside the room authorized for a mutation.
+	ErrItemNotInRoom = errors.New("furniture item not in authorized room")
 )

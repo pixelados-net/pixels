@@ -8,6 +8,7 @@ import (
 	roomfurniture "github.com/niflaot/pixels/internal/realm/room/furniture"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outupdate "github.com/niflaot/pixels/networking/outbound/room/furniture/update"
 	outbubble "github.com/niflaot/pixels/networking/outbound/session/bubblealert"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"go.uber.org/zap"
@@ -19,7 +20,7 @@ const (
 )
 
 // handleSoftError logs a rejected move attempt with context and sends a bubble alert when possible.
-func (handler Handler) handleSoftError(ctx context.Context, cmd Command, err error) error {
+func (handler Handler) handleSoftError(ctx context.Context, cmd Command, roomID int64, err error) error {
 	key, soft := bubbleErrorKey(err)
 	if !soft {
 		return err
@@ -31,11 +32,38 @@ func (handler Handler) handleSoftError(ctx context.Context, cmd Command, err err
 			zap.Error(err),
 		)
 	}
+	rollbackErr := handler.sendRollback(ctx, cmd, roomID)
 	if key == "" {
+		return rollbackErr
+	}
+
+	return errors.Join(rollbackErr, handler.sendBubbleAlert(ctx, cmd.Handler, key))
+}
+
+// sendRollback restores the authoritative item state after a rejected predicted move.
+func (handler Handler) sendRollback(ctx context.Context, cmd Command, roomID int64) error {
+	if roomID <= 0 || handler.Furniture == nil {
 		return nil
 	}
 
-	return handler.sendBubbleAlert(ctx, cmd.Handler, key)
+	item, found, err := handler.Furniture.FindItemByID(ctx, cmd.ItemID)
+	if err != nil || !found {
+		return err
+	}
+	if item.RoomID == nil || *item.RoomID != roomID || item.X == nil || item.Y == nil || item.Z == nil {
+		return nil
+	}
+
+	definition, found, err := handler.Furniture.FindDefinitionByID(ctx, item.DefinitionID)
+	if err != nil || !found {
+		return err
+	}
+	packet, err := outupdate.Encode(updateRecord(item, definition))
+	if err != nil {
+		return err
+	}
+
+	return cmd.Handler.Send(ctx, packet)
 }
 
 // sendBubbleAlert notifies the actor of a rejected furniture move.
@@ -75,6 +103,7 @@ func bubbleErrorKey(err error) (string, bool) {
 		return "session.bubble.furniture.item_not_in_inventory", true
 	case errors.Is(err, furnitureservice.ErrItemNotFound),
 		errors.Is(err, furnitureservice.ErrItemNotPlaced),
+		errors.Is(err, furnitureservice.ErrItemNotInRoom),
 		errors.Is(err, roomfurniture.ErrDefinitionNotFound):
 		return "session.bubble.furniture.item_not_found", true
 	case errors.Is(err, roomlive.ErrWorldNotLoaded):

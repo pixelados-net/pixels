@@ -115,9 +115,9 @@ func TestPlaceItemReportsNoRowsAsNotUpdated(t *testing.T) {
 func TestMoveItemUsesPlacedGuardedQuery(t *testing.T) {
 	executor := &fakeExecutor{row: fakeRow{values: itemValuesForTest(placedRoomID, placedX, placedY, placedZ)}}
 	item, updated, err := New(executor).MoveItem(context.Background(), MoveItemParams{
-		ID:            1,
-		OwnerPlayerID: 7,
-		Placement:     furnituremodel.Placement{X: 5, Y: 5, Z: 0, Rotation: furnituremodel.RotationEast},
+		ID:        1,
+		RoomID:    1,
+		Placement: furnituremodel.Placement{X: 5, Y: 5, Z: 0, Rotation: furnituremodel.RotationEast},
 	})
 	if err != nil {
 		t.Fatalf("move item: %v", err)
@@ -125,7 +125,7 @@ func TestMoveItemUsesPlacedGuardedQuery(t *testing.T) {
 	if !updated || !item.InRoom() {
 		t.Fatalf("unexpected move result item=%#v updated=%v", item, updated)
 	}
-	if !strings.Contains(executor.query, "room_id is not null") || len(executor.arguments) != 6 {
+	if !strings.Contains(executor.query, "room_id = $2") || len(executor.arguments) != 6 || executor.arguments[1] != int64(1) {
 		t.Fatalf("unexpected query %q arguments=%#v", executor.query, executor.arguments)
 	}
 }

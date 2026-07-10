@@ -99,7 +99,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return nil
 	}
 	if !active.CanManageFurniture(player.ID()) {
-		return handler.handleSoftError(ctx, envelope.Command, roomlive.ErrNoFurnitureRights)
+		return handler.handleSoftError(ctx, envelope.Command, roomID, roomlive.ErrNoFurnitureRights)
 	}
 
 	item, found, err := handler.Furniture.FindItemByID(ctx, envelope.Command.ItemID)
@@ -113,19 +113,20 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	rotation := furnituremodel.Rotation(envelope.Command.Rotation)
 	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item.ID, item.DefinitionID, envelope.Command.X, envelope.Command.Y, rotation)
 	if err != nil {
-		return handler.handleSoftError(ctx, envelope.Command, err)
+		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
 	}
 
 	moved, err := handler.Furniture.Move(ctx, furnitureservice.MoveParams{
 		ItemID:        item.ID,
 		ActorPlayerID: player.ID(),
+		RoomID:        roomID,
 		Placement: furnituremodel.Placement{
 			X: envelope.Command.X, Y: envelope.Command.Y,
 			Z: float64(worldItem.Z), Rotation: rotation,
 		},
 	})
 	if err != nil {
-		return handler.handleSoftError(ctx, envelope.Command, err)
+		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
 	}
 
 	reoriented, err := active.ReloadFurniture(moved.ID, &worldItem)

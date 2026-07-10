@@ -102,7 +102,7 @@ Autorización dentro del propio service (no en el comando — mismo criterio que
 | Inbound | `rights/revokeall` | sin campos (implícito: "mi room actual") |
 | Inbound | `rights/relinquish` | sin campos |
 | Inbound | `rights/list` | sin campos |
-| Outbound | `rights/level` | `level int32` (`NONE=0/RIGHTS=1/OWNER=2` — simplificado respecto al enum completo de Arcturus, `GUILD_RIGHTS`/`GUILD_ADMIN` se agregan el día que exista un realm de grupos, mismo criterio ya fijado en `REMAINING-ROOMS.md` 4.1), mandado al jugador afectado tras cada cambio |
+| Outbound | `rights/level` | `level int32` (`NONE=0`, `RIGHTS=1`, `OWNER=4`, `MODERATOR=5`; `2` y `3` quedan reservados para group member/admin), mandado al jugador afectado tras cada cambio |
 | Outbound | `rights/list` | lista de `(playerId, username)` actualmente con derechos, respuesta a `rights/list` |
 
 Los headers fueron confirmados contra Nitro real durante RM2 y están enumerados en la Parte 2.7.

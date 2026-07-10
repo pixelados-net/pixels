@@ -49,6 +49,43 @@ func TestListRoomItemsRejectsInvalidRoom(t *testing.T) {
 	}
 }
 
+// TestMoveRepositionsPlacedItem verifies room authorization is independent of item ownership.
+func TestMoveRepositionsPlacedItem(t *testing.T) {
+	store := newFakeStore()
+	store.item = placedItemForTest()
+	store.item.OwnerPlayerID = 99
+
+	item, err := New(store).Move(context.Background(), MoveParams{ItemID: 1, ActorPlayerID: 7, RoomID: 1, Placement: validPlacementForTest()})
+	if err != nil {
+		t.Fatalf("move item: %v", err)
+	}
+	if !item.InRoom() || store.moveParams.RoomID != 1 {
+		t.Fatalf("unexpected moved item %#v", item)
+	}
+}
+
+// TestMoveRejectsInventoryItem verifies move state validation.
+func TestMoveRejectsInventoryItem(t *testing.T) {
+	store := newFakeStore()
+	store.item = inventoryItemForTest()
+
+	_, err := New(store).Move(context.Background(), MoveParams{ItemID: 1, ActorPlayerID: 7, RoomID: 1, Placement: validPlacementForTest()})
+	if !errors.Is(err, ErrItemNotInRoom) {
+		t.Fatalf("expected item outside authorized room, got %v", err)
+	}
+}
+
+// TestMoveRejectsItemFromDifferentRoom verifies room guards cannot mutate foreign placements.
+func TestMoveRejectsItemFromDifferentRoom(t *testing.T) {
+	store := newFakeStore()
+	store.item = placedItemForTest()
+
+	_, err := New(store).Move(context.Background(), MoveParams{ItemID: 1, ActorPlayerID: 7, RoomID: 2, Placement: validPlacementForTest()})
+	if !errors.Is(err, ErrItemNotInRoom) {
+		t.Fatalf("expected item outside authorized room, got %v", err)
+	}
+}
+
 // TestPickupRejectsInvalidInput verifies pickup input validation.
 func TestPickupRejectsInvalidInput(t *testing.T) {
 	_, err := New(newFakeStore()).Pickup(context.Background(), PickupParams{ActorPlayerID: 7})

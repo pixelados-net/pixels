@@ -331,7 +331,7 @@ func TestBubbleErrorKeyMapsKnownErrors(t *testing.T) {
 func TestHandleSoftErrorReturnsNilWithoutBubbleForWorldNotLoaded(t *testing.T) {
 	handler := Handler{Log: zap.NewNop()}
 
-	err := handler.handleSoftError(context.Background(), Command{Handler: connectionForTest()}, roomlive.ErrWorldNotLoaded)
+	err := handler.handleSoftError(context.Background(), Command{Handler: connectionForTest()}, 0, roomlive.ErrWorldNotLoaded)
 	if err != nil {
 		t.Fatalf("expected nil for world-not-loaded soft error, got %v", err)
 	}
@@ -558,7 +558,7 @@ func (manager *fakeManager) Move(_ context.Context, params furnitureservice.Move
 
 	return furnituremodel.Item{
 		Base:         sharedmodel.Base{Identity: sharedmodel.Identity{ID: params.ItemID}},
-		DefinitionID: manager.item.DefinitionID, OwnerPlayerID: params.ActorPlayerID,
+		DefinitionID: manager.item.DefinitionID, OwnerPlayerID: manager.item.OwnerPlayerID,
 		RoomID: &roomID, X: &x, Y: &y, Z: &z, Rotation: params.Placement.Rotation,
 	}, nil
 }

@@ -7,8 +7,11 @@ import (
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	"github.com/niflaot/pixels/internal/realm/room/broadcast"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	"github.com/niflaot/pixels/internal/realm/room/projection"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outstatus "github.com/niflaot/pixels/networking/outbound/room/entities/status"
 	outadded "github.com/niflaot/pixels/networking/outbound/room/rights/added"
 	outlevel "github.com/niflaot/pixels/networking/outbound/room/rights/level"
 	outremoved "github.com/niflaot/pixels/networking/outbound/room/rights/removed"
@@ -47,6 +50,10 @@ func (broadcaster *Broadcaster) Granted(ctx context.Context, roomID int64, playe
 	if err := broadcast.RoomPacket(ctx, broadcaster.connections, active, packet, 0); err != nil {
 		return err
 	}
+	active.SetUnitStatus(playerID, worldunit.StatusFlatControl, "1")
+	if err := broadcaster.broadcastStatus(ctx, active, playerID); err != nil {
+		return err
+	}
 
 	return broadcaster.sendLevel(ctx, active, playerID, outlevel.Rights)
 }
@@ -65,8 +72,26 @@ func (broadcaster *Broadcaster) Revoked(ctx context.Context, roomID int64, playe
 	if err := broadcast.RoomPacket(ctx, broadcaster.connections, active, packet, 0); err != nil {
 		return err
 	}
+	active.SetUnitStatus(playerID, worldunit.StatusFlatControl, "0")
+	if err := broadcaster.broadcastStatus(ctx, active, playerID); err != nil {
+		return err
+	}
 
 	return broadcaster.sendLevel(ctx, active, playerID, outlevel.None)
+}
+
+// broadcastStatus synchronizes one target's room controller marker with every occupant.
+func (broadcaster *Broadcaster) broadcastStatus(ctx context.Context, active *roomlive.Room, playerID int64) error {
+	records := projection.Statuses(active, playerID)
+	if len(records) == 0 {
+		return nil
+	}
+	packet, err := outstatus.Encode(records)
+	if err != nil {
+		return err
+	}
+
+	return broadcast.RoomPacket(ctx, broadcaster.connections, active, packet, 0)
 }
 
 // sendLevel sends room control level to one active occupant.

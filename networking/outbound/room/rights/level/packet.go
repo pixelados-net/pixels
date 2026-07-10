@@ -11,7 +11,9 @@ const (
 	// Rights identifies room rights control.
 	Rights int32 = 1
 	// Owner identifies room owner control.
-	Owner int32 = 2
+	Owner int32 = 4
+	// Moderator identifies global room moderation control.
+	Moderator int32 = 5
 )
 
 // Definition describes ROOM_RIGHTS fields.

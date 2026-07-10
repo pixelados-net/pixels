@@ -35,11 +35,11 @@ set room_id = $3, x = $4, y = $5, z = $6, rotation = $7, updated_at = now(), ver
 where id = $1 and owner_player_id = $2 and room_id is null and deleted_at is null
 returning ` + itemColumns
 
-	// moveItemSQL repositions an owned, already placed item.
+	// moveItemSQL repositions an item within its authorized room.
 	moveItemSQL = `
 update furniture_items
 set x = $3, y = $4, z = $5, rotation = $6, updated_at = now(), version = version + 1
-where id = $1 and owner_player_id = $2 and room_id is not null and deleted_at is null
+where id = $1 and room_id = $2 and deleted_at is null
 returning ` + itemColumns
 
 	// pickupItemSQL returns an owned, placed item to inventory.
@@ -65,13 +65,13 @@ type PlaceItemParams struct {
 	Placement furnituremodel.Placement
 }
 
-// MoveItemParams contains input for repositioning an owned, placed item.
+// MoveItemParams contains input for repositioning an item within one room.
 type MoveItemParams struct {
 	// ID identifies the furniture item.
 	ID int64
 
-	// OwnerPlayerID identifies the required current owner.
-	OwnerPlayerID int64
+	// RoomID identifies the required current room.
+	RoomID int64
 
 	// Placement stores the destination floor coordinates and rotation.
 	Placement furnituremodel.Placement
@@ -117,9 +117,9 @@ func (repository *Repository) PlaceItem(ctx context.Context, params PlaceItemPar
 	return repository.queryItem(ctx, placeItemSQL, params.ID, params.OwnerPlayerID, params.RoomID, params.Placement.X, params.Placement.Y, params.Placement.Z, params.Placement.Rotation)
 }
 
-// MoveItem repositions an owned, already placed item.
+// MoveItem repositions an item guarded by its current room.
 func (repository *Repository) MoveItem(ctx context.Context, params MoveItemParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, moveItemSQL, params.ID, params.OwnerPlayerID, params.Placement.X, params.Placement.Y, params.Placement.Z, params.Placement.Rotation)
+	return repository.queryItem(ctx, moveItemSQL, params.ID, params.RoomID, params.Placement.X, params.Placement.Y, params.Placement.Z, params.Placement.Rotation)
 }
 
 // PickupItem returns an owned, placed item to inventory.

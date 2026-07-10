@@ -45,6 +45,9 @@ type MoveParams struct {
 	// ActorPlayerID identifies the player requesting the move.
 	ActorPlayerID int64
 
+	// RoomID identifies the room authorized for the move.
+	RoomID int64
+
 	// Placement stores the destination floor coordinates and rotation.
 	Placement furnituremodel.Placement
 }
@@ -149,28 +152,34 @@ func (service *Service) Move(ctx context.Context, params MoveParams) (furniturem
 	if err := validateActor(params.ItemID, params.ActorPlayerID); err != nil {
 		return furnituremodel.Item{}, err
 	}
+	if params.RoomID <= 0 {
+		return furnituremodel.Item{}, ErrInvalidRoomID
+	}
 	if err := validatePlacement(params.Placement); err != nil {
 		return furnituremodel.Item{}, err
 	}
 
-	item, err := service.ownedItem(ctx, params.ItemID, params.ActorPlayerID)
+	item, found, err := service.store.FindItemByID(ctx, params.ItemID)
 	if err != nil {
 		return furnituremodel.Item{}, err
 	}
-	if item.InInventory() {
-		return furnituremodel.Item{}, ErrItemNotPlaced
+	if !found {
+		return furnituremodel.Item{}, ErrItemNotFound
+	}
+	if item.RoomID == nil || *item.RoomID != params.RoomID {
+		return furnituremodel.Item{}, ErrItemNotInRoom
 	}
 
 	moved, updated, err := service.store.MoveItem(ctx, repository.MoveItemParams{
-		ID:            params.ItemID,
-		OwnerPlayerID: params.ActorPlayerID,
-		Placement:     params.Placement,
+		ID:        params.ItemID,
+		RoomID:    params.RoomID,
+		Placement: params.Placement,
 	})
 	if err != nil {
 		return furnituremodel.Item{}, err
 	}
 	if !updated {
-		return furnituremodel.Item{}, ErrItemNotPlaced
+		return furnituremodel.Item{}, ErrItemNotInRoom
 	}
 
 	return moved, nil

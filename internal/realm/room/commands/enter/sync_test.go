@@ -1,6 +1,7 @@
 package enter
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -42,6 +43,9 @@ func TestHandleBroadcastsSecondPlayerToFirst(t *testing.T) {
 
 	if len(*firstSent) != firstCount+2 {
 		t.Fatalf("expected first player to receive second spawn, got %#v", *firstSent)
+	}
+	if !bytes.Contains((*firstSent)[firstCount+1].Payload, []byte("flatctrl 0")) {
+		t.Fatalf("expected visitor flat control in spawn status, got %#v", (*firstSent)[firstCount+1])
 	}
 	if len(*secondSent) != 8 {
 		t.Fatalf("expected second player room snapshot, got %#v", *secondSent)

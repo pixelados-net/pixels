@@ -3,6 +3,7 @@ package broadcast
 
 import (
 	"context"
+	"errors"
 
 	"github.com/niflaot/pixels/internal/command"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -15,6 +16,7 @@ import (
 	outentryerror "github.com/niflaot/pixels/networking/outbound/room/entryerror"
 	outmuted "github.com/niflaot/pixels/networking/outbound/room/moderation/muted"
 	outunbanned "github.com/niflaot/pixels/networking/outbound/room/moderation/unbanned"
+	outdesktop "github.com/niflaot/pixels/networking/outbound/session/desktop"
 	outerror "github.com/niflaot/pixels/networking/outbound/session/error"
 	"github.com/niflaot/pixels/pkg/bus"
 )
@@ -94,33 +96,51 @@ func (broadcaster *Broadcaster) remove(ctx context.Context, roomID int64, player
 	if !found || active.ID() != roomID {
 		return nil
 	}
-	if err := broadcaster.sendTarget(ctx, roomID, playerID, packet); err != nil {
-		return err
+	target, targetFound := broadcaster.targetConnection(active, playerID)
+	var noticeErr error
+	if targetFound {
+		noticeErr = target.Send(ctx, packet)
+	}
+	leaveErr := broadcaster.leave.Handle(ctx, command.Envelope[leavecmd.Command]{Command: leavecmd.Command{PlayerID: playerID}})
+	desktop, err := outdesktop.Encode()
+	if err != nil {
+		return errors.Join(noticeErr, leaveErr, err)
+	}
+	var desktopErr error
+	if targetFound {
+		desktopErr = target.Send(ctx, desktop)
 	}
 
-	return broadcaster.leave.Handle(ctx, command.Envelope[leavecmd.Command]{Command: leavecmd.Command{PlayerID: playerID}})
+	return errors.Join(noticeErr, leaveErr, desktopErr)
 }
 
 // sendTarget sends one packet to a target only while present in the selected room.
 func (broadcaster *Broadcaster) sendTarget(ctx context.Context, roomID int64, playerID int64, packet codec.Packet) error {
-	if broadcaster.connections == nil {
-		return nil
-	}
 	active, found := broadcaster.runtime.Find(roomID)
 	if !found {
 		return nil
+	}
+	connection, found := broadcaster.targetConnection(active, playerID)
+	if !found {
+		return nil
+	}
+
+	return connection.Send(ctx, packet)
+}
+
+// targetConnection resolves one occupant's connection before runtime removal.
+func (broadcaster *Broadcaster) targetConnection(active *roomlive.Room, playerID int64) (netconn.Connection, bool) {
+	if broadcaster.connections == nil || active == nil {
+		return nil, false
 	}
 	for _, occupant := range active.Occupants() {
 		if occupant.PlayerID != playerID {
 			continue
 		}
 		connection, found := broadcaster.connections.Get(occupant.ConnectionKind, occupant.ConnectionID)
-		if !found {
-			return nil
-		}
 
-		return connection.Send(ctx, packet)
+		return connection, found
 	}
 
-	return nil
+	return nil, false
 }

@@ -40,6 +40,22 @@ func (room *Room) Units() []UnitSnapshot {
 	return units
 }
 
+// SetUnitStatus stores one status on a player unit when its world is loaded.
+func (room *Room) SetUnitStatus(playerID int64, key string, value string) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return false
+	}
+	roomUnit, found := room.world.units[playerID]
+	if !found {
+		return false
+	}
+	roomUnit.SetStatus(key, value)
+
+	return true
+}
+
 // FurnitureItems returns stable placed furniture item snapshots.
 func (room *Room) FurnitureItems() []worldfurniture.Item {
 	room.mutex.RLock()

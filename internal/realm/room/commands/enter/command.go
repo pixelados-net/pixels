@@ -78,6 +78,8 @@ type Handler struct {
 	Entry *roomentry.Service
 	// Rights manages persistent room build rights.
 	Rights roomrights.Manager
+	// Control projects global room capabilities into Nitro controller state.
+	Control ControlPolicy
 }
 
 // CommandName returns the stable command name.

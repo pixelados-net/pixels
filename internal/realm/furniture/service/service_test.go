@@ -94,31 +94,6 @@ func TestPlaceRejectsConcurrentConflict(t *testing.T) {
 	}
 }
 
-// TestMoveRepositionsPlacedItem verifies successful moves.
-func TestMoveRepositionsPlacedItem(t *testing.T) {
-	store := newFakeStore()
-	store.item = placedItemForTest()
-
-	item, err := New(store).Move(context.Background(), MoveParams{ItemID: 1, ActorPlayerID: 7, Placement: validPlacementForTest()})
-	if err != nil {
-		t.Fatalf("move item: %v", err)
-	}
-	if !item.InRoom() {
-		t.Fatalf("unexpected moved item %#v", item)
-	}
-}
-
-// TestMoveRejectsInventoryItem verifies move state validation.
-func TestMoveRejectsInventoryItem(t *testing.T) {
-	store := newFakeStore()
-	store.item = inventoryItemForTest()
-
-	_, err := New(store).Move(context.Background(), MoveParams{ItemID: 1, ActorPlayerID: 7, Placement: validPlacementForTest()})
-	if !errors.Is(err, ErrItemNotPlaced) {
-		t.Fatalf("expected item not placed, got %v", err)
-	}
-}
-
 // TestPickupReturnsPlacedItemToInventory verifies successful pickup.
 func TestPickupReturnsPlacedItemToInventory(t *testing.T) {
 	store := newFakeStore()
@@ -183,6 +158,8 @@ type fakeStore struct {
 	placeUpdated bool
 	// moveUpdated reports whether MoveItem matched a row.
 	moveUpdated bool
+	// moveParams stores the latest move mutation input.
+	moveParams repository.MoveItemParams
 	// pickupUpdated reports whether PickupItem matched a row.
 	pickupUpdated bool
 	// pickupResult is the returned item for a successful pickup.
@@ -237,7 +214,9 @@ func (store *fakeStore) PlaceItem(_ context.Context, params repository.PlaceItem
 }
 
 // MoveItem moves an item for tests.
-func (store *fakeStore) MoveItem(context.Context, repository.MoveItemParams) (furnituremodel.Item, bool, error) {
+func (store *fakeStore) MoveItem(_ context.Context, params repository.MoveItemParams) (furnituremodel.Item, bool, error) {
+	store.moveParams = params
+
 	return store.item, store.moveUpdated, nil
 }
 

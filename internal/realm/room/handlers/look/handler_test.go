@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	lookcmd "github.com/niflaot/pixels/internal/realm/room/commands/look"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	inlook "github.com/niflaot/pixels/networking/inbound/room/entities/look"
@@ -21,5 +22,12 @@ func TestRegisterAddsLookHandler(t *testing.T) {
 	err = registry.Handle(netconn.Context{State: netconn.StateConnected, Authenticated: true}, packet)
 	if err == nil {
 		t.Fatal("expected handler dependency error")
+	}
+}
+
+// TestStalePresenceErrorsAreSoft verifies post-leave look packets are harmless.
+func TestStalePresenceErrorsAreSoft(t *testing.T) {
+	if !isStalePresenceError(lookcmd.ErrPlayerNotInRoom) || !isStalePresenceError(roomlive.ErrRoomNotFound) {
+		t.Fatal("expected stale room presence errors to be soft")
 	}
 }
