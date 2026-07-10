@@ -4,11 +4,16 @@ package catalog
 import (
 	"context"
 
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
 	catalogrepo "github.com/niflaot/pixels/internal/realm/catalog/repository"
 	catalogservice "github.com/niflaot/pixels/internal/realm/catalog/service"
+	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/postgres"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // Module provides catalog persistence, cache, and purchase behavior.
@@ -16,7 +21,7 @@ var Module = fx.Module(
 	"realm-catalog",
 	fx.Provide(
 		NewStore,
-		catalogservice.New,
+		NewService,
 		NewManager,
 		NewReader,
 		catalogadmin.New,
@@ -24,6 +29,11 @@ var Module = fx.Module(
 	),
 	fx.Invoke(RegisterLifecycle, RegisterConnectionHandlers),
 )
+
+// NewService creates permission-aware catalog behavior.
+func NewService(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker) *catalogservice.Service {
+	return catalogservice.New(store, currencies, furniture, events, log, permissions)
+}
 
 // NewStore creates catalog persistence behavior.
 func NewStore(pool *postgres.Pool) catalogrepo.Store {

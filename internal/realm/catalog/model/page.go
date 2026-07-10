@@ -1,7 +1,10 @@
 // Package model contains durable catalog records.
 package model
 
-import sharedmodel "github.com/niflaot/pixels/pkg/model"
+import (
+	"github.com/niflaot/pixels/internal/permission"
+	sharedmodel "github.com/niflaot/pixels/pkg/model"
+)
 
 const (
 	// DefaultLayout identifies the first supported catalog page layout.
@@ -28,8 +31,8 @@ type Page struct {
 	// IconImage stores the client icon image.
 	IconImage int32
 
-	// MinRank stores the minimum visible player rank.
-	MinRank int32
+	// RequiredNode stores the optional permission needed to access the page.
+	RequiredNode *permission.Node
 
 	// OrderNum stores sibling display order.
 	OrderNum int32
@@ -44,7 +47,7 @@ type Page struct {
 	ClubOnly bool
 }
 
-// Accessible reports whether a player can see and open the page.
-func (page Page) Accessible(rank int32, hasClub bool) bool {
-	return page.Visible && page.Enabled && rank >= page.MinRank && (!page.ClubOnly || hasClub)
+// Accessible reports whether visibility and club requirements allow page access.
+func (page Page) Accessible(hasClub bool) bool {
+	return page.Visible && page.Enabled && (!page.ClubOnly || hasClub)
 }

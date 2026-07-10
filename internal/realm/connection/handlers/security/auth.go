@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/niflaot/pixels/internal/auth/sso"
+	permissionbroadcast "github.com/niflaot/pixels/internal/permission/broadcast"
 	currencyrequest "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
 	playerauthenticated "github.com/niflaot/pixels/internal/realm/player/events/authenticated"
 	playerauthenticating "github.com/niflaot/pixels/internal/realm/player/events/authenticating"
@@ -34,11 +35,13 @@ type Authenticator struct {
 	events bus.Publisher
 	// currencies sends the composed player's wallet bootstrap.
 	currencies *currencyrequest.Handler
+	// permissions sends the player's permission and perk bootstrap.
+	permissions *permissionbroadcast.Projector
 }
 
 // NewAuthenticator creates a security authenticator.
-func NewAuthenticator(tickets *sso.Service, players playerservice.Finder, live *live.Registry, bindings *binding.Registry, events bus.Publisher, currencies *currencyrequest.Handler) *Authenticator {
-	return &Authenticator{
+func NewAuthenticator(tickets *sso.Service, players playerservice.Finder, live *live.Registry, bindings *binding.Registry, events bus.Publisher, currencies *currencyrequest.Handler, projectors ...*permissionbroadcast.Projector) *Authenticator {
+	authenticator := &Authenticator{
 		tickets:    tickets,
 		players:    players,
 		live:       live,
@@ -46,6 +49,11 @@ func NewAuthenticator(tickets *sso.Service, players playerservice.Finder, live *
 		events:     events,
 		currencies: currencies,
 	}
+	if len(projectors) > 0 {
+		authenticator.permissions = projectors[0]
+	}
+
+	return authenticator
 }
 
 // Resolve consumes a ticket and loads the bound player record.

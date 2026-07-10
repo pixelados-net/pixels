@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	// DefaultRank stores catalog access until the permission system is implemented.
-	DefaultRank int32 = 1
 	// DefaultClub stores catalog club access until subscriptions are implemented.
 	DefaultClub bool = false
 )

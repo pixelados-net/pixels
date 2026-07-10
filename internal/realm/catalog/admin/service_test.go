@@ -16,7 +16,7 @@ import (
 // TestPageLifecycle verifies catalog page creation and partial updates.
 func TestPageLifecycle(t *testing.T) {
 	fixture := newFixture()
-	created, err := fixture.service.CreatePage(context.Background(), PageInput{Name: "chairs", Layout: "default_3x3", MinRank: 1, Visible: true, Enabled: true})
+	created, err := fixture.service.CreatePage(context.Background(), PageInput{Name: "chairs", Layout: "default_3x3", Visible: true, Enabled: true})
 	if err != nil || created.ID != 2 {
 		t.Fatalf("unexpected created page %#v error %v", created, err)
 	}
@@ -35,7 +35,7 @@ func TestPageLifecycle(t *testing.T) {
 func TestCreatePageRejectsMissingParent(t *testing.T) {
 	fixture := newFixture()
 	parentID := int64(99)
-	_, err := fixture.service.CreatePage(context.Background(), PageInput{ParentID: &parentID, Name: "bad", Layout: "default_3x3", MinRank: 1})
+	_, err := fixture.service.CreatePage(context.Background(), PageInput{ParentID: &parentID, Name: "bad", Layout: "default_3x3"})
 	if !errors.Is(err, ErrPageNotFound) {
 		t.Fatalf("expected page not found, got %v", err)
 	}
@@ -85,7 +85,7 @@ type adminFixture struct {
 
 // newFixture creates catalog administration fixtures.
 func newFixture() adminFixture {
-	store := &adminStore{pages: []catalogmodel.Page{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: "root", Layout: "default_3x3", MinRank: 1}}}
+	store := &adminStore{pages: []catalogmodel.Page{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: "root", Layout: "default_3x3"}}}
 	catalog := &adminCatalog{}
 	definitions := adminDefinitions{definitions: []furnituremodel.Definition{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 2}}}}}
 

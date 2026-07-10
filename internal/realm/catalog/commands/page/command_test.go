@@ -81,10 +81,10 @@ type pageReader struct {
 }
 
 // Pages supplies unused page tree behavior.
-func (pageReader) Pages(context.Context, int32, bool) ([]catalogmodel.Page, error) { return nil, nil }
+func (pageReader) Pages(context.Context, int64, bool) ([]catalogmodel.Page, error) { return nil, nil }
 
 // Page returns catalog page fixtures.
-func (reader pageReader) Page(context.Context, int64, int32, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
+func (reader pageReader) Page(context.Context, int64, int64, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
 	return reader.page, reader.items, reader.err
 }
 

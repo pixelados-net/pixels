@@ -5,13 +5,14 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 )
 
 // CreatePage creates one catalog page.
 func (service *Service) CreatePage(ctx context.Context, input PageInput) (catalogmodel.Page, error) {
 	page := catalogmodel.Page{ParentID: input.ParentID, Name: strings.TrimSpace(input.Name), Layout: strings.TrimSpace(input.Layout),
-		IconColor: input.IconColor, IconImage: input.IconImage, MinRank: input.MinRank, OrderNum: input.OrderNum,
+		IconColor: input.IconColor, IconImage: input.IconImage, RequiredNode: input.RequiredNode, OrderNum: input.OrderNum,
 		Visible: input.Visible, Enabled: input.Enabled, ClubOnly: input.ClubOnly}
 	if err := service.validatePage(ctx, page); err != nil {
 		return catalogmodel.Page{}, err
@@ -62,7 +63,10 @@ func (service *Service) UpdatePage(ctx context.Context, id int64, patch PagePatc
 
 // validatePage validates catalog page fields and its optional parent.
 func (service *Service) validatePage(ctx context.Context, page catalogmodel.Page) error {
-	if page.Name == "" || page.Layout == "" || page.MinRank < 1 || page.IconColor < 0 || page.IconImage < 0 {
+	if page.Name == "" || page.Layout == "" || page.IconColor < 0 || page.IconImage < 0 {
+		return ErrInvalidPage
+	}
+	if page.RequiredNode != nil && (!page.RequiredNode.Concrete() || !permission.Registered(*page.RequiredNode)) {
 		return ErrInvalidPage
 	}
 	if page.ParentID == nil {
@@ -99,8 +103,8 @@ func applyPagePatch(page *catalogmodel.Page, patch PagePatch) {
 	if patch.IconImage != nil {
 		page.IconImage = *patch.IconImage
 	}
-	if patch.MinRank != nil {
-		page.MinRank = *patch.MinRank
+	if patch.RequiredNode != nil {
+		page.RequiredNode = *patch.RequiredNode
 	}
 	if patch.OrderNum != nil {
 		page.OrderNum = *patch.OrderNum

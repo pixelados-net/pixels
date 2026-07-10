@@ -15,7 +15,7 @@ import (
 
 // Purchase buys one catalog offer.
 func (service *Service) Purchase(ctx context.Context, params PurchaseParams) (PurchaseResult, error) {
-	item, err := service.purchaseOffer(params)
+	item, err := service.purchaseOffer(ctx, params)
 	if err != nil {
 		return PurchaseResult{}, err
 	}
@@ -35,7 +35,7 @@ func (service *Service) Purchase(ctx context.Context, params PurchaseParams) (Pu
 }
 
 // purchaseOffer validates and resolves one cached offer and page.
-func (service *Service) purchaseOffer(params PurchaseParams) (catalogmodel.Item, error) {
+func (service *Service) purchaseOffer(ctx context.Context, params PurchaseParams) (catalogmodel.Item, error) {
 	if params.PlayerID <= 0 {
 		return catalogmodel.Item{}, ErrInvalidPlayerID
 	}
@@ -54,7 +54,11 @@ func (service *Service) purchaseOffer(params PurchaseParams) (catalogmodel.Item,
 	if !found {
 		return catalogmodel.Item{}, ErrPageNotFound
 	}
-	if !service.pageAccessible(page, params.Rank, params.HasClub) || (item.ClubOnly && !params.HasClub) {
+	accessible, err := service.pageAccessible(ctx, page, params.PlayerID, params.HasClub)
+	if err != nil {
+		return catalogmodel.Item{}, err
+	}
+	if !accessible || (item.ClubOnly && !params.HasClub) {
 		return catalogmodel.Item{}, ErrOfferNotVisible
 	}
 

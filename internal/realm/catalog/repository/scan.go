@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 )
@@ -20,16 +21,21 @@ const (
 func scanPage(row pgx.Row) (catalogmodel.Page, error) {
 	var page catalogmodel.Page
 	var parentID pgtype.Int8
+	var requiredNode pgtype.Text
 	var deletedAt pgtype.Timestamptz
 	err := row.Scan(
 		&page.ID, &parentID, &page.Name, &page.Layout, &page.IconColor, &page.IconImage,
-		&page.MinRank, &page.OrderNum, &page.Visible, &page.Enabled, &page.ClubOnly,
+		&requiredNode, &page.OrderNum, &page.Visible, &page.Enabled, &page.ClubOnly,
 		&page.CreatedAt, &page.UpdatedAt, &deletedAt, &page.Version.Version,
 	)
 	if err != nil {
 		return catalogmodel.Page{}, err
 	}
 	page.ParentID = int64Pointer(parentID)
+	if requiredNode.Valid {
+		node := permission.Node(requiredNode.String)
+		page.RequiredNode = &node
+	}
 	page.DeletedAt = timePointer(deletedAt)
 
 	return page, nil

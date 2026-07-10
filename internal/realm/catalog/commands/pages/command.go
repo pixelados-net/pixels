@@ -60,7 +60,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 	viewer := player.OpenCatalog()
 	viewer.SetMode(envelope.Command.Mode)
-	pages, err := handler.Catalog.Pages(ctx, catalogsession.DefaultRank, catalogsession.DefaultClub)
+	pages, err := handler.Catalog.Pages(ctx, player.ID(), catalogsession.DefaultClub)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/niflaot/pixels/internal/permission"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 )
@@ -13,7 +14,7 @@ import (
 // TestPurchaseCreditsChargesAndGrants verifies a regular credits purchase.
 func TestPurchaseCreditsChargesAndGrants(t *testing.T) {
 	fixture := newServiceFixture(t, itemForTest())
-	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if err != nil {
 		t.Fatalf("purchase credits: %v", err)
 	}
@@ -36,7 +37,7 @@ func TestPurchasePointsChargesConfiguredCurrency(t *testing.T) {
 	item.CostPoints = 4
 	fixture := newServiceFixture(t, item)
 
-	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if err != nil || result.NewPointsBalance != 96 {
 		t.Fatalf("unexpected result=%#v err=%v", result, err)
 	}
@@ -52,7 +53,7 @@ func TestPurchaseInsufficientBalanceRollsBackReservation(t *testing.T) {
 	fixture := newServiceFixture(t, item)
 	fixture.currency.err = currencyservice.ErrInsufficientBalance
 
-	_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if !errors.Is(err, currencyservice.ErrInsufficientBalance) {
 		t.Fatalf("expected insufficient balance, got %v", err)
 	}
@@ -67,28 +68,38 @@ func TestPurchaseLimitedCompletesEditionAndRejectsSoldOut(t *testing.T) {
 	item.LimitedStack = 1
 	fixture := newServiceFixture(t, item)
 
-	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if err != nil || result.LimitedUnitNumber == nil || *result.LimitedUnitNumber != 1 {
 		t.Fatalf("unexpected result=%#v err=%v", result, err)
 	}
-	_, err = fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	_, err = fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if !errors.Is(err, ErrOfferDisabled) {
 		t.Fatalf("expected disabled sold out offer, got %v", err)
 	}
 }
 
-// TestPurchaseRejectsInvisibleOffer verifies page rank policy before mutations.
+// TestPurchaseRejectsInvisibleOffer verifies page permission policy before mutations.
 func TestPurchaseRejectsInvisibleOffer(t *testing.T) {
 	fixture := newServiceFixture(t, itemForTest())
-	fixture.store.pages[0].MinRank = 5
+	node := permission.RegisterNode("catalog.test.restricted", "")
+	fixture.store.pages[0].RequiredNode = &node
+	fixture.service.permissions = fixedChecker(false)
 	if err := fixture.service.Refresh(context.Background()); err != nil {
-		t.Fatalf("refresh rank gate: %v", err)
+		t.Fatalf("refresh permission gate: %v", err)
 	}
 
-	_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+	_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 	if !errors.Is(err, ErrOfferNotVisible) || fixture.store.txCalls != 0 {
 		t.Fatalf("expected visibility rejection, calls=%d err=%v", fixture.store.txCalls, err)
 	}
+}
+
+// fixedChecker returns one configured permission result.
+type fixedChecker bool
+
+// HasPermission returns the configured permission result.
+func (checker fixedChecker) HasPermission(context.Context, int64, permission.Node) (bool, error) {
+	return bool(checker), nil
 }
 
 // TestConcurrentPurchaseLastLimitedUnitAllowsOneWinner verifies serialized LTD reservation.
@@ -104,7 +115,7 @@ func TestConcurrentPurchaseLastLimitedUnitAllowsOneWinner(t *testing.T) {
 		go func() {
 			defer wait.Done()
 			<-start
-			_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10, Rank: 1})
+			_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: 10})
 			errorsFound <- err
 		}()
 	}

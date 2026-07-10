@@ -18,6 +18,7 @@ import (
 	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
 	notificationroutes "github.com/niflaot/pixels/pkg/http/notification/routes"
 	"github.com/niflaot/pixels/pkg/http/openapi"
+	permissionroutes "github.com/niflaot/pixels/pkg/http/permission/routes"
 	roomroutes "github.com/niflaot/pixels/pkg/http/room/routes"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	wsroutes "github.com/niflaot/pixels/pkg/http/websocket/routes"
@@ -35,13 +36,14 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies) {
+func registerPrivate(app *fiber.App, sso *sso.Service, rooms roomservice.Manager, runtime *roomlive.Registry, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies) {
 	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
 	wsroutes.Register(app, currencyAdmin.Connections)
 	roomroutes.Register(app, rooms, runtime, currencyAdmin.Connections, navigator)
 	notificationroutes.Register(app, currencyAdmin.Players, currencyAdmin.Connections, currencyAdmin.Translations)
 	currencyroutes.Register(app, currencyAdmin)
 	catalogroutes.Register(app, catalogAdmin)
+	permissionroutes.Register(app, permissionAdmin)
 	app.Use(notFoundHandler)
 }
 

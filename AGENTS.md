@@ -153,6 +153,25 @@ minimum manual checks expected when touching it.
   - `go test ./pkg/bus ./internal/command`
   - Run with debug logs and verify `event published` and `command dispatched`.
 
+### FEATURE: Permission Groups and Player Overrides
+
+- Owns `internal/permission`, permission database changelogs, permission protocol
+  packets, and `pkg/http/permission/routes`.
+- Provides typed registered nodes, wildcard grants, inheritable weighted groups,
+  direct player allow/deny overrides, local plus Redis caching, live projection,
+  default `member` assignment, and seeded `admin` access.
+- Permission resolution order is direct player override, highest-weight matching
+  group, then specificity and nearest child within that group's inheritance chain.
+- Catalog page access uses optional `required_node`; player-originated currency
+  deductions honor `currency.economy.infinite` without bypassing admin mutations.
+- Test after changes:
+  - `go test ./internal/permission/... ./pkg/http/permission/...`
+  - `go test ./networking/outbound/session/permissions ./networking/outbound/session/perks`
+  - Open `/docs` and verify the `Admin Permissions` route group.
+  - Assign and revoke a group/direct node while a player is online and verify
+    `USER_PERMISSIONS` and `USER_PERKS` are projected immediately.
+  - Create a player and verify membership in the seeded `member` group.
+
 ### FEATURE: Pixel Codec and Packets
 
 - Owns `networking/codec`, `networking/inbound`, and `networking/outbound`.

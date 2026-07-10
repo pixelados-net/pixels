@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
@@ -16,17 +17,18 @@ func TestApplyPagePatchAppliesEveryPresentField(t *testing.T) {
 	layout := "spaces"
 	color := int32(3)
 	image := int32(4)
-	rank := int32(2)
+	node := permission.Node("catalog.admin.manage")
 	order := int32(5)
 	visible := true
 	enabled := true
 	club := true
 	parent := &parentID
+	required := &node
 	page := catalogmodel.Page{}
 	applyPagePatch(&page, PagePatch{ParentID: &parent, Name: &name, Layout: &layout, IconColor: &color,
-		IconImage: &image, MinRank: &rank, OrderNum: &order, Visible: &visible, Enabled: &enabled, ClubOnly: &club})
+		IconImage: &image, RequiredNode: &required, OrderNum: &order, Visible: &visible, Enabled: &enabled, ClubOnly: &club})
 	if page.ParentID == nil || *page.ParentID != 2 || page.Name != name || page.Layout != layout || page.IconColor != color ||
-		page.IconImage != image || page.MinRank != rank || page.OrderNum != order || !page.Visible || !page.Enabled || !page.ClubOnly {
+		page.IconImage != image || page.RequiredNode == nil || *page.RequiredNode != node || page.OrderNum != order || !page.Visible || !page.Enabled || !page.ClubOnly {
 		t.Fatalf("unexpected page %#v", page)
 	}
 }

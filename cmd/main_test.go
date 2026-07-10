@@ -15,6 +15,9 @@ func TestNewAppBuilds(t *testing.T) {
 	if app == nil {
 		t.Fatal("expected app")
 	}
+	if err := app.Err(); err != nil {
+		t.Fatalf("build dependency graph: %v", err)
+	}
 }
 
 // setCurrencyPathForTest points app construction at a minimal currency catalog.
@@ -32,8 +35,8 @@ func setCurrencyPathForTest(t *testing.T) {
 func TestOptionsBuilds(t *testing.T) {
 	options := options()
 
-	if len(options) != 20 {
-		t.Fatalf("expected twenty options, got %d", len(options))
+	if len(options) != 21 {
+		t.Fatalf("expected twenty-one options, got %d", len(options))
 	}
 }
 

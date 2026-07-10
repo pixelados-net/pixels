@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/permission"
 	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
 )
 
@@ -62,11 +63,17 @@ func updatePageHandler(dependencies Dependencies) fiber.Handler {
 // pagePatch maps an HTTP page patch to administration input.
 func pagePatch(request PagePatchRequest) catalogadmin.PagePatch {
 	patch := catalogadmin.PagePatch{Name: request.Name, Layout: request.Layout, IconColor: request.IconColor,
-		IconImage: request.IconImage, MinRank: request.MinRank, OrderNum: request.OrderNum,
+		IconImage: request.IconImage, OrderNum: request.OrderNum,
 		Visible: request.Visible, Enabled: request.Enabled, ClubOnly: request.ClubOnly}
 	if request.ParentID != nil {
 		parentID := request.ParentID
 		patch.ParentID = &parentID
+	}
+	if request.ClearRequiredNode {
+		var node *permission.Node
+		patch.RequiredNode = &node
+	} else if request.RequiredNode != nil {
+		patch.RequiredNode = &request.RequiredNode
 	}
 
 	return patch

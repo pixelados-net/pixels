@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	"github.com/niflaot/pixels/internal/realm/inventory/currency"
 	currencychanged "github.com/niflaot/pixels/internal/realm/inventory/currency/events/changed"
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
@@ -26,15 +27,22 @@ type Service struct {
 
 	// log records non-critical projection failures.
 	log *zap.Logger
+	// permissions resolves infinite balance capability.
+	permissions permissionservice.Checker
 }
 
 // New creates a currency service.
-func New(store currencyrepo.Store, catalog *currency.Catalog, events bus.Publisher, log *zap.Logger) *Service {
+func New(store currencyrepo.Store, catalog *currency.Catalog, events bus.Publisher, log *zap.Logger, checkers ...permissionservice.Checker) *Service {
 	if log == nil {
 		log = zap.NewNop()
 	}
 
-	return &Service{store: store, catalog: catalog, events: events, log: log}
+	service := &Service{store: store, catalog: catalog, events: events, log: log}
+	if len(checkers) > 0 {
+		service.permissions = checkers[0]
+	}
+
+	return service
 }
 
 // Wallet returns every configured currency balance for a player.
@@ -84,6 +92,18 @@ func (service *Service) Grant(ctx context.Context, params GrantParams) (int64, e
 	if err != nil {
 		return 0, err
 	}
+	infinite, err := service.infiniteBalance(ctx, params)
+	if err != nil {
+		return 0, err
+	}
+	if infinite {
+		balance, found, err := service.store.FindBalance(ctx, params.PlayerID, params.CurrencyType)
+		if err != nil || !found {
+			return 0, err
+		}
+
+		return balance.Amount, nil
+	}
 
 	result, err := service.store.Grant(ctx, mutation(params, definition.Ledger))
 	if errors.Is(err, currencyrepo.ErrInsufficientBalance) {
@@ -98,6 +118,15 @@ func (service *Service) Grant(ctx context.Context, params GrantParams) (int64, e
 	service.publish(ctx, params.PlayerID, params.CurrencyType, result.Balance.Amount, result.Delta, params.ActorKind)
 
 	return result.Balance.Amount, nil
+}
+
+// infiniteBalance reports whether a player-originated deduction bypasses persistence.
+func (service *Service) infiniteBalance(ctx context.Context, params GrantParams) (bool, error) {
+	if service.permissions == nil || params.ActorKind != ActorPlayer || params.Amount >= 0 {
+		return false, nil
+	}
+
+	return service.permissions.HasPermission(ctx, params.PlayerID, currency.InfiniteBalance)
 }
 
 // Set replaces a currency balance with an absolute amount.

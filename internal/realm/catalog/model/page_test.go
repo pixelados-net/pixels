@@ -4,11 +4,11 @@ import "testing"
 
 // TestPageAccessibleAppliesVisibilityGates verifies page access policy.
 func TestPageAccessibleAppliesVisibilityGates(t *testing.T) {
-	page := Page{Visible: true, Enabled: true, MinRank: 2, ClubOnly: true}
-	if page.Accessible(1, true) || page.Accessible(2, false) {
-		t.Fatal("expected rank and club gates")
+	page := Page{Visible: true, Enabled: true, ClubOnly: true}
+	if page.Accessible(false) {
+		t.Fatal("expected club gate")
 	}
-	if !page.Accessible(2, true) {
+	if !page.Accessible(true) {
 		t.Fatal("expected eligible page access")
 	}
 }

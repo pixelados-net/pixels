@@ -1,0 +1,51 @@
+package permission
+
+import "testing"
+
+// TestRegisterNodeExposesMetadata verifies stable node catalog behavior.
+func TestRegisterNodeExposesMetadata(t *testing.T) {
+	first := RegisterNode("test.registry.alpha", "TEST_ALPHA")
+	second := RegisterNode("test.registry.beta", "")
+	if first == second || !Registered(first) || !Registered(second) {
+		t.Fatal("expected distinct registered nodes")
+	}
+
+	found := false
+	for _, registration := range RegisteredNodes() {
+		if registration.Node == first {
+			found = registration.PerkName == "TEST_ALPHA" && registration.Package != ""
+		}
+	}
+	if !found {
+		t.Fatal("expected registered metadata")
+	}
+}
+
+// TestRegisterNodeRejectsDuplicates verifies collisions fail during initialization.
+func TestRegisterNodeRejectsDuplicates(t *testing.T) {
+	node := RegisterNode("test.registry.duplicate", "")
+	deferred := false
+	func() {
+		defer func() {
+			deferred = recover() != nil
+		}()
+		RegisterNode(node, "")
+	}()
+	if !deferred {
+		t.Fatal("expected duplicate registration panic")
+	}
+}
+
+// TestRegisterNodeRejectsInvalidSyntax verifies invalid declarations fail at boot.
+func TestRegisterNodeRejectsInvalidSyntax(t *testing.T) {
+	deferred := false
+	func() {
+		defer func() {
+			deferred = recover() != nil
+		}()
+		RegisterNode("bad..node", "")
+	}()
+	if !deferred {
+		t.Fatal("expected invalid registration panic")
+	}
+}

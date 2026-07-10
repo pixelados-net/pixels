@@ -2,6 +2,7 @@
 package inventory
 
 import (
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	"github.com/niflaot/pixels/internal/realm/inventory/currency"
 	currencybroadcast "github.com/niflaot/pixels/internal/realm/inventory/currency/broadcast"
 	requestcmd "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
@@ -9,8 +10,10 @@ import (
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
+	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/postgres"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // Module provides inventory currency persistence and packet behavior.
@@ -19,7 +22,7 @@ var Module = fx.Module(
 	fx.Provide(
 		currency.LoadCatalog,
 		NewCurrencyStore,
-		currencyservice.New,
+		NewCurrencyService,
 		currencybroadcast.New,
 		NewCurrencyManager,
 		NewCurrencyGranter,
@@ -31,6 +34,11 @@ var Module = fx.Module(
 		RegisterCurrencyBroadcaster,
 	),
 )
+
+// NewCurrencyService creates currency behavior with permission-aware deductions.
+func NewCurrencyService(store currencyrepo.Store, catalog *currency.Catalog, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker) *currencyservice.Service {
+	return currencyservice.New(store, catalog, events, log, permissions)
+}
 
 // NewCurrencyStore creates the currency persistence store.
 func NewCurrencyStore(pool *postgres.Pool) currencyrepo.Store {

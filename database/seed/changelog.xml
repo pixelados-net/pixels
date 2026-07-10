@@ -6,6 +6,7 @@
     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <include file="../../internal/realm/player/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/permission/database/seed/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/room/database/seed/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/furniture/database/seed/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/catalog/database/seed/changelog.xml" relativeToChangelogFile="true"/>

@@ -8,4 +8,5 @@
     <include file="migrations/0001_create_catalog_pages.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0002_create_catalog_items.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0003_create_catalog_item_limited_units.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_add_catalog_page_permission.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

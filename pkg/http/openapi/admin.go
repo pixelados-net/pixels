@@ -1,6 +1,10 @@
 package openapi
 
-import "net/http"
+import (
+	"net/http"
+
+	permissionapi "github.com/niflaot/pixels/pkg/http/openapi/permission"
+)
 
 // adminOperations returns protected connection administration operations.
 func adminOperations() []operation {
@@ -34,7 +38,32 @@ func adminOperations() []operation {
 		adminCatalog(http.MethodDelete, "/api/admin/catalog/items/{id}", "Delete catalog offer", &CatalogIDRequest{}, nil),
 		adminCatalog(http.MethodPost, "/api/admin/catalog/refresh", "Refresh and publish catalog", &APIKeyRequest{}, &CatalogRefreshResponse{}),
 		adminCatalog(http.MethodGet, "/api/admin/catalog/sanitize-list", "List definitions without offers", &APIKeyRequest{}, &CatalogDefinitionsResponse{}),
+		adminPermission(http.MethodGet, "/api/admin/permissions/nodes", "List registered permission nodes", &permissionapi.APIKeyRequest{}, &permissionapi.NodesResponse{}, http.StatusOK),
+		adminPermission(http.MethodGet, "/api/admin/permissions/groups", "List permission groups", &permissionapi.APIKeyRequest{}, &permissionapi.GroupsResponse{}, http.StatusOK),
+		adminPermission(http.MethodPost, "/api/admin/permissions/groups", "Create permission group", &permissionapi.GroupCreateRequest{}, &permissionapi.GroupResponse{}, http.StatusCreated),
+		adminPermission(http.MethodPatch, "/api/admin/permissions/groups/{id}", "Update permission group", &permissionapi.GroupPatchRequest{}, &permissionapi.GroupResponse{}, http.StatusOK),
+		adminPermission(http.MethodPost, "/api/admin/permissions/groups/{id}/nodes", "Grant group permission node", &permissionapi.GroupNodeRequest{}, &permissionapi.MutationResponse{}, http.StatusOK),
+		adminPermission(http.MethodDelete, "/api/admin/permissions/groups/{id}/nodes/{node}", "Revoke group permission node", &permissionapi.GroupNodeDeleteRequest{}, nil, http.StatusNoContent),
+		adminPermission(http.MethodPost, "/api/admin/permissions/players/{playerId}/groups/{groupId}", "Add player to permission group", &permissionapi.MembershipRequest{}, &permissionapi.MutationResponse{}, http.StatusOK),
+		adminPermission(http.MethodDelete, "/api/admin/permissions/players/{playerId}/groups/{groupId}", "Remove player from permission group", &permissionapi.MembershipRequest{}, nil, http.StatusNoContent),
+		adminPermission(http.MethodPost, "/api/admin/permissions/players/{playerId}/nodes", "Grant direct player permission node", &permissionapi.PlayerNodeRequest{}, &permissionapi.MutationResponse{}, http.StatusOK),
+		adminPermission(http.MethodDelete, "/api/admin/permissions/players/{playerId}/nodes/{node}", "Revoke direct player permission node", &permissionapi.PlayerNodeDeleteRequest{}, nil, http.StatusNoContent),
+		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/effective", "List effective player permissions", &permissionapi.PlayerRequest{}, &permissionapi.EffectiveResponse{}, http.StatusOK),
+		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/check", "Check player permission", &permissionapi.CheckRequest{}, &permissionapi.CheckResponse{}, http.StatusOK),
 	}
+}
+
+// adminPermission creates a permission administration operation.
+func adminPermission(method string, path string, summary string, request any, body any, status int) operation {
+	responses := errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError)
+	if body == nil {
+		responses = append([]response{emptyResponse(status, summary+".")}, responses...)
+	} else {
+		responses = append([]response{jsonResponse(status, body, summary+".")}, responses...)
+	}
+
+	return operation{method: method, path: path, tag: "Admin Permissions", summary: summary,
+		description: summary + ".", request: request, responses: responses, secured: true}
 }
 
 // adminCatalog creates a catalog administration operation.

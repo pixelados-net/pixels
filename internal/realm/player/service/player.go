@@ -56,6 +56,11 @@ func (service *Service) Create(ctx context.Context, params CreateParams) (Record
 	if err != nil {
 		return Record{}, fmt.Errorf("create player profile: %w", err)
 	}
+	if service.permissions != nil {
+		if err := service.permissions.AssignDefaultGroup(ctx, player.ID); err != nil {
+			return Record{}, fmt.Errorf("assign player default permission group: %w", err)
+		}
+	}
 
 	return Record{Player: player, Profile: profile}, nil
 }

@@ -13,8 +13,8 @@ type CatalogPageRequest struct {
 	IconColor int32 `json:"iconColor" minimum:"0"`
 	// IconImage stores the client icon image.
 	IconImage int32 `json:"iconImage" minimum:"0"`
-	// MinRank stores the minimum player rank.
-	MinRank int32 `json:"minRank" required:"true" minimum:"1"`
+	// RequiredNode stores the optional permission needed to access the page.
+	RequiredNode *string `json:"requiredNode,omitempty" example:"catalog.page.staff"`
 	// OrderNum stores sibling display order.
 	OrderNum int32 `json:"orderNum"`
 	// Visible reports whether the page appears in the tree.
@@ -40,8 +40,10 @@ type CatalogPagePatchRequest struct {
 	IconColor *int32 `json:"iconColor,omitempty" minimum:"0"`
 	// IconImage replaces the icon image.
 	IconImage *int32 `json:"iconImage,omitempty" minimum:"0"`
-	// MinRank replaces the minimum rank.
-	MinRank *int32 `json:"minRank,omitempty" minimum:"1"`
+	// RequiredNode replaces the page access permission.
+	RequiredNode *string `json:"requiredNode,omitempty" example:"catalog.page.staff"`
+	// ClearRequiredNode removes the page access permission.
+	ClearRequiredNode bool `json:"clearRequiredNode,omitempty"`
 	// OrderNum replaces sibling display order.
 	OrderNum *int32 `json:"orderNum,omitempty"`
 	// Visible replaces page tree visibility.
@@ -62,8 +64,8 @@ type CatalogPageResponse struct {
 	Name string `json:"name" required:"true"`
 	// Layout identifies the Nitro layout.
 	Layout string `json:"layout" required:"true"`
-	// MinRank stores the minimum player rank.
-	MinRank int32 `json:"minRank" required:"true"`
+	// RequiredNode stores the optional page access permission.
+	RequiredNode *string `json:"requiredNode,omitempty"`
 	// Visible reports tree visibility.
 	Visible bool `json:"visible" required:"true"`
 	// Enabled reports page availability.

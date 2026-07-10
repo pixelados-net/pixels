@@ -4,6 +4,7 @@ package model
 import (
 	"time"
 
+	"github.com/niflaot/pixels/internal/permission"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
@@ -23,4 +24,14 @@ type Player struct {
 
 	// LastSeenAt is the last time the player was seen by profile systems.
 	LastSeenAt *time.Time
+}
+
+// HolderID identifies the player permission holder.
+func (player Player) HolderID() int64 {
+	return player.ID
+}
+
+// HolderKind reports that Player is an individual permission holder.
+func (player Player) HolderKind() permission.HolderKind {
+	return permission.HolderPlayer
 }

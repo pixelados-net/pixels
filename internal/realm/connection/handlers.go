@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/niflaot/pixels/internal/auth/sso"
+	permissionbroadcast "github.com/niflaot/pixels/internal/permission/broadcast"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/handshake"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/heartbeat"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/latency"
@@ -36,11 +37,21 @@ type Handlers struct {
 
 // NewHandlers creates connection-realm handler registries.
 func NewHandlers(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus, currencies *currencyrequest.Handler) *Handlers {
+	return newHandlers(sso, finder, players, bindings, events, currencies, nil)
+}
+
+// NewHandlersWithPermissions creates handlers with permission bootstrap projection.
+func NewHandlersWithPermissions(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus, currencies *currencyrequest.Handler, permissions *permissionbroadcast.Projector) *Handlers {
+	return newHandlers(sso, finder, players, bindings, events, currencies, permissions)
+}
+
+// newHandlers creates connection-realm handlers with optional permission projection.
+func newHandlers(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus, currencies *currencyrequest.Handler, permissions *permissionbroadcast.Projector) *Handlers {
 	inbound := netconn.NewHandlerRegistry()
 	outbound := netconn.NewHandlerRegistry()
 	handlers := &Handlers{Inbound: inbound, Outbound: outbound, players: players, bindings: bindings, events: events}
 
-	registerInbound(inbound, security.NewAuthenticator(sso, finder, players, bindings, events, currencies))
+	registerInbound(inbound, security.NewAuthenticator(sso, finder, players, bindings, events, currencies, permissions))
 	outbound.SetFallback(noopHandler, netconn.AllowAnyActiveState(), netconn.AllowUnauthenticated())
 
 	return handlers

@@ -25,7 +25,7 @@ import (
 func TestHandleSendsVisibleCatalogTree(t *testing.T) {
 	connection, sent := pagesConnection(t)
 	players, bindings := pagesPlayer(t, connection)
-	reader := pagesReader{pages: []catalogmodel.Page{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: "furniture", Visible: true, Enabled: true, MinRank: 1}}}
+	reader := pagesReader{pages: []catalogmodel.Page{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: "furniture", Visible: true, Enabled: true}}}
 	handler := Handler{Players: players, Bindings: bindings, Catalog: reader,
 		Translations: i18n.NewCatalog(i18n.Config{}, map[i18n.Locale]map[i18n.Key]string{"en": {"catalog.page.furniture": "Furniture"}})}
 	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, Mode: "NORMAL"}})
@@ -68,12 +68,12 @@ type pagesReader struct {
 }
 
 // Pages returns visible page fixtures.
-func (reader pagesReader) Pages(context.Context, int32, bool) ([]catalogmodel.Page, error) {
+func (reader pagesReader) Pages(context.Context, int64, bool) ([]catalogmodel.Page, error) {
 	return reader.pages, reader.err
 }
 
 // Page supplies unused page behavior.
-func (pagesReader) Page(context.Context, int64, int32, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
+func (pagesReader) Page(context.Context, int64, int64, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
 	return catalogmodel.Page{}, nil, nil
 }
 

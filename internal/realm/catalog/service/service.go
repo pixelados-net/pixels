@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	catalogrepo "github.com/niflaot/pixels/internal/realm/catalog/repository"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
@@ -32,15 +33,22 @@ type Service struct {
 
 	// log records post-commit projection failures.
 	log *zap.Logger
+	// permissions resolves optional catalog page requirements.
+	permissions permissionservice.Checker
 }
 
 // New creates a catalog service.
-func New(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, events bus.Publisher, log *zap.Logger) *Service {
+func New(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, events bus.Publisher, log *zap.Logger, checkers ...permissionservice.Checker) *Service {
 	if log == nil {
 		log = zap.NewNop()
 	}
 
-	return &Service{store: store, currencies: currencies, furniture: furniture, cache: newCache(), events: events, log: log}
+	service := &Service{store: store, currencies: currencies, furniture: furniture, cache: newCache(), events: events, log: log}
+	if len(checkers) > 0 {
+		service.permissions = checkers[0]
+	}
+
+	return service
 }
 
 // Refresh reloads the complete catalog cache.
@@ -71,11 +79,15 @@ func (service *Service) Definition(_ context.Context, definitionID int64) (furni
 }
 
 // Pages returns pages visible to one player capability set.
-func (service *Service) Pages(_ context.Context, rank int32, hasClub bool) ([]catalogmodel.Page, error) {
+func (service *Service) Pages(ctx context.Context, playerID int64, hasClub bool) ([]catalogmodel.Page, error) {
 	pages := service.cache.pages()
 	visible := make([]catalogmodel.Page, 0, len(pages))
 	for _, page := range pages {
-		if service.pageAccessible(page, rank, hasClub) {
+		accessible, err := service.pageAccessible(ctx, page, playerID, hasClub)
+		if err != nil {
+			return nil, err
+		}
+		if accessible {
 			visible = append(visible, page)
 		}
 	}
@@ -84,12 +96,16 @@ func (service *Service) Pages(_ context.Context, rank int32, hasClub bool) ([]ca
 }
 
 // Page returns one visible page and its enabled offers.
-func (service *Service) Page(_ context.Context, pageID int64, rank int32, hasClub bool) (catalogmodel.Page, []catalogmodel.Item, error) {
+func (service *Service) Page(ctx context.Context, pageID int64, playerID int64, hasClub bool) (catalogmodel.Page, []catalogmodel.Item, error) {
 	page, found := service.cache.page(pageID)
 	if !found {
 		return catalogmodel.Page{}, nil, ErrPageNotFound
 	}
-	if !service.pageAccessible(page, rank, hasClub) {
+	accessible, err := service.pageAccessible(ctx, page, playerID, hasClub)
+	if err != nil {
+		return catalogmodel.Page{}, nil, err
+	}
+	if !accessible {
 		return catalogmodel.Page{}, nil, ErrOfferNotVisible
 	}
 
@@ -110,22 +126,34 @@ func (service *Service) SanitizeList(ctx context.Context) ([]furnituremodel.Defi
 }
 
 // pageAccessible verifies a page and every cached ancestor.
-func (service *Service) pageAccessible(page catalogmodel.Page, rank int32, hasClub bool) bool {
+func (service *Service) pageAccessible(ctx context.Context, page catalogmodel.Page, playerID int64, hasClub bool) (bool, error) {
 	visited := make(map[int64]struct{})
 	for {
 		if _, found := visited[page.ID]; found {
-			return false
+			return false, nil
 		}
 		visited[page.ID] = struct{}{}
-		if !page.Accessible(rank, hasClub) {
-			return false
+		if !page.Accessible(hasClub) {
+			return false, nil
+		}
+		if page.RequiredNode != nil {
+			if service.permissions == nil {
+				return false, nil
+			}
+			allowed, err := service.permissions.HasPermission(ctx, playerID, *page.RequiredNode)
+			if err != nil {
+				return false, err
+			}
+			if !allowed {
+				return false, nil
+			}
 		}
 		if page.ParentID == nil {
-			return true
+			return true, nil
 		}
 		parent, found := service.cache.page(*page.ParentID)
 		if !found {
-			return false
+			return false, nil
 		}
 		page = parent
 	}

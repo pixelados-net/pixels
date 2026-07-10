@@ -3,6 +3,7 @@ package routes
 import (
 	"time"
 
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 )
@@ -21,8 +22,8 @@ type PageResponse struct {
 	IconColor int32 `json:"iconColor"`
 	// IconImage stores the client icon image.
 	IconImage int32 `json:"iconImage"`
-	// MinRank stores the minimum visible rank.
-	MinRank int32 `json:"minRank"`
+	// RequiredNode stores the optional page access permission.
+	RequiredNode *permission.Node `json:"requiredNode,omitempty"`
 	// OrderNum stores sibling display order.
 	OrderNum int32 `json:"orderNum"`
 	// Visible reports page tree visibility.
@@ -96,7 +97,7 @@ type RefreshResponse struct {
 // pageResponse maps one catalog page record.
 func pageResponse(page catalogmodel.Page) PageResponse {
 	return PageResponse{ID: page.ID, ParentID: page.ParentID, Name: page.Name, Layout: page.Layout, IconColor: page.IconColor,
-		IconImage: page.IconImage, MinRank: page.MinRank, OrderNum: page.OrderNum, Visible: page.Visible,
+		IconImage: page.IconImage, RequiredNode: page.RequiredNode, OrderNum: page.OrderNum, Visible: page.Visible,
 		Enabled: page.Enabled, ClubOnly: page.ClubOnly, Version: page.Version.Version, UpdatedAt: page.UpdatedAt}
 }
 

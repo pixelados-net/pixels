@@ -11,10 +11,10 @@ import (
 // Reader reads player-visible catalog data.
 type Reader interface {
 	// Pages returns pages visible to one player capability set.
-	Pages(ctx context.Context, rank int32, hasClub bool) ([]catalogmodel.Page, error)
+	Pages(ctx context.Context, playerID int64, hasClub bool) ([]catalogmodel.Page, error)
 
 	// Page returns one visible page and its enabled offers.
-	Page(ctx context.Context, pageID int64, rank int32, hasClub bool) (catalogmodel.Page, []catalogmodel.Item, error)
+	Page(ctx context.Context, pageID int64, playerID int64, hasClub bool) (catalogmodel.Page, []catalogmodel.Item, error)
 
 	// Definition returns cached furniture metadata for one catalog offer.
 	Definition(ctx context.Context, definitionID int64) (furnituremodel.Definition, bool, error)
@@ -41,9 +41,6 @@ type PurchaseParams struct {
 
 	// CatalogItemID identifies the requested offer.
 	CatalogItemID int64
-
-	// Rank stores the buyer's permission rank.
-	Rank int32
 
 	// HasClub reports whether the buyer has active club membership.
 	HasClub bool

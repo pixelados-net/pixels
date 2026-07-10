@@ -114,10 +114,10 @@ type buyManager struct {
 }
 
 // Pages supplies unused catalog tree behavior.
-func (buyManager) Pages(context.Context, int32, bool) ([]catalogmodel.Page, error) { return nil, nil }
+func (buyManager) Pages(context.Context, int64, bool) ([]catalogmodel.Page, error) { return nil, nil }
 
 // Page returns the offered item.
-func (manager *buyManager) Page(context.Context, int64, int32, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
+func (manager *buyManager) Page(context.Context, int64, int64, bool) (catalogmodel.Page, []catalogmodel.Item, error) {
 	if manager.pageItems != nil {
 		return catalogmodel.Page{}, manager.pageItems, nil
 	}

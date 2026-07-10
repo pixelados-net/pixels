@@ -1,6 +1,7 @@
 package player
 
 import (
+	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	"github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/player/repository"
 	"github.com/niflaot/pixels/internal/realm/player/service"
@@ -14,12 +15,17 @@ var Module = fx.Module(
 	fx.Provide(
 		NewStore,
 		live.NewRegistry,
-		service.New,
+		NewService,
 		NewCreator,
 		NewFinder,
 		NewManager,
 	),
 )
+
+// NewService creates player behavior with default permission assignment.
+func NewService(store repository.Store, permissions permissionservice.DefaultAssigner) *service.Service {
+	return service.New(store, permissions)
+}
 
 // NewStore creates the player persistence store.
 func NewStore(pool *postgres.Pool) repository.Store {

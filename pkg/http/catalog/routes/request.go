@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/pixels/internal/permission"
 	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
 )
 
@@ -19,8 +20,8 @@ type PageRequest struct {
 	IconColor int32 `json:"iconColor"`
 	// IconImage stores the client icon image.
 	IconImage int32 `json:"iconImage"`
-	// MinRank stores the minimum visible rank.
-	MinRank int32 `json:"minRank"`
+	// RequiredNode stores the optional page access permission.
+	RequiredNode *permission.Node `json:"requiredNode"`
 	// OrderNum stores sibling display order.
 	OrderNum int32 `json:"orderNum"`
 	// Visible reports whether the page appears in the tree.
@@ -43,8 +44,10 @@ type PagePatchRequest struct {
 	IconColor *int32 `json:"iconColor"`
 	// IconImage replaces the client icon image.
 	IconImage *int32 `json:"iconImage"`
-	// MinRank replaces the minimum visible rank.
-	MinRank *int32 `json:"minRank"`
+	// RequiredNode replaces the page access permission.
+	RequiredNode *permission.Node `json:"requiredNode"`
+	// ClearRequiredNode removes the page access permission.
+	ClearRequiredNode bool `json:"clearRequiredNode"`
 	// OrderNum replaces sibling display order.
 	OrderNum *int32 `json:"orderNum"`
 	// Visible replaces page tree visibility.
@@ -128,7 +131,7 @@ func routeID(ctx *fiber.Ctx) (int64, error) {
 // pageInput maps an HTTP page request to administration input.
 func pageInput(request PageRequest) catalogadmin.PageInput {
 	return catalogadmin.PageInput{ParentID: request.ParentID, Name: request.Name, Layout: request.Layout,
-		IconColor: request.IconColor, IconImage: request.IconImage, MinRank: request.MinRank, OrderNum: request.OrderNum,
+		IconColor: request.IconColor, IconImage: request.IconImage, RequiredNode: request.RequiredNode, OrderNum: request.OrderNum,
 		Visible: request.Visible, Enabled: request.Enabled, ClubOnly: request.ClubOnly}
 }
 

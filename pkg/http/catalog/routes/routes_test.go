@@ -26,12 +26,11 @@ func TestCatalogAdministrationRoutes(t *testing.T) {
 	app := fiber.New()
 	Register(app, Dependencies{Catalog: admin, Connections: registry, Log: zap.NewNop()})
 
-	assertStatus(t, app, http.MethodPost, basePath+"/pages", PageRequest{Name: "chairs", Layout: "default_3x3", MinRank: 1, Visible: true, Enabled: true}, http.StatusOK)
+	assertStatus(t, app, http.MethodPost, basePath+"/pages", PageRequest{Name: "chairs", Layout: "default_3x3", Visible: true, Enabled: true}, http.StatusOK)
 	pageName := "chairs_updated"
 	pageLayout := "spaces"
-	pageRank := int32(2)
 	pageVisible := false
-	assertStatus(t, app, http.MethodPatch, basePath+"/pages/1", PagePatchRequest{Name: &pageName, Layout: &pageLayout, MinRank: &pageRank, Visible: &pageVisible}, http.StatusOK)
+	assertStatus(t, app, http.MethodPatch, basePath+"/pages/1", PagePatchRequest{Name: &pageName, Layout: &pageLayout, Visible: &pageVisible}, http.StatusOK)
 	assertStatus(t, app, http.MethodGet, basePath+"/pages", nil, http.StatusOK)
 	assertStatus(t, app, http.MethodPost, basePath+"/items", ItemRequest{PageID: 1, DefinitionID: 2, Name: "chair", CostCredits: 2, PointsType: -1, Amount: 1, Enabled: true}, http.StatusOK)
 	itemPage := int64(1)
@@ -105,7 +104,7 @@ func (admin *routeAdmin) Pages(context.Context) ([]catalogmodel.Page, error) { r
 // CreatePage creates a page fixture.
 func (admin *routeAdmin) CreatePage(_ context.Context, input catalogadmin.PageInput) (catalogmodel.Page, error) {
 	page := catalogmodel.Page{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: input.Name, Layout: input.Layout,
-		MinRank: input.MinRank, Visible: input.Visible, Enabled: input.Enabled}
+		RequiredNode: input.RequiredNode, Visible: input.Visible, Enabled: input.Enabled}
 	admin.pages = append(admin.pages, page)
 	return page, nil
 }

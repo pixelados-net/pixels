@@ -213,7 +213,7 @@ func newServiceFixture(t *testing.T, item model.Item) serviceFixture {
 func pageForTest() model.Page {
 	return model.Page{
 		Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Name: "chairs",
-		Layout: model.DefaultLayout, MinRank: 1, Visible: true, Enabled: true,
+		Layout: model.DefaultLayout, Visible: true, Enabled: true,
 	}
 }
 

@@ -4,6 +4,7 @@ package admin
 import (
 	"context"
 
+	"github.com/niflaot/pixels/internal/permission"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 )
@@ -42,8 +43,8 @@ type PageInput struct {
 	IconColor int32
 	// IconImage stores the client icon image.
 	IconImage int32
-	// MinRank stores the minimum visible rank.
-	MinRank int32
+	// RequiredNode stores the optional access permission.
+	RequiredNode *permission.Node
 	// OrderNum stores sibling display order.
 	OrderNum int32
 	// Visible reports whether the page appears in the tree.
@@ -66,8 +67,8 @@ type PagePatch struct {
 	IconColor *int32
 	// IconImage replaces the icon image when present.
 	IconImage *int32
-	// MinRank replaces the minimum rank when present.
-	MinRank *int32
+	// RequiredNode replaces or clears the access permission when present.
+	RequiredNode **permission.Node
 	// OrderNum replaces sibling display order when present.
 	OrderNum *int32
 	// Visible replaces page visibility when present.

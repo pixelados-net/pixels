@@ -41,6 +41,8 @@ func routeTags() []openapi3.Tag {
 		tag("Admin Connections", "Protected connection inspection and disconnection routes."),
 		tag("Admin Notifications", "Protected localized player communication routes."),
 		tag("Admin Currencies", "Protected player currency balance routes."),
+		tag("Admin Catalog", "Protected catalog page and offer routes."),
+		tag("Admin Permissions", "Protected permission group, membership, and grant routes."),
 		tag("Admin Rooms", "Protected room metadata and runtime routes."),
 		tag("Admin Navigator", "Protected navigator metadata routes."),
 		tag("Fallback", "Authenticated fallback behavior."),

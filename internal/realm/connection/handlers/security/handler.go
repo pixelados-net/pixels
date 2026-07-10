@@ -99,6 +99,17 @@ func sendBootstrap(handler netconn.Context, record playerservice.Record, authent
 			return err
 		}
 	}
+	if authenticator.permissions != nil {
+		packets, err := authenticator.permissions.Packets(context.Background(), record.Player.ID)
+		if err != nil {
+			return err
+		}
+		for _, packet := range packets {
+			if err := handler.Send(context.Background(), packet); err != nil {
+				return err
+			}
+		}
+	}
 
 	return handler.Transition(netconn.EventSessionReady)
 }
