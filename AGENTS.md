@@ -72,6 +72,10 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 ## HTTP Routes
 
 - Document every HTTP route in `pkg/http/openapi`.
+- Group administrative routes by capability, such as `/api/admin/currencies` or
+  `/api/admin/notifications`, instead of accumulating unrelated behavior below
+  `/api/admin/players`; pass the target player id through the request body or a
+  query parameter as appropriate.
 - Include request headers, request bodies, responses, possible error codes, and response bodies.
 - Keep `/status`, `/ws`, and development-only documentation routes public.
 - Protect private routes with the configured API key header.
@@ -117,7 +121,7 @@ minimum manual checks expected when touching it.
   - `go test ./pkg/http/...`
   - Open `/docs` in development and verify route groups are visible.
   - Call private routes with and without `X-API-Key`.
-  - Send `POST /api/admin/players/:id/notifications` to an online player and
+  - Send `POST /api/admin/notifications/send` to an online player and
     verify the localized bubble or alert packet arrives.
 
 ### FEATURE: Redis SSO

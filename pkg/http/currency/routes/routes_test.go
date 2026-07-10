@@ -15,7 +15,7 @@ import (
 // TestReadRoutesReturnWalletAndTypes verifies currency administration reads.
 func TestReadRoutesReturnWalletAndTypes(t *testing.T) {
 	fixture := newRouteFixture()
-	wallet := requestRoute(t, fixture.app, http.MethodGet, "/api/admin/players/7/currencies", "")
+	wallet := requestRoute(t, fixture.app, http.MethodGet, "/api/admin/currencies/wallet?playerId=7", "")
 	if wallet.StatusCode != fiber.StatusOK || !bodyContains(t, wallet, `"currencyType":-1`) {
 		t.Fatalf("unexpected wallet status %d", wallet.StatusCode)
 	}
@@ -29,7 +29,7 @@ func TestReadRoutesReturnWalletAndTypes(t *testing.T) {
 func TestGrantDefaultsAlertToFalse(t *testing.T) {
 	fixture := newRouteFixture()
 	connection := addLivePlayer(t, fixture)
-	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":5}`)
+	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":5}`)
 
 	if response.StatusCode != fiber.StatusOK || len(connection.sent) != 0 {
 		t.Fatalf("unexpected status=%d packets=%#v", response.StatusCode, connection.sent)
@@ -46,7 +46,7 @@ func TestGrantDefaultsAlertToFalse(t *testing.T) {
 func TestGrantSendsLocalizedAlertWhenRequested(t *testing.T) {
 	fixture := newRouteFixture()
 	connection := addLivePlayer(t, fixture)
-	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":5,"alert":true,"locale":"es"}`)
+	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":5,"alert":true,"locale":"es"}`)
 
 	if response.StatusCode != fiber.StatusOK || len(connection.sent) != 1 || connection.sent[0].Header != outalert.Header {
 		t.Fatalf("unexpected status=%d packets=%#v", response.StatusCode, connection.sent)
@@ -64,15 +64,15 @@ func TestGrantSendsLocalizedAlertWhenRequested(t *testing.T) {
 func TestMutationErrorsUseMeaningfulStatuses(t *testing.T) {
 	fixture := newRouteFixture()
 	fixture.manager.err = currencyservice.ErrInsufficientBalance
-	conflict := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/deduct", `{"amount":20}`)
+	conflict := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/deduct", `{"playerId":7,"currencyType":5,"amount":20}`)
 	if conflict.StatusCode != fiber.StatusConflict {
 		t.Fatalf("expected conflict, got %d", conflict.StatusCode)
 	}
-	invalid := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":0}`)
+	invalid := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":0}`)
 	if invalid.StatusCode != fiber.StatusBadRequest {
 		t.Fatalf("expected bad request, got %d", invalid.StatusCode)
 	}
-	missing := requestRoute(t, fixture.app, http.MethodGet, "/api/admin/players/8/currencies", "")
+	missing := requestRoute(t, fixture.app, http.MethodGet, "/api/admin/currencies/wallet?playerId=8", "")
 	if missing.StatusCode != fiber.StatusNotFound {
 		t.Fatalf("expected not found, got %d", missing.StatusCode)
 	}
@@ -81,12 +81,12 @@ func TestMutationErrorsUseMeaningfulStatuses(t *testing.T) {
 // TestDeductAndSetMapAdministrativeIntent verifies action-specific service parameters.
 func TestDeductAndSetMapAdministrativeIntent(t *testing.T) {
 	fixture := newRouteFixture()
-	deduct := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/deduct", `{"amount":3,"reason":"moderation"}`)
+	deduct := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/deduct", `{"playerId":7,"currencyType":5,"amount":3,"reason":"moderation"}`)
 	if deduct.StatusCode != fiber.StatusOK || fixture.manager.grant.Amount != -3 || fixture.manager.grant.Reason != "moderation" {
 		t.Fatalf("unexpected deduct status=%d params=%#v", deduct.StatusCode, fixture.manager.grant)
 	}
 
-	set := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/set", `{"amount":0}`)
+	set := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/set", `{"playerId":7,"currencyType":5,"amount":0}`)
 	if set.StatusCode != fiber.StatusOK || fixture.manager.set.Amount != 0 || fixture.manager.set.Reason != "admin_api_set" {
 		t.Fatalf("unexpected set status=%d params=%#v", set.StatusCode, fixture.manager.set)
 	}
@@ -95,7 +95,7 @@ func TestDeductAndSetMapAdministrativeIntent(t *testing.T) {
 // TestAlertRequestedForOfflinePlayerCommitsWithoutDelivery verifies optional side-effect semantics.
 func TestAlertRequestedForOfflinePlayerCommitsWithoutDelivery(t *testing.T) {
 	fixture := newRouteFixture()
-	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":5,"alert":true}`)
+	response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":5,"alert":true}`)
 	if response.StatusCode != fiber.StatusOK || !bodyContains(t, response, `"alertSent":false`) {
 		t.Fatalf("unexpected offline alert status %d", response.StatusCode)
 	}
@@ -105,22 +105,31 @@ func TestAlertRequestedForOfflinePlayerCommitsWithoutDelivery(t *testing.T) {
 func TestMutationInputRejectsMalformedRequests(t *testing.T) {
 	fixture := newRouteFixture()
 	cases := []string{
-		"/api/admin/players/invalid/currencies/5/grant",
-		"/api/admin/players/7/currencies/invalid/grant",
+		`{"playerId":0,"currencyType":5,"amount":1}`,
+		`{"playerId":7,"amount":1}`,
 	}
-	for _, path := range cases {
-		response := requestRoute(t, fixture.app, http.MethodPost, path, `{"amount":1}`)
+	for _, body := range cases {
+		response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", body)
 		if response.StatusCode != fiber.StatusBadRequest {
-			t.Fatalf("expected bad request for %s, got %d", path, response.StatusCode)
+			t.Fatalf("expected bad request for %s, got %d", body, response.StatusCode)
 		}
 	}
-	malformed := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", "{")
+	malformed := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", "{")
 	if malformed.StatusCode != fiber.StatusBadRequest {
 		t.Fatalf("expected malformed body error, got %d", malformed.StatusCode)
 	}
-	negativeSet := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/set", `{"amount":-1}`)
+	negativeSet := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/set", `{"playerId":7,"currencyType":5,"amount":-1}`)
 	if negativeSet.StatusCode != fiber.StatusBadRequest {
 		t.Fatalf("expected negative set error, got %d", negativeSet.StatusCode)
+	}
+}
+
+// TestWalletRejectsMissingPlayer verifies the capability read requires its target query.
+func TestWalletRejectsMissingPlayer(t *testing.T) {
+	fixture := newRouteFixture()
+	response := requestRoute(t, fixture.app, http.MethodGet, "/api/admin/currencies/wallet", "")
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("expected missing player query error, got %d", response.StatusCode)
 	}
 }
 
@@ -134,7 +143,7 @@ func TestMutationMapsRemainingDomainErrors(t *testing.T) {
 	}
 	for _, expected := range cases {
 		fixture.manager.err = expected
-		response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":1}`)
+		response := requestRoute(t, fixture.app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":1}`)
 		if response.StatusCode != fiber.StatusBadRequest {
 			t.Fatalf("expected bad request for %v, got %d", expected, response.StatusCode)
 		}

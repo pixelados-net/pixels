@@ -13,11 +13,8 @@ import (
 )
 
 const (
-	// playerBasePath stores player currency route prefixes.
-	playerBasePath = "/api/admin/players"
-
-	// catalogPath stores the currency catalog route.
-	catalogPath = "/api/admin/currencies/types"
+	// basePath stores the currency administration route prefix.
+	basePath = "/api/admin/currencies"
 )
 
 // Dependencies contains currency administration collaborators.
@@ -49,9 +46,9 @@ func Register(app *fiber.App, dependencies Dependencies) {
 		dependencies.Log = zap.NewNop()
 	}
 
-	app.Get(playerBasePath+"/:id/currencies", walletHandler(dependencies))
-	app.Post(playerBasePath+"/:id/currencies/:type/grant", mutationHandler(grantAction, dependencies))
-	app.Post(playerBasePath+"/:id/currencies/:type/deduct", mutationHandler(deductAction, dependencies))
-	app.Post(playerBasePath+"/:id/currencies/:type/set", mutationHandler(setAction, dependencies))
-	app.Get(catalogPath, typesHandler(dependencies))
+	app.Get(basePath+"/wallet", walletHandler(dependencies))
+	app.Post(basePath+"/grant", mutationHandler(grantAction, dependencies))
+	app.Post(basePath+"/deduct", mutationHandler(deductAction, dependencies))
+	app.Post(basePath+"/set", mutationHandler(setAction, dependencies))
+	app.Get(basePath+"/types", typesHandler(dependencies))
 }

@@ -9,6 +9,12 @@ import (
 
 // MutationRequest contains one administrative currency mutation.
 type MutationRequest struct {
+	// PlayerID identifies the target player.
+	PlayerID int64 `json:"playerId"`
+
+	// CurrencyType identifies the target protocol currency.
+	CurrencyType *int32 `json:"currencyType"`
+
 	// Amount stores a positive delta or non-negative absolute balance.
 	Amount int64 `json:"amount"`
 
@@ -34,32 +40,29 @@ type mutationInput struct {
 	request MutationRequest
 }
 
-// parseMutationInput parses and validates mutation path and body input.
+// parseMutationInput parses and validates currency mutation body input.
 func parseMutationInput(ctx *fiber.Ctx, action mutationAction) (mutationInput, error) {
-	playerID, err := positiveInt64(ctx.Params("id"), "player id")
-	if err != nil {
-		return mutationInput{}, err
-	}
-	currencyType, err := int32Value(ctx.Params("type"), "currency type")
-	if err != nil {
-		return mutationInput{}, err
-	}
-
 	var request MutationRequest
 	if err := ctx.BodyParser(&request); err != nil {
 		return mutationInput{}, fiber.NewError(fiber.StatusBadRequest, "invalid currency mutation request body")
+	}
+	if request.PlayerID <= 0 {
+		return mutationInput{}, fiber.NewError(fiber.StatusBadRequest, "invalid player id")
+	}
+	if request.CurrencyType == nil {
+		return mutationInput{}, fiber.NewError(fiber.StatusBadRequest, "currency type is required")
 	}
 	if err := action.validate(request.Amount); err != nil {
 		return mutationInput{}, err
 	}
 	request.Reason = strings.TrimSpace(request.Reason)
 
-	return mutationInput{playerID: playerID, currencyType: currencyType, request: request}, nil
+	return mutationInput{playerID: request.PlayerID, currencyType: *request.CurrencyType, request: request}, nil
 }
 
-// playerIDParam parses a positive player id path parameter.
-func playerIDParam(ctx *fiber.Ctx) (int64, error) {
-	return positiveInt64(ctx.Params("id"), "player id")
+// playerIDQuery parses the required wallet player query parameter.
+func playerIDQuery(ctx *fiber.Ctx) (int64, error) {
+	return positiveInt64(ctx.Query("playerId"), "player id")
 }
 
 // positiveInt64 parses one positive signed integer.
@@ -70,14 +73,4 @@ func positiveInt64(value string, name string) (int64, error) {
 	}
 
 	return parsed, nil
-}
-
-// int32Value parses one signed protocol integer.
-func int32Value(value string, name string) (int32, error) {
-	parsed, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		return 0, fiber.NewError(fiber.StatusBadRequest, "invalid "+name)
-	}
-
-	return int32(parsed), nil
 }

@@ -60,11 +60,11 @@ type ReasonResponse struct {
 	Reason string `json:"reason" required:"true"`
 }
 
-// PlayerNotificationRequest contains one localized notification request.
-type PlayerNotificationRequest struct {
+// NotificationRequest contains one localized notification request.
+type NotificationRequest struct {
 	APIKeyRequest
-	// ID stores the target player id.
-	ID int64 `path:"id" required:"true"`
+	// PlayerID stores the target player id.
+	PlayerID int64 `json:"playerId" required:"true" minimum:"1"`
 	// Kind stores the notification kind.
 	Kind string `json:"kind" enum:"bubble,alert" default:"bubble"`
 	// Key stores the required i18n message key.
@@ -77,8 +77,8 @@ type PlayerNotificationRequest struct {
 	Params map[string]string `json:"params,omitempty"`
 }
 
-// PlayerNotificationResponse contains delivery status.
-type PlayerNotificationResponse struct {
+// NotificationResponse contains delivery status.
+type NotificationResponse struct {
 	// PlayerID stores the target player id.
 	PlayerID int64 `json:"playerId" required:"true"`
 	// Kind stores the delivered notification kind.
@@ -92,17 +92,17 @@ type PlayerNotificationResponse struct {
 // CurrencyWalletRequest identifies one player's wallet.
 type CurrencyWalletRequest struct {
 	APIKeyRequest
-	// ID stores the target player id.
-	ID int64 `path:"id" required:"true" minimum:"1"`
+	// PlayerID stores the target player id.
+	PlayerID int64 `query:"playerId" required:"true" minimum:"1"`
 }
 
 // CurrencyMutationRequest contains one administrative currency mutation.
 type CurrencyMutationRequest struct {
 	APIKeyRequest
-	// ID stores the target player id.
-	ID int64 `path:"id" required:"true" minimum:"1"`
-	// Type stores the signed protocol currency type.
-	Type int32 `path:"type" required:"true" example:"5"`
+	// PlayerID stores the target player id.
+	PlayerID int64 `json:"playerId" required:"true" minimum:"1"`
+	// CurrencyType stores the signed protocol currency type.
+	CurrencyType int32 `json:"currencyType" required:"true" example:"5"`
 	// Amount stores a positive delta or non-negative absolute balance.
 	Amount int64 `json:"amount" required:"true" minimum:"0"`
 	// Reason stores an optional ledger audit reason.

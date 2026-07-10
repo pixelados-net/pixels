@@ -3,6 +3,8 @@ package routes
 
 // NotifyRequest requests one end-user notification.
 type NotifyRequest struct {
+	// PlayerID stores the target player id.
+	PlayerID int64 `json:"playerId"`
 	// Kind stores the notification kind, either bubble or alert.
 	Kind string `json:"kind"`
 	// Key stores the localized message key.

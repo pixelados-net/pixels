@@ -7,9 +7,9 @@ import (
 	"github.com/niflaot/pixels/pkg/i18n"
 )
 
-const basePath = "/api/admin/players"
+const sendPath = "/api/admin/notifications/send"
 
 // Register mounts protected player notification administration routes.
 func Register(app *fiber.App, players *playerlive.Registry, connections *netconn.Registry, translations i18n.Translator) {
-	app.Post(basePath+"/:id/notifications", notifyHandler(players, connections, translations))
+	app.Post(sendPath, notifyHandler(players, connections, translations))
 }

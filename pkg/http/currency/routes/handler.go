@@ -10,7 +10,7 @@ import (
 // walletHandler returns one persistent player's configured wallet.
 func walletHandler(dependencies Dependencies) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		playerID, err := playerIDParam(ctx)
+		playerID, err := playerIDQuery(ctx)
 		if err != nil {
 			return err
 		}

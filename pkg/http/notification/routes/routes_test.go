@@ -13,6 +13,7 @@ import (
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outalert "github.com/niflaot/pixels/networking/outbound/session/alert"
 	outbubble "github.com/niflaot/pixels/networking/outbound/session/bubblealert"
 	"github.com/niflaot/pixels/pkg/i18n"
 )
@@ -23,8 +24,8 @@ func TestNotifySendsLocalizedBubble(t *testing.T) {
 	app, players, connections := testApp(t, &sent)
 	addPlayer(t, players, connections, "connection-one", &sent)
 
-	body := `{"kind":"bubble","key":"admin.notification.default","locale":"es"}`
-	response := request(t, app, http.MethodPost, "/api/admin/players/7/notifications", body)
+	body := `{"playerId":7,"kind":"bubble","key":"admin.notification.default","locale":"es"}`
+	response := request(t, app, http.MethodPost, "/api/admin/notifications/send", body)
 	if response.StatusCode != fiber.StatusOK {
 		t.Fatalf("expected status 200, got %d", response.StatusCode)
 	}
@@ -39,10 +40,51 @@ func TestNotifyReportsOfflinePlayer(t *testing.T) {
 	sent := make([]codec.Packet, 0, 1)
 	app, _, _ := testApp(t, &sent)
 
-	body := `{"kind":"bubble","key":"admin.notification.default"}`
-	response := request(t, app, http.MethodPost, "/api/admin/players/7/notifications", body)
+	body := `{"playerId":7,"kind":"bubble","key":"admin.notification.default"}`
+	response := request(t, app, http.MethodPost, "/api/admin/notifications/send", body)
 	if response.StatusCode != fiber.StatusNotFound {
 		t.Fatalf("expected status 404, got %d", response.StatusCode)
+	}
+}
+
+// TestNotifyRejectsMissingTarget verifies notification input requires a player id.
+func TestNotifyRejectsMissingTarget(t *testing.T) {
+	sent := make([]codec.Packet, 0, 1)
+	app, _, _ := testApp(t, &sent)
+	response := request(t, app, http.MethodPost, "/api/admin/notifications/send", `{"kind":"bubble","key":"admin.notification.default"}`)
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", response.StatusCode)
+	}
+}
+
+// TestNotifySendsLocalizedAlert verifies the explicit alert packet path.
+func TestNotifySendsLocalizedAlert(t *testing.T) {
+	sent := make([]codec.Packet, 0, 1)
+	app, players, connections := testApp(t, &sent)
+	addPlayer(t, players, connections, "connection-alert", &sent)
+
+	body := `{"playerId":7,"kind":"alert","key":"admin.notification.default"}`
+	response := request(t, app, http.MethodPost, "/api/admin/notifications/send", body)
+	if response.StatusCode != fiber.StatusOK || len(sent) != 1 || sent[0].Header != outalert.Header {
+		t.Fatalf("expected one alert packet, status=%d packets=%#v", response.StatusCode, sent)
+	}
+}
+
+// TestNotifyRejectsInvalidRequests verifies malformed notification boundaries.
+func TestNotifyRejectsInvalidRequests(t *testing.T) {
+	sent := make([]codec.Packet, 0, 1)
+	app, players, connections := testApp(t, &sent)
+	addPlayer(t, players, connections, "connection-invalid", &sent)
+
+	for _, body := range []string{
+		"{",
+		`{"playerId":7,"kind":"bubble"}`,
+		`{"playerId":7,"kind":"unsupported","key":"admin.notification.default"}`,
+	} {
+		response := request(t, app, http.MethodPost, "/api/admin/notifications/send", body)
+		if response.StatusCode != fiber.StatusBadRequest {
+			t.Fatalf("expected status 400 for %s, got %d", body, response.StatusCode)
+		}
 	}
 }
 

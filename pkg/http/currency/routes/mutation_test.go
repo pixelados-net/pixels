@@ -45,7 +45,7 @@ func TestGrantFlowsThroughEventBroadcaster(t *testing.T) {
 	fixture := routeFixture{app: app, players: players, connections: connections}
 	connection := addLivePlayer(t, fixture)
 
-	response := requestRoute(t, app, http.MethodPost, "/api/admin/players/7/currencies/5/grant", `{"amount":5}`)
+	response := requestRoute(t, app, http.MethodPost, "/api/admin/currencies/grant", `{"playerId":7,"currencyType":5,"amount":5}`)
 	if response.StatusCode != fiber.StatusOK {
 		t.Fatalf("unexpected status %d", response.StatusCode)
 	}

@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -23,12 +21,12 @@ const (
 // notifyHandler sends one localized notification to a live player.
 func notifyHandler(players *playerlive.Registry, connections *netconn.Registry, translations i18n.Translator) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		playerID, request, err := parseNotifyRequest(ctx)
+		request, err := parseNotifyRequest(ctx)
 		if err != nil {
 			return err
 		}
 
-		connection, err := playerConnection(players, connections, playerID)
+		connection, err := playerConnection(players, connections, request.PlayerID)
 		if err != nil {
 			return err
 		}
@@ -41,26 +39,24 @@ func notifyHandler(players *playerlive.Registry, connections *netconn.Registry, 
 			return err
 		}
 
-		return ctx.JSON(NotifyResponse{PlayerID: playerID, Kind: request.kind(), Key: request.Key, Sent: true})
+		return ctx.JSON(NotifyResponse{PlayerID: request.PlayerID, Kind: request.kind(), Key: request.Key, Sent: true})
 	}
 }
 
-// parseNotifyRequest parses path and body data.
-func parseNotifyRequest(ctx *fiber.Ctx) (int64, NotifyRequest, error) {
-	playerID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
-	if err != nil || playerID <= 0 {
-		return 0, NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "invalid player id")
-	}
-
+// parseNotifyRequest parses and validates notification input.
+func parseNotifyRequest(ctx *fiber.Ctx) (NotifyRequest, error) {
 	var request NotifyRequest
 	if err := ctx.BodyParser(&request); err != nil {
-		return 0, NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "invalid notification request body")
+		return NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "invalid notification request body")
+	}
+	if request.PlayerID <= 0 {
+		return NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "invalid player id")
 	}
 	if request.Key == "" {
-		return 0, NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "notification key is required")
+		return NotifyRequest{}, fiber.NewError(fiber.StatusBadRequest, "notification key is required")
 	}
 
-	return playerID, request, nil
+	return request, nil
 }
 
 // playerConnection resolves a live player's connection.

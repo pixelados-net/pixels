@@ -19,12 +19,12 @@ func adminOperations() []operation {
 		adminRoomAction("/api/admin/rooms/{id}/forward", "Forward active room occupants", &RoomForwardRequest{}),
 		adminNavigatorRead("/api/admin/navigator/categories", "List navigator categories", &APIKeyRequest{}, &CategoryListResponse{}),
 		adminNavigatorRead("/api/admin/navigator/lifted", "List navigator lifted rooms", &APIKeyRequest{}, &LiftedListResponse{}),
-		adminNotificationAction("/api/admin/players/{id}/notifications", "Send localized player notification", &PlayerNotificationRequest{}),
-		adminCurrencyRead("/api/admin/players/{id}/currencies", "Read player currency wallet", &CurrencyWalletRequest{}, &CurrencyWalletResponse{}),
+		adminNotificationAction("/api/admin/notifications/send", "Send localized player notification", &NotificationRequest{}),
+		adminCurrencyRead("/api/admin/currencies/wallet", "Read player currency wallet", &CurrencyWalletRequest{}, &CurrencyWalletResponse{}),
 		adminCurrencyRead("/api/admin/currencies/types", "List configured currency types", &APIKeyRequest{}, &CurrencyTypesResponse{}),
-		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/grant", "Grant player currency"),
-		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/deduct", "Deduct player currency"),
-		adminCurrencyAction("/api/admin/players/{id}/currencies/{type}/set", "Set player currency balance"),
+		adminCurrencyAction("/api/admin/currencies/grant", "Grant player currency"),
+		adminCurrencyAction("/api/admin/currencies/deduct", "Deduct player currency"),
+		adminCurrencyAction("/api/admin/currencies/set", "Set player currency balance"),
 	}
 }
 
@@ -77,12 +77,12 @@ func adminNotificationAction(path string, summary string, request any) operation
 	return operation{
 		method:      http.MethodPost,
 		path:        path,
-		tag:         "Admin Players",
+		tag:         "Admin Notifications",
 		summary:     summary,
 		description: summary + ".",
 		request:     request,
 		responses: append(
-			[]response{jsonResponse(http.StatusOK, &PlayerNotificationResponse{}, "Notification sent.")},
+			[]response{jsonResponse(http.StatusOK, &NotificationResponse{}, "Notification sent.")},
 			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound)...,
 		),
 		secured: true,

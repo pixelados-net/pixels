@@ -28,9 +28,34 @@ func TestSpecDocumentsRoutes(t *testing.T) {
 		t.Fatalf("unmarshal spec: %v", err)
 	}
 
-	for _, path := range []string{"/status", "/ws", "/docs", "/*"} {
+	for _, path := range []string{
+		"/status", "/ws", "/docs", "/*",
+		"/api/admin/notifications/send", "/api/admin/currencies/wallet",
+		"/api/admin/currencies/grant", "/api/admin/currencies/deduct", "/api/admin/currencies/set",
+	} {
 		if _, ok := document.Paths[path]; !ok {
 			t.Fatalf("expected path %s to be documented", path)
+		}
+	}
+}
+
+// TestSpecOmitsPlayerCapabilityRoutes verifies capabilities do not collect below players.
+func TestSpecOmitsPlayerCapabilityRoutes(t *testing.T) {
+	var document struct {
+		Paths map[string]any `json:"paths"`
+	}
+
+	if err := json.Unmarshal(Bytes(), &document); err != nil {
+		t.Fatalf("unmarshal spec: %v", err)
+	}
+
+	for _, path := range []string{
+		"/api/admin/players/{id}/notifications",
+		"/api/admin/players/{id}/currencies",
+		"/api/admin/players/{id}/currencies/{type}/grant",
+	} {
+		if _, ok := document.Paths[path]; ok {
+			t.Fatalf("unexpected player capability path %s", path)
 		}
 	}
 }
