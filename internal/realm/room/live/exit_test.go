@@ -19,7 +19,7 @@ func TestExitToDoorForcesPathAndMarksDeparture(t *testing.T) {
 	room.Tick()
 	room.Tick()
 	movements := room.Tick()
-	if len(movements) != 1 || !movements[0].Settled || !movements[0].Exited {
+	if len(movements) != 1 || !movements[0].Settled || !movements[0].Exited || !movements[0].ForcedExit {
 		t.Fatalf("expected settled door exit, got %#v", movements)
 	}
 }
@@ -34,7 +34,7 @@ func TestWalkingOntoDoorMarksDeparture(t *testing.T) {
 	room.Tick()
 	room.Tick()
 	movements := room.Tick()
-	if len(movements) != 1 || !movements[0].Exited {
+	if len(movements) != 1 || !movements[0].Exited || movements[0].ForcedExit {
 		t.Fatalf("expected normal door exit, got %#v", movements)
 	}
 }

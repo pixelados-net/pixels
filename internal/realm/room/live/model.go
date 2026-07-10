@@ -148,6 +148,9 @@ type Movement struct {
 
 	// Exited reports whether the unit completed or could not continue a room exit.
 	Exited bool
+
+	// ForcedExit reports whether server moderation initiated the room exit.
+	ForcedExit bool
 }
 
 // MovementPublisher publishes room tick movements.

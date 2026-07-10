@@ -12,18 +12,20 @@ import (
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
 	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
 	"github.com/niflaot/pixels/internal/realm/room/live"
+	moderationbroadcast "github.com/niflaot/pixels/internal/realm/room/moderation/broadcast"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
+	"github.com/niflaot/pixels/pkg/i18n"
 	"go.uber.org/fx"
 )
 
 // NewLiveRegistry creates the active room registry.
-func NewLiveRegistry(publisher bus.Publisher, connections *netconn.Registry, players *playerlive.Registry, config roomentry.Config, entryService *roomentry.Service) *live.Registry {
+func NewLiveRegistry(publisher bus.Publisher, connections *netconn.Registry, players *playerlive.Registry, config roomentry.Config, entryService *roomentry.Service, translations i18n.Translator) *live.Registry {
 	var registry *live.Registry
 	registry = live.NewRegistry(func(ctx context.Context, occupancy live.Occupancy) error {
 		return publisher.Publish(ctx, bus.Event{Name: roomoccupancy.Name, Payload: occupancyEvent(occupancy)})
 	},
-		live.WithMovementPublisher(newMovementPublisher(connections, players, publisher, func() *live.Registry { return registry })),
+		live.WithMovementPublisher(newMovementPublisher(connections, players, publisher, translations, func() *live.Registry { return registry })),
 		live.WithDoorbellPublisher(broadcast.NewDoorbellPublisher(connections)),
 		live.WithDoorbellApprover(newDoorbellApprover(entryService)),
 		live.WithDoorbellTimeout(config.Normalize().HangoutTimeout),
@@ -33,14 +35,24 @@ func NewLiveRegistry(publisher bus.Publisher, connections *netconn.Registry, pla
 }
 
 // newMovementPublisher broadcasts movement before completing door exits.
-func newMovementPublisher(connections *netconn.Registry, players *playerlive.Registry, publisher bus.Publisher, registry func() *live.Registry) live.MovementPublisher {
+func newMovementPublisher(connections *netconn.Registry, players *playerlive.Registry, publisher bus.Publisher, translations i18n.Translator, registry func() *live.Registry) live.MovementPublisher {
 	broadcastMovement := broadcast.NewMovementPublisher(connections)
 
 	return func(ctx context.Context, active *live.Room, movements []live.Movement) error {
 		movementErr := broadcastMovement(ctx, active, movements)
 		leave := leavecmd.Handler{Players: players, Runtime: registry(), Connections: connections, Events: publisher}
 		for _, movement := range movements {
-			if movement.Exited {
+			if !movement.Exited {
+				continue
+			}
+			if movement.ForcedExit {
+				notice, err := moderationbroadcast.KickedNotice(translations)
+				if err != nil {
+					movementErr = errors.Join(movementErr, leave.ToDesktop(ctx, movement.PlayerID), err)
+					continue
+				}
+				movementErr = errors.Join(movementErr, leave.ToDesktopThen(ctx, movement.PlayerID, notice))
+			} else {
 				movementErr = errors.Join(movementErr, leave.ToDesktop(ctx, movement.PlayerID))
 			}
 		}

@@ -72,7 +72,7 @@ func TestProvidersExposeContracts(t *testing.T) {
 	layoutService := layout.NewService(nil)
 	roomService := service.New(nil, layoutService)
 
-	if NewLiveRegistry(bus.New(), netconn.NewRegistry(), nil, roomentry.Config{}, nil) == nil {
+	if NewLiveRegistry(bus.New(), netconn.NewRegistry(), nil, roomentry.Config{}, nil, nil) == nil {
 		t.Fatal("expected live registry")
 	}
 	if NewLayoutStore(nil) == nil {

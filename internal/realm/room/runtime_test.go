@@ -41,7 +41,7 @@ func TestMovementPublisherCompletesDoorExitAfterMovement(t *testing.T) {
 		t.Fatalf("join runtime: %v", err)
 	}
 
-	publisher := newMovementPublisher(nil, players, bus.New(), func() *live.Registry { return runtime })
+	publisher := newMovementPublisher(nil, players, bus.New(), nil, func() *live.Registry { return runtime })
 	if err := publisher(context.Background(), active, []live.Movement{{PlayerID: 7, Exited: true}}); err != nil {
 		t.Fatalf("publish exit: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestNewLiveRegistryPublishesRoomEvents(t *testing.T) {
 		t.Fatalf("subscribe: %v", err)
 	}
 
-	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil)
+	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil, nil)
 	if _, err := registry.Activate(live.Snapshot{ID: 9, MaxUsers: 1}); err != nil {
 		t.Fatalf("activate room: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestNewLiveRegistryPublishesRoomEvents(t *testing.T) {
 func TestRegisterRuntimeCleanupRemovesDisconnectedPlayer(t *testing.T) {
 	lifecycle := fxtest.NewLifecycle(t)
 	local := bus.New()
-	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil)
+	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil, nil)
 	if err := RegisterRuntimeCleanup(lifecycle, local, local, registry, netconn.NewRegistry()); err != nil {
 		t.Fatalf("register cleanup: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestRegisterRuntimeCleanupRemovesDisconnectedPlayer(t *testing.T) {
 func TestRegisterRuntimeCleanupIgnoresUnknownPayload(t *testing.T) {
 	lifecycle := fxtest.NewLifecycle(t)
 	local := bus.New()
-	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil)
+	registry := NewLiveRegistry(local, netconn.NewRegistry(), nil, roomentry.Config{}, nil, nil)
 	if err := RegisterRuntimeCleanup(lifecycle, local, local, registry, netconn.NewRegistry()); err != nil {
 		t.Fatalf("register cleanup: %v", err)
 	}

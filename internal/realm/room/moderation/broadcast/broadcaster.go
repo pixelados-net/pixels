@@ -15,13 +15,12 @@ import (
 	outentryerror "github.com/niflaot/pixels/networking/outbound/room/entryerror"
 	outmuted "github.com/niflaot/pixels/networking/outbound/room/moderation/muted"
 	outunbanned "github.com/niflaot/pixels/networking/outbound/room/moderation/unbanned"
-	outerror "github.com/niflaot/pixels/networking/outbound/session/error"
+	outalert "github.com/niflaot/pixels/networking/outbound/session/alert"
 	"github.com/niflaot/pixels/pkg/bus"
+	"github.com/niflaot/pixels/pkg/i18n"
 )
 
 const (
-	// kickedErrorCode identifies Nitro's kicked-out-of-room generic error.
-	kickedErrorCode int32 = 4008
 	// bannedEntryErrorCode identifies a room ban entry error.
 	bannedEntryErrorCode int32 = 4
 )
@@ -34,19 +33,21 @@ type Broadcaster struct {
 	connections *netconn.Registry
 	// leave removes targets through standard room lifecycle.
 	leave leavecmd.Handler
+	// translations resolves end-user moderation notices.
+	translations i18n.Translator
 }
 
 // New creates a room moderation broadcaster.
-func New(players *playerlive.Registry, bindings *binding.Registry, runtime *roomlive.Registry, connections *netconn.Registry, events bus.Publisher) *Broadcaster {
+func New(players *playerlive.Registry, bindings *binding.Registry, runtime *roomlive.Registry, connections *netconn.Registry, events bus.Publisher, translations i18n.Translator) *Broadcaster {
 	return &Broadcaster{
-		runtime: runtime, connections: connections,
+		runtime: runtime, connections: connections, translations: translations,
 		leave: leavecmd.Handler{Players: players, Bindings: bindings, Runtime: runtime, Connections: connections, Events: events},
 	}
 }
 
 // Kick notifies one occupant and walks it to the room door when reachable.
 func (broadcaster *Broadcaster) Kick(ctx context.Context, roomID int64, playerID int64) error {
-	packet, err := outerror.Encode(kickedErrorCode)
+	packet, err := KickedNotice(broadcaster.translations)
 	if err != nil {
 		return err
 	}
@@ -54,17 +55,22 @@ func (broadcaster *Broadcaster) Kick(ctx context.Context, roomID int64, playerID
 	if !found || active.ID() != roomID {
 		return nil
 	}
-	target, targetFound := broadcaster.targetConnection(active, playerID)
-	var noticeErr error
-	if targetFound {
-		noticeErr = target.Send(ctx, packet)
-	}
 	walking, _ := active.ExitToDoor(playerID)
 	if walking {
-		return noticeErr
+		return nil
 	}
 
-	return errors.Join(noticeErr, broadcaster.leave.ToDesktop(ctx, playerID))
+	return broadcaster.leave.ToDesktopThen(ctx, playerID, packet)
+}
+
+// KickedNotice creates a global localized notice that survives room teardown.
+func KickedNotice(translations i18n.Translator) (codec.Packet, error) {
+	message := "You were kicked out of the room."
+	if translations != nil {
+		message = translations.Default("room.moderation.kicked")
+	}
+
+	return outalert.Encode(message)
 }
 
 // Ban notifies and removes one active room occupant.

@@ -125,7 +125,8 @@ func (room *Room) Tick() []Movement {
 					roomUnit.SetHeight(section.Z())
 				}
 				movements = append(movements, Movement{
-					PlayerID: playerID, Unit: unitSnapshot(playerID, roomUnit), Settled: true, Exited: exited,
+					PlayerID: playerID, Unit: unitSnapshot(playerID, roomUnit), Settled: true,
+					Exited: exited, ForcedExit: exited,
 				})
 
 				continue
@@ -139,13 +140,15 @@ func (room *Room) Tick() []Movement {
 			room.world.settleUnit(playerID, roomUnit)
 		}
 		exited := settled && roomUnit.Position().Point == room.world.door.Point
+		forcedExit := exited && roomUnit.Exiting()
 		movements = append(movements, Movement{
-			PlayerID: playerID,
-			Unit:     unitSnapshot(playerID, roomUnit),
-			Step:     step,
-			Moved:    moved,
-			Settled:  settled,
-			Exited:   exited,
+			PlayerID:   playerID,
+			Unit:       unitSnapshot(playerID, roomUnit),
+			Step:       step,
+			Moved:      moved,
+			Settled:    settled,
+			Exited:     exited,
+			ForcedExit: forcedExit,
 		})
 	}
 
