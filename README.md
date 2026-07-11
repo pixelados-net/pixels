@@ -85,6 +85,7 @@ go tool cover -func=coverage.out
 | `PIXELS_WS_PING_INTERVAL` | `30s` | Interval between server heartbeat pings. |
 | `PIXELS_WS_PONG_TIMEOUT` | `60s` | Maximum duration without a client pong before disconnecting. |
 | `PIXELS_WS_CLOSE_GRACE` | `2s` | Maximum graceful close flushing duration. |
+| `PIXELS_FURNITURE_TELEPORT_BYPASS_LOCKED` | `false` | Allows paired furniture teleports through locked room modes; room bans still apply. |
 
 ## Database
 

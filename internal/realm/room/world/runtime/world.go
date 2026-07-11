@@ -18,6 +18,8 @@ type World struct {
 	resolver *surface.Resolver
 	// furniture stores placed furniture items by id.
 	furniture map[int64]worldfurniture.Item
+	// interactions indexes interactive furniture by footprint tile.
+	interactions map[grid.Point]int64
 	// door stores the room entry position.
 	door worldpath.Position
 	// body stores the initial body rotation.
@@ -38,7 +40,7 @@ type World struct {
 
 // New creates loaded world state.
 func New(config Config) (*World, error) {
-	fixtures, furnitureIndex, err := furnitureFixtures(config.Furniture)
+	fixtures, furnitureIndex, interactionIndex, err := furnitureFixtures(config.Furniture)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func New(config Config) (*World, error) {
 	}
 
 	return &World{
-		grid: config.Grid, resolver: resolver, furniture: furnitureIndex,
+		grid: config.Grid, resolver: resolver, furniture: furnitureIndex, interactions: interactionIndex,
 		door: config.Door, body: config.Body, head: config.Head, rules: config.Rules.Normalize(),
 		units: make(map[int64]*worldunit.Unit), nextUnitID: 1,
 		unitSlots: make(map[int64]grid.Point), slotOccupants: make(map[grid.Point]int64),
@@ -117,6 +119,12 @@ func (world *World) ReloadFurniture(sourceID int64, item *worldfurniture.Item) (
 	} else {
 		delete(world.furniture, sourceID)
 	}
+	if hadPrevious {
+		world.removeInteraction(previous)
+	}
+	if item != nil {
+		world.addInteraction(*item)
+	}
 	if !hadPrevious {
 		return nil, nil
 	}
@@ -125,17 +133,51 @@ func (world *World) ReloadFurniture(sourceID int64, item *worldfurniture.Item) (
 }
 
 // furnitureFixtures converts furniture into resolver fixtures and an id index.
-func furnitureFixtures(items []worldfurniture.Item) ([]surface.Fixture, map[int64]worldfurniture.Item, error) {
+func furnitureFixtures(items []worldfurniture.Item) ([]surface.Fixture, map[int64]worldfurniture.Item, map[grid.Point]int64, error) {
 	fixtures := make([]surface.Fixture, 0, len(items))
 	index := make(map[int64]worldfurniture.Item, len(items))
+	var interactions map[grid.Point]int64
 	for _, item := range items {
 		itemFixtures, err := worldfurniture.Fixtures(item)
 		if err != nil {
-			return nil, nil, fmt.Errorf("build fixtures for furniture item %d: %w", item.ID, err)
+			return nil, nil, nil, fmt.Errorf("build fixtures for furniture item %d: %w", item.ID, err)
 		}
 		fixtures = append(fixtures, itemFixtures...)
 		index[item.ID] = item
+		if item.Definition.InteractionType != "" && item.Definition.InteractionType != "default" {
+			if interactions == nil {
+				interactions = make(map[grid.Point]int64)
+			}
+			for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+				interactions[point] = item.ID
+			}
+		}
 	}
 
-	return fixtures, index, nil
+	return fixtures, index, interactions, nil
+}
+
+// addInteraction indexes one interactive furniture footprint.
+func (world *World) addInteraction(item worldfurniture.Item) {
+	if item.Definition.InteractionType == "" || item.Definition.InteractionType == "default" {
+		return
+	}
+	if world.interactions == nil {
+		world.interactions = make(map[grid.Point]int64)
+	}
+	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		world.interactions[point] = item.ID
+	}
+}
+
+// removeInteraction removes one interactive furniture footprint.
+func (world *World) removeInteraction(item worldfurniture.Item) {
+	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		if world.interactions[point] == item.ID {
+			delete(world.interactions, point)
+		}
+	}
+	if len(world.interactions) == 0 {
+		world.interactions = nil
+	}
 }

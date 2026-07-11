@@ -24,7 +24,7 @@ func TestRoomLoopPublishesMovements(t *testing.T) {
 	room.startLoop(context.Background(), time.Millisecond, func(context.Context, *Room, []Movement) error {
 		calls.Add(1)
 		return nil
-	}, nil, 0)
+	}, nil, nil, 0)
 	defer room.stopLoop()
 
 	deadline := time.After(200 * time.Millisecond)
@@ -75,7 +75,7 @@ func TestTickBroadcastsStopAfterFurnitureInvalidatesPath(t *testing.T) {
 // TestRoomLoopIgnoresMissingPublisher verifies nil publishers do not start.
 func TestRoomLoopIgnoresMissingPublisher(t *testing.T) {
 	room := worldRoomForTest(t, "0", 0, 0)
-	room.startLoop(context.Background(), time.Millisecond, nil, nil, 0)
+	room.startLoop(context.Background(), time.Millisecond, nil, nil, nil, 0)
 	room.stopLoop()
 }
 

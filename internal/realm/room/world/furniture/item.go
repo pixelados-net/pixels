@@ -10,6 +10,9 @@ type Item struct {
 	// ID stores the durable furniture item id, used as the surface fixture source id.
 	ID int64
 
+	// OwnerPlayerID stores the durable furniture owner id.
+	OwnerPlayerID int64
+
 	// Definition stores the resolved definition snapshot for this instance.
 	Definition Definition
 
@@ -21,6 +24,9 @@ type Item struct {
 
 	// Rotation stores the placed instance rotation.
 	Rotation worldunit.Rotation
+
+	// ExtraData stores the protocol-facing visual state.
+	ExtraData string
 }
 
 // Top returns the physical top height this item occupies once placed.

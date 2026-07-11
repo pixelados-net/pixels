@@ -466,6 +466,29 @@ minimum manual checks expected when touching it.
   - Enter another player's room and verify place, move, and pickup return a
     localized no-rights bubble without changing inventory or room state.
 
+### FEATURE: Paired Furniture Teleports
+
+- Owns `internal/realm/furniture/interactions/teleport`, teleport pair
+  persistence, furniture use packet `99`, and room movement walk-on events.
+- Provides owner-validated durable pairs, click pads, zero-delay walk-on tiles,
+  room-owner-cycle animation phases, authoritative controlled movement, and
+  same-room or cross-room travel. Cross-room travel uses Nitro `ROOM_FORWARD`
+  plus a one-time destination consumed before destination entity bootstrap.
+- Active transition lookup and interaction-tile detection stay in memory;
+  animation ticks never query PostgreSQL and never create timers or goroutines.
+- `PIXELS_FURNITURE_TELEPORT_BYPASS_LOCKED` may bypass password, doorbell, and
+  invisible destination gates. Room bans always remain authoritative.
+- Test after changes:
+  - `go test -race ./internal/realm/furniture/interactions/teleport/... ./internal/realm/room/...`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/furniture/interactions/teleport/...`
+  - Click seeded items `1001`/`1002` in room `1` and verify opening, transfer,
+    controlled walk-out, and synchronized close state for every occupant.
+  - Use seeded item `1003` to reach item `1004` in room `2`; verify Nitro loads
+    the destination room and spawns the player on the paired item.
+  - Walk over seeded items `1005`/`1006` and verify use without clicking.
+  - Repeat a click during an active transition, remove a target, disconnect in
+    transit, and test locked plus banned destination rooms.
+
 ### FEATURE: Room Rights, Moderation, and Audit
 
 - Owns `internal/realm/room/control/rights`, `internal/realm/room/control/moderation`,

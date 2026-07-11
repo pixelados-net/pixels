@@ -5,6 +5,9 @@ import "github.com/niflaot/pixels/internal/realm/room/world/path"
 // Kind stores the room unit kind.
 type Kind uint8
 
+// ControlKind identifies server-controlled unit movement.
+type ControlKind uint8
+
 const (
 	// KindPlayer marks a player-controlled unit.
 	KindPlayer Kind = iota + 1
@@ -14,6 +17,15 @@ const (
 
 	// KindPet marks a pet-controlled unit.
 	KindPet
+)
+
+const (
+	// ControlNone leaves movement under player control.
+	ControlNone ControlKind = iota
+	// ControlExitingRoom reserves movement for a room exit.
+	ControlExitingRoom
+	// ControlTeleporting reserves movement for a teleport sequence.
+	ControlTeleporting
 )
 
 // Unit stores runtime state for an entity inside a room.
@@ -48,8 +60,8 @@ type Unit struct {
 	// settling reports whether movement needs a final clean status.
 	settling bool
 
-	// exiting reports whether server-controlled movement must finish at the room door.
-	exiting bool
+	// control identifies the active server-controlled movement.
+	control ControlKind
 
 	// activePath stores the accepted path used to validate staleness against the world.
 	activePath path.Path

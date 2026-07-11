@@ -57,6 +57,47 @@ func (world *World) FurnitureItems() []worldfurniture.Item {
 	return items
 }
 
+// FurnitureItem returns one furniture snapshot without allocating.
+func (world *World) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
+	item, found := world.furniture[itemID]
+
+	return item, found
+}
+
+// InteractionAt returns one interactive item on a tile without allocating.
+func (world *World) InteractionAt(point grid.Point) (worldfurniture.Item, bool) {
+	itemID, found := world.interactions[point]
+	if !found {
+		return worldfurniture.Item{}, false
+	}
+	item, found := world.furniture[itemID]
+
+	return item, found
+}
+
+// OtherInteractionAt finds another interaction sharing a tile without allocating.
+func (world *World) OtherInteractionAt(point grid.Point, excludedID int64) (worldfurniture.Item, bool) {
+	for itemID, item := range world.furniture {
+		if itemID != excludedID && item.Point == point && item.Definition.InteractionType != "" && item.Definition.InteractionType != "default" {
+			return item, true
+		}
+	}
+
+	return worldfurniture.Item{}, false
+}
+
+// SetFurnitureExtraData updates one runtime furniture visual state.
+func (world *World) SetFurnitureExtraData(itemID int64, value string) (worldfurniture.Item, bool) {
+	item, found := world.furniture[itemID]
+	if !found {
+		return worldfurniture.Item{}, false
+	}
+	item.ExtraData = value
+	world.furniture[itemID] = item
+
+	return item, true
+}
+
 // SurfaceHeights returns current tile heights in row-major order.
 func (world *World) SurfaceHeights() (uint16, uint16, []TileHeight) {
 	width, height := world.grid.Width(), world.grid.Height()

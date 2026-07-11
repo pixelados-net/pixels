@@ -220,7 +220,7 @@ Seis fases, confirmadas 1:1 contra `TeleportAction{One..Five}.java` — cada una
 ### 3.4 Fase D — El cruce real (reubicación instantánea, sin pathfinding)
 
 - La unidad se coloca **directamente** (sin calcular ningún camino, es un teletransporte, no una caminata) sobre el tile exacto del teleportador emparejado, con su `Z` ajustado a la altura de ese tile.
-- **Si el room destino es distinto del actual**: se reusa exactamente el Mecanismo B ya diseñado en `plan/rooms/ENTRY.md` (Parte 4.5/4.6) — `enter.Command{RoomID: targetRoomID, Trusted: bypassConfigured}` construido y ejecutado server-side de punta a punta (leave del room actual + `Room.LoadWorld`/join al nuevo + packets de bootstrap), **sin** pasar por `ROOM_FORWARD` ni pedirle al cliente que renavegue — la transición ocurre en la misma sesión de conexión, sin que el jugador note un "salto" de protocolo.
+- **Si el room destino es distinto del actual**: se usa `ROOM_FORWARD`, porque Nitro necesita ejecutar su ciclo normal de desmontaje, navegación y carga del nuevo renderer. Antes de enviarlo se registra un destino efímero de un solo uso `{playerID, roomID, targetItemID}`. El evento síncrono `room.entered` consume ese destino y coloca la unidad sobre el teleportador antes de proyectar las entidades del nuevo room. Así el cliente y los observadores reciben la misma posición autoritativa sin reemplazar estado server-side debajo de un renderer viejo.
 - El item de destino pasa a extradata `"2"` — la "puerta" del otro lado ya está mostrándose abierta/activa justo cuando la unidad aparece ahí (el jugador nunca ve el destino "cerrado" en el instante exacto de llegar).
 - Rotación de la unidad al llegar: igual a la rotación del teleportador destino (queda mirando hacia afuera de él, en la dirección natural de salida).
 - Duración hasta la Fase E: 500ms (pad) / 0ms (tile).
@@ -311,7 +311,7 @@ Mismo patrón de desacople ya usado en el resto del proyecto (`RIGHTS.md`'s subs
 | Inbound | `furniture/interact` (compartido con el futuro Milestone I1, no dedicado a teleport) | `itemId int32` | TBD |
 | Outbound | `room/furniture/state` (ya diseñado en `INTERACTIONS.md` Parte 3, reusado tal cual) | `itemId int32`, `state string` (los valores `"0"`/`"1"`/`"2"` de la Parte 3) | TBD |
 | Outbound | `room/entities/status` (ya existente, reusado) | status `mv` ilusorio de la Fase B/caminata de salida de la Fase F | ya existente |
-| — | `ROOM_FORWARD`/`FORWARD_TO_SOME_ROOM` | **No se usan** — el cruce de sala (Fase D) es Mecanismo B (rejoin directo), nunca Mecanismo A (`ENTRY.md` Parte 4.1) | — |
+| Outbound | `ROOM_FORWARD` | Inicia el ciclo nativo de navegación de Nitro para cruces entre salas; el destino efímero se consume antes del bootstrap del room | `160` |
 
 El teleportador **no necesita ningún packet nuevo dedicado** más allá de lo que el futuro Milestone I1 (click genérico) y el sistema de entrada ya existente proveen — toda la "magia" es orquestación server-side sobre primitivas de protocolo que ya están diseñadas en otros documentos.
 
@@ -331,7 +331,7 @@ El teleportador **no necesita ningún packet nuevo dedicado** más allá de lo q
 - Click estando lejos → camina al tile-en-frente, luego al tile exacto, luego arranca la Fase B (sin que el jugador tenga que volver a clickear).
 - Segundo click mientras ya hay un `Transit` activo → no-op, sin duplicar la secuencia.
 - Par válido en la misma sala → Fase D reubica sin cambiar de room.
-- Par válido en otra sala → Fase D reusa el Mecanismo B (`enter.Command`), confirmado con un fake que verifica que nunca se manda `ROOM_FORWARD`.
+- Par válido en otra sala → Fase D envía `ROOM_FORWARD`; `room.entered` consume el destino de un solo uso y fija el spawn antes del bootstrap.
 - Par roto (item destino eliminado) → salta a Fase F sin reubicar, sin error duro; y si la relación era asimétrica, ambos lados quedan limpios (no solo el usado).
 - `BypassLockedRoom = false` (default) → un teleport hacia una sala con `DoorModePassword` falla el cruce igual que una entrada normal; `= true` → entra igual que un `Trusted: true` normal, salvo ban.
 - Variante tile: caminar encima dispara la secuencia sin click, con delays en 0; aparecer sobre OTRO tile de teleporte variante-tile lo encadena automáticamente.

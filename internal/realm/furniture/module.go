@@ -2,6 +2,9 @@
 package furniture
 
 import (
+	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
+	teleportdb "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/database"
+	teleportpair "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/pair"
 	"github.com/niflaot/pixels/internal/realm/furniture/repository"
 	"github.com/niflaot/pixels/internal/realm/furniture/service"
 	"github.com/niflaot/pixels/pkg/postgres"
@@ -17,9 +20,19 @@ var Module = fx.Module(
 		NewManager,
 		NewGranter,
 		NewDefinitionGranter,
+		teleport.LoadConfig,
+		teleportdb.New,
+		NewTeleportPairService,
+		teleport.NewService,
 	),
+	fx.Invoke(teleport.Register),
 	fx.Invoke(RegisterConnectionHandlers),
 )
+
+// NewTeleportPairService creates validated teleport pairing behavior.
+func NewTeleportPairService(store *teleportdb.Repository, furniture service.Manager) *teleportpair.Service {
+	return teleportpair.NewService(store, furniture)
+}
 
 // NewStore creates the furniture persistence store.
 func NewStore(pool *postgres.Pool) repository.Store {

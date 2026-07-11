@@ -10,6 +10,8 @@ import (
 	movehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/move"
 	pickuphandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/pickup"
 	placehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/place"
+	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
+	teleportuse "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/use"
 	"github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
@@ -41,6 +43,8 @@ type HandlerDeps struct {
 	Translations i18n.Translator
 	// Log records command dispatch.
 	Log *zap.Logger
+	// Teleports coordinates paired furniture travel.
+	Teleports *teleport.Service
 }
 
 // RegisterConnectionHandlers registers furniture packet handlers.
@@ -63,5 +67,8 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	pickuphandler.Register(handlers.Inbound, pickuphandler.New(pickupcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Furniture: deps.Furniture,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events, Translations: deps.Translations, Log: deps.Log,
+	}, deps.Log))
+	teleportuse.Register(handlers.Inbound, teleportuse.New(teleportuse.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Teleports: deps.Teleports,
 	}, deps.Log))
 }

@@ -49,11 +49,13 @@ func ToWorldItem(item furnituremodel.Item, definitions map[int64]furnituremodel.
 	}
 
 	return worldfurniture.Item{
-		ID:         item.ID,
-		Definition: worldDefinition,
-		Point:      point,
-		Z:          RoundHeight(*item.Z),
-		Rotation:   worldunit.Rotation(item.Rotation),
+		ID:            item.ID,
+		OwnerPlayerID: item.OwnerPlayerID,
+		Definition:    worldDefinition,
+		Point:         point,
+		Z:             RoundHeight(*item.Z),
+		Rotation:      worldunit.Rotation(item.Rotation),
+		ExtraData:     item.ExtraData,
 	}, true, nil
 }
 
@@ -65,14 +67,16 @@ func ToWorldDefinition(definition furnituremodel.Definition) (worldfurniture.Def
 	}
 
 	return worldfurniture.Definition{
-		Width:       definition.Width,
-		Length:      definition.Length,
-		StackHeight: RoundHeight(definition.StackHeight),
-		AllowStack:  definition.AllowStack,
-		AllowWalk:   definition.AllowWalk,
-		AllowSit:    definition.AllowSit,
-		AllowLay:    definition.AllowLay,
-		Slots:       slots,
+		SpriteID:        definition.SpriteID,
+		InteractionType: definition.InteractionType,
+		Width:           definition.Width,
+		Length:          definition.Length,
+		StackHeight:     RoundHeight(definition.StackHeight),
+		AllowStack:      definition.AllowStack,
+		AllowWalk:       definition.AllowWalk,
+		AllowSit:        definition.AllowSit,
+		AllowLay:        definition.AllowLay,
+		Slots:           slots,
 	}, nil
 }
 

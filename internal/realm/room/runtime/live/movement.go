@@ -3,11 +3,28 @@ package live
 import (
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
 // MoveTo sets a unit movement goal.
 func (room *Room) MoveTo(playerID int64, goal grid.Point) (worldpath.Path, error) {
-	return room.moveTo(playerID, goal, false)
+	return room.moveTo(playerID, goal, worldunit.ControlNone)
+}
+
+// MoveControlled sets a unit movement goal reserved for server behavior.
+func (room *Room) MoveControlled(playerID int64, goal grid.Point, control worldunit.ControlKind) (worldpath.Path, error) {
+	return room.moveTo(playerID, goal, control)
+}
+
+// StepControlled assigns one authoritative adjacent movement step.
+func (room *Room) StepControlled(playerID int64, goal grid.Point, control worldunit.ControlKind) error {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return ErrWorldNotLoaded
+	}
+
+	return room.world.ApplyControlledStep(playerID, goal, control)
 }
 
 // ExitToDoor starts a server-controlled path to the room door.
@@ -19,7 +36,7 @@ func (room *Room) ExitToDoor(playerID int64) (bool, error) {
 	}
 	door := room.world.Door().Point
 	room.mutex.RUnlock()
-	roomPath, err := room.moveTo(playerID, door, true)
+	roomPath, err := room.moveTo(playerID, door, worldunit.ControlExitingRoom)
 	if err != nil {
 		return false, err
 	}
@@ -28,7 +45,7 @@ func (room *Room) ExitToDoor(playerID int64) (bool, error) {
 }
 
 // moveTo plans outside the room lock and applies against the same loaded world.
-func (room *Room) moveTo(playerID int64, goal grid.Point, exiting bool) (worldpath.Path, error) {
+func (room *Room) moveTo(playerID int64, goal grid.Point, control worldunit.ControlKind) (worldpath.Path, error) {
 	room.mutex.RLock()
 	runtime := room.world
 	if runtime == nil {
@@ -52,7 +69,7 @@ func (room *Room) moveTo(playerID int64, goal grid.Point, exiting bool) (worldpa
 	if room.world != runtime {
 		return worldpath.Path{}, worldpath.ErrInvalidPath
 	}
-	if err := runtime.ApplyMovement(playerID, roomPath, exiting); err != nil {
+	if err := runtime.ApplyControlledMovement(playerID, roomPath, control); err != nil {
 		return worldpath.Path{}, err
 	}
 

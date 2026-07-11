@@ -34,6 +34,12 @@ type SlotDefinition struct {
 
 // Definition stores the minimal furniture definition snapshot used by the room world.
 type Definition struct {
+	// SpriteID stores the Nitro rendering class id.
+	SpriteID int
+
+	// InteractionType identifies the furniture behavior.
+	InteractionType string
+
 	// Width stores the footprint width at rotation 0.
 	Width int
 

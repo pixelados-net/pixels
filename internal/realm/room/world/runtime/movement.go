@@ -32,11 +32,21 @@ func (world *World) FindPath(plan MovementPlan) (worldpath.Path, error) {
 
 // ApplyMovement assigns a validated path to a unit.
 func (world *World) ApplyMovement(playerID int64, roomPath worldpath.Path, exiting bool) error {
+	control := worldunit.ControlNone
+	if exiting {
+		control = worldunit.ControlExitingRoom
+	}
+
+	return world.ApplyControlledMovement(playerID, roomPath, control)
+}
+
+// ApplyControlledMovement assigns a path with explicit server control.
+func (world *World) ApplyControlledMovement(playerID int64, roomPath worldpath.Path, control worldunit.ControlKind) error {
 	roomUnit, ok := world.units[playerID]
 	if !ok {
 		return ErrUnitNotFound
 	}
-	if roomUnit.Exiting() && !exiting {
+	if roomUnit.Control() != worldunit.ControlNone && control == worldunit.ControlNone {
 		return ErrUnitExiting
 	}
 	if err := roomPath.Validate(world.resolver); err != nil {
@@ -44,11 +54,46 @@ func (world *World) ApplyMovement(playerID int64, roomPath worldpath.Path, exiti
 	}
 	world.releaseSlot(playerID)
 	roomUnit.SetPath(roomPath)
-	if exiting {
-		roomUnit.MarkExiting()
+	if control != worldunit.ControlNone {
+		roomUnit.SetControl(control)
 	}
 
 	return nil
+}
+
+// TeleportUnit repositions one unit without pathfinding.
+func (world *World) TeleportUnit(playerID int64, point grid.Point, rotation worldunit.Rotation, controlled bool) (UnitSnapshot, error) {
+	roomUnit, ok := world.units[playerID]
+	if !ok {
+		return UnitSnapshot{}, ErrUnitNotFound
+	}
+	section, err := world.resolver.TopSection(point)
+	if err != nil {
+		return UnitSnapshot{}, err
+	}
+	world.releaseSlot(playerID)
+	roomUnit.Reposition(worldpath.Position{Point: point, Z: section.Z()}, rotation)
+	if controlled {
+		roomUnit.SetControl(worldunit.ControlTeleporting)
+	} else {
+		roomUnit.SetControl(worldunit.ControlNone)
+	}
+
+	return unitSnapshot(playerID, roomUnit), nil
+}
+
+// ApplyControlledStep assigns one authoritative adjacent movement step.
+func (world *World) ApplyControlledStep(playerID int64, point grid.Point, control worldunit.ControlKind) error {
+	_, ok := world.units[playerID]
+	if !ok {
+		return ErrUnitNotFound
+	}
+	section, err := world.resolver.TopSection(point)
+	if err != nil || !world.rules.AllowsSection(section) {
+		return worldpath.ErrInvalidGoal
+	}
+	step := worldpath.Step{Position: worldpath.Position{Point: point, Z: section.Z()}}
+	return world.ApplyControlledMovement(playerID, worldpath.NewPath([]worldpath.Step{step}), control)
 }
 
 // FaceTo rotates a free-standing unit toward a target and clears movement.

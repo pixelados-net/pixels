@@ -64,12 +64,33 @@ func (unit *Unit) PendingSteps() int {
 
 // MarkExiting prevents client movement from replacing a server-controlled exit path.
 func (unit *Unit) MarkExiting() {
-	unit.exiting = true
+	unit.control = ControlExitingRoom
 }
 
 // Exiting reports whether the unit is following a server-controlled exit path.
 func (unit *Unit) Exiting() bool {
-	return unit.exiting
+	return unit.control == ControlExitingRoom
+}
+
+// SetControl assigns server control over unit movement.
+func (unit *Unit) SetControl(control ControlKind) {
+	unit.control = control
+}
+
+// Control returns the active server movement control.
+func (unit *Unit) Control() ControlKind {
+	return unit.control
+}
+
+// Reposition moves a unit immediately and clears transient posture and movement state.
+func (unit *Unit) Reposition(position path.Position, rotation Rotation) {
+	unit.previous = unit.position
+	unit.position = position
+	unit.body = rotation
+	unit.head = rotation
+	unit.ClearPath()
+	unit.statuses.clear(StatusSit)
+	unit.statuses.clear(StatusLay)
 }
 
 // Advance moves the unit by one pending step.

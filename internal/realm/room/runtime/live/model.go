@@ -124,6 +124,16 @@ type DoorbellPublisher func(context.Context, *Room, []roomdoorbell.Expired) erro
 // DoorbellApprover reports whether an authorized responder remains in a room.
 type DoorbellApprover func(context.Context, *Room) (bool, error)
 
+// CyclePublisher advances optional room-owned domain cycles.
+type CyclePublisher func(context.Context, *Room, time.Time) error
+
+// SetCyclePublisher configures the optional domain cycle before rooms activate.
+func (registry *Registry) SetCyclePublisher(publisher CyclePublisher) {
+	registry.mutex.Lock()
+	registry.cyclePublish = publisher
+	registry.mutex.Unlock()
+}
+
 // RegistryOption configures a room registry.
 type RegistryOption func(*Registry)
 

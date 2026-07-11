@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/niflaot/pixels/internal/command"
+	furniturewalkedoff "github.com/niflaot/pixels/internal/realm/furniture/events/walkedoff"
+	furniturewalkedon "github.com/niflaot/pixels/internal/realm/furniture/events/walkedon"
 	playerdisconnected "github.com/niflaot/pixels/internal/realm/player/events/disconnected"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	leavecmd "github.com/niflaot/pixels/internal/realm/room/access/commands/leave"
@@ -42,6 +44,9 @@ func newMovementPublisher(connections *netconn.Registry, players *playerlive.Reg
 		movementErr := broadcastMovement(ctx, active, movements)
 		leave := leavecmd.Handler{Players: players, Runtime: registry(), Connections: connections, Events: publisher}
 		for _, movement := range movements {
+			if movement.Moved {
+				movementErr = errors.Join(movementErr, publishFurnitureSteps(ctx, publisher, active, movement))
+			}
 			if !movement.Exited {
 				continue
 			}
@@ -59,6 +64,26 @@ func newMovementPublisher(connections *netconn.Registry, players *playerlive.Reg
 
 		return movementErr
 	}
+}
+
+// publishFurnitureSteps emits walk-off and walk-on events from accepted movement.
+func publishFurnitureSteps(ctx context.Context, publisher bus.Publisher, active *live.Room, movement live.Movement) error {
+	if publisher == nil {
+		return nil
+	}
+	var result error
+	if item, found := active.InteractionAt(movement.Unit.Previous.Point); found {
+		result = publisher.Publish(ctx, bus.Event{Name: furniturewalkedoff.Name, Payload: furniturewalkedoff.Payload{
+			PlayerID: movement.PlayerID, ItemID: item.ID, RoomID: active.ID(),
+		}})
+	}
+	if item, found := active.InteractionAt(movement.Unit.Position.Point); found {
+		result = errors.Join(result, publisher.Publish(ctx, bus.Event{Name: furniturewalkedon.Name, Payload: furniturewalkedon.Payload{
+			PlayerID: movement.PlayerID, ItemID: item.ID, RoomID: active.ID(),
+		}}))
+	}
+
+	return result
 }
 
 // newDoorbellApprover creates a room responder presence check.

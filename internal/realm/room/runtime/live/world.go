@@ -5,6 +5,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldruntime "github.com/niflaot/pixels/internal/realm/room/world/runtime"
 	"github.com/niflaot/pixels/internal/realm/room/world/surface"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
 // LoadWorld loads or replaces room world behavior.
@@ -121,6 +122,61 @@ func (room *Room) FurnitureItems() []worldfurniture.Item {
 	}
 
 	return room.world.FurnitureItems()
+}
+
+// FurnitureItem returns one placed furniture snapshot without allocating.
+func (room *Room) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.FurnitureItem(itemID)
+}
+
+// InteractionAt returns one interactive furniture item on a tile without allocating.
+func (room *Room) InteractionAt(point grid.Point) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.InteractionAt(point)
+}
+
+// OtherInteractionAt returns another interactive item sharing a tile without allocating.
+func (room *Room) OtherInteractionAt(point grid.Point, excludedID int64) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.OtherInteractionAt(point, excludedID)
+}
+
+// SetFurnitureExtraData changes one furniture visual state without rebuilding fixtures.
+func (room *Room) SetFurnitureExtraData(itemID int64, value string) (worldfurniture.Item, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.SetFurnitureExtraData(itemID, value)
+}
+
+// TeleportUnit repositions one unit authoritatively.
+func (room *Room) TeleportUnit(playerID int64, point grid.Point, rotation worldunit.Rotation, controlled bool) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+
+	return room.world.TeleportUnit(playerID, point, rotation, controlled)
 }
 
 // SurfaceHeights returns current per-tile walkable heights in row-major order.
