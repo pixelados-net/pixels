@@ -3,11 +3,18 @@ package room
 import (
 	moderationcmd "github.com/niflaot/pixels/internal/realm/room/control/commands/moderation"
 	rightscmd "github.com/niflaot/pixels/internal/realm/room/control/commands/rights"
+	votescmd "github.com/niflaot/pixels/internal/realm/room/control/commands/votes"
 	controlhandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/control"
 	moderationhandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/moderation"
 	rightshandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/rights"
+	votehandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/votes"
 	netconn "github.com/niflaot/pixels/networking/connection"
 )
+
+// registerVoteHandlers registers room vote packet adapters.
+func registerVoteHandlers(registry *netconn.HandlerRegistry, deps HandlerDeps) {
+	votehandler.RegisterCast(registry, votehandler.NewCast(votescmd.CastHandler{Players: deps.Players, Bindings: deps.Bindings, Votes: deps.Votes}, deps.Log))
+}
 
 // registerRightsHandlers registers room rights packet adapters.
 func registerRightsHandlers(registry *netconn.HandlerRegistry, deps HandlerDeps) {

@@ -45,6 +45,7 @@ func routeTags() []openapi3.Tag {
 		tag("Admin Chat", "Protected global filters, bubble thresholds, and bounded history."),
 		tag("Admin Permissions", "Protected permission group, membership, and grant routes."),
 		tag("Admin Rooms", "Protected room metadata and runtime routes."),
+		tag("Admin Room Votes", "Protected permanent room upvote routes."),
 		tag("Admin Navigator", "Protected navigator metadata routes."),
 		tag("Fallback", "Authenticated fallback behavior."),
 	}

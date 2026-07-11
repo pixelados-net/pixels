@@ -10,12 +10,14 @@ import (
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
 	rightsbroadcast "github.com/niflaot/pixels/internal/realm/room/control/rights/broadcast"
 	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
+	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/control/wordfilter"
 	auditrepo "github.com/niflaot/pixels/internal/realm/room/database/audit"
 	layoutrepo "github.com/niflaot/pixels/internal/realm/room/database/layout"
 	moderationrepo "github.com/niflaot/pixels/internal/realm/room/database/moderation"
 	"github.com/niflaot/pixels/internal/realm/room/database/record"
 	rightsrepo "github.com/niflaot/pixels/internal/realm/room/database/rights"
+	votesrepo "github.com/niflaot/pixels/internal/realm/room/database/votes"
 	wordrepo "github.com/niflaot/pixels/internal/realm/room/database/wordfilter"
 	"github.com/niflaot/pixels/internal/realm/room/record/service"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
@@ -55,6 +57,10 @@ var Module = fx.Module(
 		NewWordFilterStore,
 		NewWordFilterService,
 		NewWordFilterManager,
+		NewVoteStore,
+		NewVoteRoomFinder,
+		roomvotes.New,
+		NewVoteManager,
 	),
 	fx.Invoke(roomaudit.RegisterSubscriber),
 	fx.Invoke(rightsbroadcast.Register),
@@ -62,6 +68,21 @@ var Module = fx.Module(
 	fx.Invoke(RegisterRuntimeCleanup),
 	fx.Invoke(RegisterConnectionHandlers),
 )
+
+// NewVoteStore creates room vote persistence.
+func NewVoteStore(pool *postgres.Pool) roomvotes.Store {
+	return votesrepo.New(pool)
+}
+
+// NewVoteRoomFinder exposes room reads to vote behavior.
+func NewVoteRoomFinder(service *service.Service) roomvotes.RoomFinder {
+	return service
+}
+
+// NewVoteManager exposes room vote behavior through its contract.
+func NewVoteManager(service *roomvotes.Service) roomvotes.Manager {
+	return service
+}
 
 // NewSettingsAuthorizer creates shared room settings authorization.
 func NewSettingsAuthorizer(permissions permissionservice.Checker) *roomsettings.Authorizer {

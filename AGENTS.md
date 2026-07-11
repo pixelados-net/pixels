@@ -314,8 +314,17 @@ minimum manual checks expected when touching it.
   distance-aware audiences, room mute-all bypasses, configurable Redis flood
   control, global and room censorship, validated bubble styles, and bounded
   partitioned history written asynchronously with PostgreSQL COPY batches.
+- Authorized whisper observers receive a localized `To {recipient}: {message}`
+  packet; ordinary senders and recipients continue receiving the original text.
+- Global and room filters compile immutable Aho-Corasick snapshots when their
+  dictionaries change. Matching ignores separators and detects embedded text,
+  so entries such as `chancleta` also censor `chan cleta` and `chancletacion`.
 - Prefix, bold, and mention wire fields are intentionally absent because Nitro's
   chat packet shape does not contain them; do not add server-only packet fields.
+- Arcturus renders rank prefixes by sending temporary `UNIT_CHANGE_NAME` packet
+  `2182` before chat and restoring the username immediately afterward. Pixels
+  does not implement this projection yet; preserve packet ordering and sanitize
+  prefix HTML if that behavior is added explicitly.
 - Test after changes:
   - `go test ./internal/realm/chat/... ./networking/inbound/chat/... ./networking/outbound/chat/... ./pkg/http/chat/routes`
   - `go test -run '^$' -bench . -benchmem ./internal/realm/chat/send ./internal/realm/chat/history ./pkg/textfilter`
@@ -439,6 +448,22 @@ minimum manual checks expected when touching it.
     offline, and ordinary-player cases.
   - Verify bans block entry, rights bypass closed-room gates, and all successful
     mutations appear in the protected audit endpoints.
+
+### FEATURE: Room Upvotes
+
+- Owns `internal/realm/room/control/votes`, room vote persistence, vote packets,
+  and `pkg/http/room/routes/votes`.
+- Provides permanent idempotent room upvotes, owner exclusion, atomic score
+  increments, per-occupant Nitro eligibility projection, entry bootstrap, and
+  protected status, list, and cast administration routes.
+- Test after changes:
+  - `go test ./internal/realm/room/control/votes ./internal/realm/room/database/votes ./networking/inbound/room/like ./networking/outbound/room/score ./pkg/http/room/routes/votes`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/room/control/votes ./networking/inbound/room/like ./networking/outbound/room/score`
+  - Enter a room as its owner, a previous voter, and a new visitor; verify only
+    the new visitor sees the active like control.
+  - Vote twice and verify the score increments once while every occupant sees
+    the same score with their own eligibility.
+  - Open `/docs` and verify the `Admin Room Votes` route group.
 
 ## SDK Rules
 

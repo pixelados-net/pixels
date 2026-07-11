@@ -16,6 +16,7 @@ import (
 	outtyping "github.com/niflaot/pixels/networking/outbound/chat/typing"
 	outwhisper "github.com/niflaot/pixels/networking/outbound/chat/whisper"
 	outmute "github.com/niflaot/pixels/networking/outbound/room/moderation/muted"
+	"github.com/niflaot/pixels/pkg/i18n"
 )
 
 // TestSanitizeAndGesture verifies protocol-safe text and gesture inference.
@@ -66,6 +67,30 @@ func TestShoutWhisperAndTypingDelivery(t *testing.T) {
 	}
 	if (*fixture.targetPackets)[1].Header != outtyping.Header {
 		t.Fatal("expected target typing update")
+	}
+}
+
+// TestWhisperObserverSeesRecipient verifies privileged whisper decoration.
+func TestWhisperObserverSeesRecipient(t *testing.T) {
+	fixture := newFixture(t)
+	observerPackets := make([]codec.Packet, 0, 1)
+	registerSession(t, fixture.connections, "observer", &observerPackets, nil)
+	addPlayer(t, fixture.players, fixture.bindings, fixture.runtime, fixture.active, 3, "observer", "carol")
+	fixture.permissions.allowed["observe"] = true
+	fixture.service.nodes.WhisperObserveAny = "observe"
+	fixture.service.translations = i18n.NewCatalog(i18n.Config{DefaultLocale: "es"}, map[i18n.Locale]map[i18n.Key]string{
+		"es": {"chat.whisper.observer": "Para {recipient}: {message}"},
+	})
+	fixture.request.Kind = KindWhisper
+	fixture.request.Recipient = "bob"
+	fixture.request.Message = "secret"
+	assertSourceHeader(t, fixture, outwhisper.Header)
+	if len(observerPackets) != 1 {
+		t.Fatalf("expected one observer packet, got %#v", observerPackets)
+	}
+	values, err := codec.DecodePacketExact(observerPackets[0], outwhisper.Definition)
+	if err != nil || values[1].String != "Para bob: secret" {
+		t.Fatalf("values=%#v err=%v", values, err)
 	}
 }
 

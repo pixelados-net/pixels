@@ -47,6 +47,14 @@ type RoomFinder interface {
 	FindByID(context.Context, int64) (roommodel.Room, bool, error)
 }
 
+// Snapshot stores one room's immutable filter generation.
+type Snapshot struct {
+	// words stores normalized persistent entries.
+	words []string
+	// matcher stores the compiled Aho-Corasick automaton.
+	matcher *textfilter.Matcher
+}
+
 // Store persists room-specific filtered words.
 type Store interface {
 	// List lists normalized words for a room.
@@ -66,24 +74,24 @@ type Service struct {
 	// authorize resolves settings capability.
 	authorize *roomsettings.Authorizer
 	// cache stores immutable word slices by room id.
-	cache map[int64][]string
+	cache map[int64]*Snapshot
 	// cacheMutex protects immutable filter snapshot references.
 	cacheMutex sync.RWMutex
 }
 
 // New creates a room word filter service.
 func New(store Store, rooms RoomFinder, authorize *roomsettings.Authorizer) *Service {
-	return &Service{store: store, rooms: rooms, authorize: authorize, cache: make(map[int64][]string)}
+	return &Service{store: store, rooms: rooms, authorize: authorize, cache: make(map[int64]*Snapshot)}
 }
 
 // List lists room filter words and returns a caller-owned slice.
 func (service *Service) List(ctx context.Context, roomID int64) ([]string, error) {
-	words, err := service.words(ctx, roomID)
+	snapshot, err := service.snapshotFor(ctx, roomID)
 	if err != nil {
 		return nil, err
 	}
 
-	return append([]string(nil), words...), nil
+	return append([]string(nil), snapshot.words...), nil
 }
 
 // Add adds a room filter word after authorization.
@@ -114,29 +122,29 @@ func (service *Service) Remove(ctx context.Context, roomID int64, actorID int64,
 	return nil
 }
 
-// Contains reports whether text contains a filtered whole word.
+// Contains reports whether text contains a normalized filtered pattern.
 func (service *Service) Contains(ctx context.Context, roomID int64, text string) (bool, error) {
-	words, err := service.words(ctx, roomID)
-	if err != nil || len(words) == 0 {
+	snapshot, err := service.snapshotFor(ctx, roomID)
+	if err != nil || len(snapshot.words) == 0 {
 		return false, err
 	}
-	return textfilter.Contains(text, words), nil
+	return snapshot.matcher.Contains(text), nil
 }
 
-// Censor replaces filtered whole words while preserving Unicode length.
+// Censor replaces filtered patterns while preserving separators.
 func (service *Service) Censor(ctx context.Context, roomID int64, text string) (string, bool, error) {
-	words, err := service.words(ctx, roomID)
-	if err != nil || len(words) == 0 {
+	snapshot, err := service.snapshotFor(ctx, roomID)
+	if err != nil || len(snapshot.words) == 0 {
 		return text, false, err
 	}
 
-	result, changed := textfilter.Censor(text, words)
+	result, changed := snapshot.matcher.Censor(text)
 
 	return result, changed, nil
 }
 
-// words returns one immutable cached filter snapshot.
-func (service *Service) words(ctx context.Context, roomID int64) ([]string, error) {
+// snapshotFor returns one immutable cached filter generation.
+func (service *Service) snapshotFor(ctx context.Context, roomID int64) (*Snapshot, error) {
 	service.cacheMutex.RLock()
 	cached, found := service.cache[roomID]
 	service.cacheMutex.RUnlock()
@@ -154,10 +162,11 @@ func (service *Service) words(ctx context.Context, roomID int64) ([]string, erro
 			break
 		}
 	}
-	service.cache[roomID] = words
+	snapshot := &Snapshot{words: words, matcher: textfilter.Compile(words)}
+	service.cache[roomID] = snapshot
 	service.cacheMutex.Unlock()
 
-	return words, nil
+	return snapshot, nil
 }
 
 // invalidate removes one cached room filter snapshot.

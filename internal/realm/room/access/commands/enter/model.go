@@ -13,12 +13,14 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outentered "github.com/niflaot/pixels/networking/outbound/room/entered"
 	outentryinfo "github.com/niflaot/pixels/networking/outbound/room/entryinfo"
 	outentrytile "github.com/niflaot/pixels/networking/outbound/room/entrytile"
 	outmodel "github.com/niflaot/pixels/networking/outbound/room/model"
 	outmodelname "github.com/niflaot/pixels/networking/outbound/room/modelname"
 	outrightslevel "github.com/niflaot/pixels/networking/outbound/room/rights/level"
 	outrightsowner "github.com/niflaot/pixels/networking/outbound/room/rights/owner"
+	outscore "github.com/niflaot/pixels/networking/outbound/room/score"
 )
 
 const (
@@ -55,9 +57,57 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 	return SendGeometry(ctx, connection, roomLayout)
 }
 
+// sendEntered sends the initial room entry packets.
+func (handler Handler) sendEntered(ctx context.Context, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout, active *roomlive.Room, playerID int64) error {
+	packet, err := outentered.Encode()
+	if err != nil {
+		return err
+	}
+	if err := connection.Send(ctx, packet); err != nil {
+		return err
+	}
+	if err := SendModel(ctx, connection, room, roomLayout); err != nil {
+		return err
+	}
+	if err := handler.sendFloorItems(ctx, connection, room, active); err != nil {
+		return err
+	}
+	if err := handler.sendHeightMap(ctx, connection, active); err != nil {
+		return err
+	}
+	if err := handler.sendRoomState(ctx, connection, active, 0); err != nil {
+		return err
+	}
+	if err := sendEntryInfo(ctx, connection, room, playerID); err != nil {
+		return err
+	}
+	if err := handler.sendRights(ctx, connection, room, active, playerID); err != nil {
+		return err
+	}
+
+	return handler.sendVoteState(ctx, connection, room.ID, playerID)
+}
+
 // sendEntryInfo identifies the entered room and its persistent owner to Nitro.
 func sendEntryInfo(ctx context.Context, connection netconn.Context, room roommodel.Room, playerID int64) error {
 	packet, err := outentryinfo.Encode(int32(room.ID), room.OwnerPlayerID == playerID)
+	if err != nil {
+		return err
+	}
+
+	return connection.Send(ctx, packet)
+}
+
+// sendVoteState sends current room score and vote eligibility.
+func (handler Handler) sendVoteState(ctx context.Context, connection netconn.Context, roomID int64, playerID int64) error {
+	if handler.Votes == nil {
+		return nil
+	}
+	state, err := handler.Votes.State(ctx, roomID, playerID)
+	if err != nil {
+		return err
+	}
+	packet, err := outscore.Encode(int32(state.Score), state.CanVote)
 	if err != nil {
 		return err
 	}

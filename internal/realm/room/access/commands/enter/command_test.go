@@ -9,13 +9,29 @@ import (
 
 	"github.com/niflaot/pixels/internal/command"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	"github.com/niflaot/pixels/networking/codec"
 	outentryerror "github.com/niflaot/pixels/networking/outbound/room/entryerror"
+	outscore "github.com/niflaot/pixels/networking/outbound/room/score"
 	outdesktop "github.com/niflaot/pixels/networking/outbound/session/desktop"
 	outerror "github.com/niflaot/pixels/networking/outbound/session/error"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+// voteReaderForTest returns fixed entry vote state.
+type voteReaderForTest struct{}
+
+// State returns a current score and eligible player.
+func (voteReaderForTest) State(context.Context, int64, int64) (roomvotes.State, error) {
+	return roomvotes.State{Score: 12, CanVote: true}, nil
+}
+
+// List returns no durable votes.
+func (voteReaderForTest) List(context.Context, roomvotes.Query) ([]roomvotes.Vote, error) {
+	return nil, nil
+}
 
 // TestCommandName verifies the stable command name.
 func TestCommandName(t *testing.T) {
@@ -87,5 +103,20 @@ func TestCommandEnvelopeValid(t *testing.T) {
 	envelope := command.Envelope[Command]{Command: Command{RoomID: 9}}
 	if !envelope.Valid() {
 		t.Fatal("expected valid command envelope")
+	}
+}
+
+// TestSendVoteStateBootstrapsRoomScore verifies entry score projection.
+func TestSendVoteStateBootstrapsRoomScore(t *testing.T) {
+	connection, sent := sessionConnectionForTest(t)
+	if err := (Handler{Votes: voteReaderForTest{}}).sendVoteState(context.Background(), connection, 9, 2); err != nil {
+		t.Fatalf("send vote state: %v", err)
+	}
+	if len(*sent) != 1 || (*sent)[0].Header != outscore.Header {
+		t.Fatalf("packets=%+v", *sent)
+	}
+	values, err := codec.DecodePacketExact((*sent)[0], outscore.Definition)
+	if err != nil || values[0].Int32 != 12 || !values[1].Boolean {
+		t.Fatalf("values=%+v err=%v", values, err)
 	}
 }

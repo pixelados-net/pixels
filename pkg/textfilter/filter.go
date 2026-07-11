@@ -1,4 +1,4 @@
-// Package textfilter matches and censors whole Unicode words.
+// Package textfilter matches and censors normalized Unicode text.
 package textfilter
 
 import (
@@ -7,82 +7,68 @@ import (
 	"unicode/utf8"
 )
 
-// Contains reports whether text contains a case-insensitive whole-word match.
-func Contains(text string, words []string) bool {
-	for offset := 0; offset < len(text); {
-		start, end := nextToken(text, offset)
-		if start == end {
-			break
+// Contains reports whether text contains a compiled pattern.
+func (matcher *Matcher) Contains(text string) bool {
+	if matcher == nil || len(matcher.nodes) <= 1 {
+		return false
+	}
+	state := 0
+	for _, value := range text {
+		if !unicode.IsLetter(value) && !unicode.IsNumber(value) {
+			continue
 		}
-		if matches(text[start:end], words) {
+		state = matcher.next(state, unicode.ToLower(value))
+		if len(matcher.nodes[state].outputs) != 0 {
 			return true
 		}
-		offset = end
 	}
 
 	return false
 }
 
-// Censor replaces matching whole words with stars while preserving rune count.
-func Censor(text string, words []string) (string, bool) {
-	var builder strings.Builder
-	last := 0
-	matched := false
-	for offset := 0; offset < len(text); {
-		start, end := nextToken(text, offset)
-		if start == end {
-			break
-		}
-		if matches(text[start:end], words) {
-			if !matched {
-				builder.Grow(len(text))
-			}
-			builder.WriteString(text[last:start])
-			for range text[start:end] {
-				builder.WriteByte('*')
-			}
-			last = end
-			matched = true
-		}
-		offset = end
-	}
-	if !matched {
+// Censor replaces matching letters and numbers while preserving separators.
+func (matcher *Matcher) Censor(text string) (string, bool) {
+	if !matcher.Contains(text) {
 		return text, false
 	}
-	builder.WriteString(text[last:])
+	masked := make([]bool, len(text))
+	positions := make([]int, matcher.maxPattern)
+	state := 0
+	index := 0
+	for offset, value := range text {
+		if !unicode.IsLetter(value) && !unicode.IsNumber(value) {
+			continue
+		}
+		positions[index%matcher.maxPattern] = offset
+		state = matcher.next(state, unicode.ToLower(value))
+		for _, length := range matcher.nodes[state].outputs {
+			for matched := index - length + 1; matched <= index; matched++ {
+				masked[positions[matched%matcher.maxPattern]] = true
+			}
+		}
+		index++
+	}
+	var builder strings.Builder
+	builder.Grow(len(text))
+	for offset := 0; offset < len(text); {
+		value, size := utf8.DecodeRuneInString(text[offset:])
+		if masked[offset] && (unicode.IsLetter(value) || unicode.IsNumber(value)) {
+			builder.WriteByte('*')
+		} else {
+			builder.WriteString(text[offset : offset+size])
+		}
+		offset += size
+	}
 
 	return builder.String(), true
 }
 
-// matches reports whether one token matches an immutable word snapshot.
-func matches(token string, words []string) bool {
-	for _, word := range words {
-		if strings.EqualFold(token, word) {
-			return true
-		}
-	}
-
-	return false
+// Contains reports whether text contains any supplied pattern.
+func Contains(text string, words []string) bool {
+	return Compile(words).Contains(text)
 }
 
-// nextToken returns the next letter-or-number token bounds without allocation.
-func nextToken(text string, offset int) (int, int) {
-	start := offset
-	for start < len(text) {
-		r, size := utf8.DecodeRuneInString(text[start:])
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			break
-		}
-		start += size
-	}
-	end := start
-	for end < len(text) {
-		r, size := utf8.DecodeRuneInString(text[end:])
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
-			break
-		}
-		end += size
-	}
-
-	return start, end
+// Censor replaces matches from a newly compiled pattern set.
+func Censor(text string, words []string) (string, bool) {
+	return Compile(words).Censor(text)
 }

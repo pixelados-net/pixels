@@ -18,11 +18,11 @@ type storeForTest struct {
 	lists int
 }
 
-// TestCensor verifies whole-word replacement and unchanged fast paths.
+// TestCensor verifies normalized replacement and unchanged fast paths.
 func TestCensor(t *testing.T) {
 	service := New(&storeForTest{words: []string{"bad", "niño"}}, roomsForTest{}, nil)
 	result, changed, err := service.Censor(context.Background(), 9, "bad badge niño")
-	if err != nil || !changed || result != "*** badge ****" {
+	if err != nil || !changed || result != "*** ***ge ****" {
 		t.Fatalf("result=%q changed=%v err=%v", result, changed, err)
 	}
 	result, changed, err = service.Censor(context.Background(), 9, "good")
@@ -77,8 +77,8 @@ func (permissions permissionsForTest) HasPermission(context.Context, int64, perm
 	return permissions["own"], nil
 }
 
-// TestServiceMutatesCachesAndMatchesWholeWords verifies filter lifecycle and matching.
-func TestServiceMutatesCachesAndMatchesWholeWords(t *testing.T) {
+// TestServiceMutatesCachesAndMatchesPatterns verifies filter lifecycle and matching.
+func TestServiceMutatesCachesAndMatchesPatterns(t *testing.T) {
 	store := &storeForTest{}
 	room := roommodel.Room{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}}, OwnerPlayerID: 1}
 	authorizer := roomsettings.New(permissionsForTest{"own": true}, roomsettings.Nodes{OwnManage: "own", AnyManage: "any"})
@@ -89,7 +89,7 @@ func TestServiceMutatesCachesAndMatchesWholeWords(t *testing.T) {
 	for _, testCase := range []struct {
 		text    string
 		blocked bool
-	}{{"a DEMO message", true}, {"demonstration", false}, {"démo", false}} {
+	}{{"a DEMO message", true}, {"demonstration", true}, {"de mo", true}, {"démo", false}} {
 		blocked, err := service.Contains(context.Background(), 9, testCase.text)
 		if err != nil || blocked != testCase.blocked {
 			t.Fatalf("text=%q blocked=%v err=%v", testCase.text, blocked, err)

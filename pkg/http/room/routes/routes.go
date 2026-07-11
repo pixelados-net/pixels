@@ -7,13 +7,15 @@ import (
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
+	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	voteroutes "github.com/niflaot/pixels/pkg/http/room/routes/votes"
 	"go.uber.org/fx"
 )
 
-// Dependencies contains room audit administration dependencies.
+// Dependencies contains focused room administration dependencies.
 type Dependencies struct {
 	// In marks dependencies for Fx injection.
 	fx.In
@@ -22,6 +24,8 @@ type Dependencies struct {
 	Audit roomaudit.Manager
 	// Moderation reads current room sanctions.
 	Moderation roommoderation.Reader
+	// Votes manages room upvotes.
+	Votes roomvotes.Manager
 }
 
 const (
@@ -43,4 +47,5 @@ func Register(app *fiber.App, rooms roomservice.Manager, runtime *roomlive.Regis
 	app.Get(navigatorPath+"/categories", categoriesHandler(rooms))
 	app.Get(navigatorPath+"/lifted", liftedHandler(navigator))
 	registerAudit(app, dependencies)
+	voteroutes.Register(app, dependencies.Votes)
 }

@@ -9,4 +9,6 @@
     <include file="migrations/0002_create_room_records.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0003_create_room_rights_moderation.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0004_create_room_word_filters.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_create_room_votes.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_reconcile_room_vote_scores.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -4,11 +4,14 @@ import (
 	"context"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	chatconfig "github.com/niflaot/pixels/internal/realm/chat/config"
 	whisperedevent "github.com/niflaot/pixels/internal/realm/chat/events/whispered"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/networking/codec"
+	outwhisper "github.com/niflaot/pixels/networking/outbound/chat/whisper"
+	"github.com/niflaot/pixels/pkg/i18n"
 )
 
 // sendTalk routes normal speech to occupants within the configured squared radius.
@@ -38,7 +41,7 @@ func (service *Service) sendAll(ctx context.Context, active *roomlive.Room, pack
 }
 
 // sendWhisper routes private speech to sender, target, and authorized observers.
-func (service *Service) sendWhisper(ctx context.Context, active *roomlive.Room, senderID int64, recipient string, packet codec.Packet, message string, censored bool, createdAt time.Time) error {
+func (service *Service) sendWhisper(ctx context.Context, active *roomlive.Room, senderID int64, unitID int32, recipient string, packet codec.Packet, message string, styleID int32, censored bool, createdAt time.Time) error {
 	presences := active.Presences()
 	targetID := int64(0)
 	for _, presence := range presences {
@@ -59,22 +62,42 @@ func (service *Service) sendWhisper(ctx context.Context, active *roomlive.Room, 
 
 		return service.sendAlertConnection(ctx, connection, "chat.error.whisper_target")
 	}
+	var observerPacket codec.Packet
+	observerReady := false
 	for _, presence := range presences {
-		deliver := presence.Occupant.PlayerID == senderID || presence.Occupant.PlayerID == targetID
-		if !deliver {
-			allowed, err := service.permissions.HasPermission(ctx, presence.Occupant.PlayerID, service.nodes.WhisperObserveAny)
-			if err != nil {
-				return err
-			}
-			deliver = allowed
-		}
-		if deliver {
+		if presence.Occupant.PlayerID == senderID || presence.Occupant.PlayerID == targetID {
 			service.sendPresence(ctx, presence.Occupant, packet)
+			continue
+		}
+		allowed, permissionErr := service.permissions.HasPermission(ctx, presence.Occupant.PlayerID, service.nodes.WhisperObserveAny)
+		if permissionErr != nil {
+			return permissionErr
+		}
+		if allowed {
+			if !observerReady {
+				encoded, encodeErr := service.observerWhisper(unitID, recipient, message, styleID)
+				if encodeErr != nil {
+					return encodeErr
+				}
+				observerPacket = encoded
+				observerReady = true
+			}
+			service.sendPresence(ctx, presence.Occupant, observerPacket)
 		}
 	}
 	service.publish(ctx, whisperedevent.Name, whisperedevent.Payload{RoomID: active.ID(), PlayerID: senderID, TargetPlayerID: targetID, Message: message, Censored: censored, CreatedAt: createdAt})
 
 	return nil
+}
+
+// observerWhisper creates the recipient-aware packet shown to authorized observers.
+func (service *Service) observerWhisper(unitID int32, recipient string, message string, styleID int32) (codec.Packet, error) {
+	visible := "To " + recipient + ": " + message
+	if service.translations != nil {
+		visible = service.translations.Default("chat.whisper.observer", i18n.Params{"recipient": recipient, "message": message})
+	}
+
+	return outwhisper.Encode(unitID, visible, gesture(message), styleID, int32(utf8.RuneCountInString(visible)))
 }
 
 // sendPresence performs one best-effort occupant delivery.

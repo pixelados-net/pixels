@@ -16,6 +16,7 @@ import (
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
 	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
+	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/control/wordfilter"
 	tagscmd "github.com/niflaot/pixels/internal/realm/room/record/commands/tags"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
@@ -70,6 +71,8 @@ type HandlerDeps struct {
 	Settings *roomsettings.Authorizer
 	// WordFilters manages room-specific chat filter words.
 	WordFilters roomwordfilter.Manager
+	// Votes manages durable room upvotes.
+	Votes roomvotes.Manager
 	// Translations resolves end-user room control messages.
 	Translations i18n.Translator
 }
@@ -82,6 +85,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	registerRightsHandlers(handlers.Inbound, deps)
 	registerModerationHandlers(handlers.Inbound, deps)
 	registerSettingsHandlers(handlers.Inbound, deps)
+	registerVoteHandlers(handlers.Inbound, deps)
 
 	enterCommand := newEnterCommand(deps)
 	entryhandler.RegisterEnter(handlers.Inbound, entryhandler.NewEnter(enterCommand, deps.Log))
@@ -118,6 +122,7 @@ func newEnterCommand(deps HandlerDeps) entercmd.Handler {
 		Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 		Entry: deps.Entry, Rights: deps.Rights, Moderation: deps.Moderation,
+		Votes: deps.Votes,
 		Control: entercmd.ControlPolicy{
 			Permissions:    deps.Permissions,
 			RightsAnyGrant: RightsAnyGrant, RightsAnyRevoke: RightsAnyRevoke,

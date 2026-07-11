@@ -90,6 +90,14 @@ func TestTalkPipelineFiltersAndBroadcasts(t *testing.T) {
 
 // fixture contains one active two-player room chat setup.
 type fixture struct {
+	// players stores live players for extending the fixture.
+	players *playerlive.Registry
+	// bindings stores session bindings for extending the fixture.
+	bindings *binding.Registry
+	// connections stores sessions for extending the fixture.
+	connections *netconn.Registry
+	// runtime stores active rooms for extending the fixture.
+	runtime *roomlive.Registry
 	// source stores the speaking session.
 	source netconn.Connection
 	// sourcePackets stores packets delivered to the speaker.
@@ -148,6 +156,7 @@ func newFixture(t *testing.T) fixture {
 	t.Cleanup(func() { active.Close() })
 
 	return fixture{
+		players: players, bindings: bindings, connections: connections, runtime: runtime,
 		source: source, sourcePackets: &sourcePackets, targetPackets: &targetPackets,
 		active: active, counter: counter, request: &request, context: &sourceContext, service: service,
 		permissions: permissions,

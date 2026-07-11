@@ -12,6 +12,7 @@ import (
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
+	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomsession "github.com/niflaot/pixels/internal/realm/room/runtime/commands/session"
@@ -19,7 +20,6 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
-	outentered "github.com/niflaot/pixels/networking/outbound/room/entered"
 	outentryerror "github.com/niflaot/pixels/networking/outbound/room/entryerror"
 	outalert "github.com/niflaot/pixels/networking/outbound/session/alert"
 	outdesktop "github.com/niflaot/pixels/networking/outbound/session/desktop"
@@ -81,6 +81,8 @@ type Handler struct {
 	Rights roomrights.Manager
 	// Moderation reads current room mute projections during activation.
 	Moderation roommoderation.Reader
+	// Votes reads room score and player eligibility.
+	Votes roomvotes.Reader
 	// Control projects global room capabilities into Nitro controller state.
 	Control ControlPolicy
 }
@@ -182,37 +184,6 @@ func (handler Handler) loadRoom(ctx context.Context, roomID int64) (roommodel.Ro
 	}
 
 	return room, roomLayout, nil
-}
-
-// sendEntered sends the initial room entry packets.
-func (handler Handler) sendEntered(ctx context.Context, connection netconn.Context, room roommodel.Room, roomLayout layout.Layout, active *roomlive.Room, playerID int64) error {
-	packet, err := outentered.Encode()
-	if err != nil {
-		return err
-	}
-	if err := connection.Send(ctx, packet); err != nil {
-		return err
-	}
-
-	if err := SendModel(ctx, connection, room, roomLayout); err != nil {
-		return err
-	}
-
-	if err := handler.sendFloorItems(ctx, connection, room, active); err != nil {
-		return err
-	}
-	if err := handler.sendHeightMap(ctx, connection, active); err != nil {
-		return err
-	}
-
-	if err := handler.sendRoomState(ctx, connection, active, 0); err != nil {
-		return err
-	}
-	if err := sendEntryInfo(ctx, connection, room, playerID); err != nil {
-		return err
-	}
-
-	return handler.sendRights(ctx, connection, room, active, playerID)
 }
 
 // sendEntryError sends a room entry error when possible.

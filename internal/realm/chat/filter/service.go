@@ -26,6 +26,8 @@ var (
 type Snapshot struct {
 	// Words stores normalized words in stable order.
 	Words []string
+	// Matcher stores the immutable compiled automaton.
+	Matcher *textfilter.Matcher
 }
 
 // Service manages persistent words and a lock-free read snapshot.
@@ -39,7 +41,7 @@ type Service struct {
 // New creates a global chat filter service with an empty initial snapshot.
 func New(store filterrepo.Store) *Service {
 	service := &Service{store: store}
-	service.snapshot.Store(&Snapshot{})
+	service.snapshot.Store(&Snapshot{Matcher: textfilter.Compile(nil)})
 
 	return service
 }
@@ -50,7 +52,7 @@ func (service *Service) Refresh(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	service.snapshot.Store(&Snapshot{Words: words})
+	service.snapshot.Store(&Snapshot{Words: words, Matcher: textfilter.Compile(words)})
 
 	return nil
 }
@@ -62,7 +64,7 @@ func (service *Service) List() []string {
 
 // Censor applies the immutable global dictionary without locks.
 func (service *Service) Censor(text string) (string, bool) {
-	return textfilter.Censor(text, service.snapshot.Load().Words)
+	return service.snapshot.Load().Matcher.Censor(text)
 }
 
 // Add persists one normalized word and refreshes the snapshot.
