@@ -150,7 +150,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if handler.Runtime != nil {
 		active, activeFound := handler.Runtime.Find(roomID)
 		if activeFound {
-			active.UpdateSettings(updated.CategoryID, updated.MaxUsers)
+			active.UpdateSettings(updated.CategoryID, updated.MaxUsers, updated.ChatDistance, updated.ChatProtection)
 			if err = handler.broadcast(ctx, active, updated); err != nil {
 				return err
 			}

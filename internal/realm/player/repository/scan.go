@@ -39,7 +39,7 @@ func scanProfile(row pgx.Row) (playermodel.Profile, error) {
 	var homeRoomID pgtype.Int8
 	var gender string
 
-	err := row.Scan(&profile.PlayerID, &profile.Look, &gender, &profile.Motto, &homeRoomID, &profile.AllowNameChange, &profile.CreatedAt, &profile.UpdatedAt, &profile.Version.Version)
+	err := row.Scan(&profile.PlayerID, &profile.Look, &gender, &profile.Motto, &homeRoomID, &profile.AllowNameChange, &profile.BubbleStyle, &profile.CreatedAt, &profile.UpdatedAt, &profile.Version.Version)
 	if err != nil {
 		return playermodel.Profile{}, err
 	}

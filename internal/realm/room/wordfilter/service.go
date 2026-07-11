@@ -6,12 +6,12 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"unicode"
 	"unicode/utf8"
 
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
 	wordrepo "github.com/niflaot/pixels/internal/realm/room/wordfilter/repository"
+	"github.com/niflaot/pixels/pkg/textfilter"
 )
 
 const (
@@ -38,6 +38,8 @@ type Manager interface {
 	Remove(context.Context, int64, int64, string) error
 	// Contains reports whether text contains a filtered whole word.
 	Contains(context.Context, int64, string) (bool, error)
+	// Censor replaces filtered whole words while preserving Unicode length.
+	Censor(context.Context, int64, string) (string, bool, error)
 }
 
 // RoomFinder reads room identity and ownership.
@@ -109,22 +111,19 @@ func (service *Service) Contains(ctx context.Context, roomID int64, text string)
 	if err != nil || len(words) == 0 {
 		return false, err
 	}
-	for start := 0; start < len(text); {
-		var end int
-		start, end = nextToken(text, start)
-		if start == end {
-			break
-		}
-		token := text[start:end]
-		for _, word := range words {
-			if strings.EqualFold(token, word) {
-				return true, nil
-			}
-		}
-		start = end
+	return textfilter.Contains(text, words), nil
+}
+
+// Censor replaces filtered whole words while preserving Unicode length.
+func (service *Service) Censor(ctx context.Context, roomID int64, text string) (string, bool, error) {
+	words, err := service.words(ctx, roomID)
+	if err != nil || len(words) == 0 {
+		return text, false, err
 	}
 
-	return false, nil
+	result, changed := textfilter.Censor(text, words)
+
+	return result, changed, nil
 }
 
 // words returns one immutable cached filter snapshot.
@@ -177,28 +176,6 @@ func (service *Service) validateMutation(ctx context.Context, roomID int64, acto
 	}
 
 	return word, nil
-}
-
-// nextToken returns the next letter-or-number token bounds without allocation.
-func nextToken(text string, offset int) (int, int) {
-	start := offset
-	for start < len(text) {
-		r, size := utf8.DecodeRuneInString(text[start:])
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			break
-		}
-		start += size
-	}
-	end := start
-	for end < len(text) {
-		r, size := utf8.DecodeRuneInString(text[end:])
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
-			break
-		}
-		end += size
-	}
-
-	return start, end
 }
 
 // managerAssertion verifies Service implements Manager.

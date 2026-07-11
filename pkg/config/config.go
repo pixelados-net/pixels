@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/niflaot/pixels/internal/auth/sso"
+	chatconfig "github.com/niflaot/pixels/internal/realm/chat/config"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
@@ -30,6 +31,9 @@ type AppConfig struct {
 
 	// Currency contains inventory currency settings.
 	Currency currencyconfig.Config
+
+	// Chat contains protocol chat limits and history settings.
+	Chat chatconfig.Config
 
 	// RoomEntry contains closed-room entry settings.
 	RoomEntry roomentry.Config
@@ -73,6 +77,11 @@ func Load(paths ...string) (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	chat, err := chatconfig.LoadConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	roomEntry, err := roomentry.LoadConfig()
 	if err != nil {
 		return AppConfig{}, err
@@ -103,6 +112,7 @@ func Load(paths ...string) (AppConfig, error) {
 		Logger:         log,
 		I18N:           translations,
 		Currency:       currency,
+		Chat:           chat,
 		RoomEntry:      roomEntry,
 		RoomModeration: roomModeration,
 		Postgres:       postgres,

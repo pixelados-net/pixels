@@ -293,6 +293,24 @@ minimum manual checks expected when touching it.
   - Fill a runtime room to capacity and verify `room.entry_error`.
   - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
 
+### FEATURE: Room Chat
+
+- Owns `internal/realm/chat`, `networking/inbound/chat`,
+  `networking/outbound/chat`, and `pkg/http/chat/routes`.
+- Provides Nitro talk, shout, whisper, typing, native mute/flood feedback,
+  distance-aware audiences, room mute-all bypasses, configurable Redis flood
+  control, global and room censorship, validated bubble styles, and bounded
+  partitioned history written asynchronously with PostgreSQL COPY batches.
+- Prefix, bold, and mention wire fields are intentionally absent because Nitro's
+  chat packet shape does not contain them; do not add server-only packet fields.
+- Test after changes:
+  - `go test ./internal/realm/chat/... ./networking/inbound/chat/... ./networking/outbound/chat/... ./pkg/http/chat/routes`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/chat/send ./internal/realm/chat/history ./pkg/textfilter`
+  - In Nitro, verify talk radius, room-wide shout, private whisper, typing,
+    mute/mute-all, flood feedback, censorship, and bubble selection.
+  - Exercise `/api/admin/chat/filters`, `/api/admin/chat/bubbles`, and room/player
+    chat history routes with and without `X-API-Key`.
+
 ### FEATURE: Room Settings, Filters, and Mute-All
 
 - Owns `internal/realm/room/settings`, `internal/realm/room/wordfilter`, room

@@ -180,7 +180,7 @@ func TestRoomSettingsRuntimeStateIsAtomicAndEphemeral(t *testing.T) {
 		t.Fatalf("create room: %v", err)
 	}
 	categoryID := int64(4)
-	room.UpdateSettings(&categoryID, 8)
+	room.UpdateSettings(&categoryID, 8, 30, 1)
 	room.SetMuteAll(true)
 	snapshot := room.Snapshot()
 	if snapshot.CategoryID == nil || *snapshot.CategoryID != 4 || snapshot.MaxUsers != 8 || !room.MuteAll() {

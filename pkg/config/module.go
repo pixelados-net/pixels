@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/niflaot/pixels/internal/auth/sso"
+	chatconfig "github.com/niflaot/pixels/internal/realm/chat/config"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
@@ -22,6 +23,7 @@ var Module = fx.Module(
 		Logger,
 		I18N,
 		Currency,
+		Chat,
 		RoomEntry,
 		RoomModeration,
 		Postgres,
@@ -54,6 +56,9 @@ func I18N(config AppConfig) i18n.Config {
 func Currency(config AppConfig) currencyconfig.Config {
 	return config.Currency
 }
+
+// Chat extracts protocol chat settings from composed configuration.
+func Chat(config AppConfig) chatconfig.Config { return config.Chat }
 
 // RoomEntry extracts closed-room entry settings from composed configuration.
 func RoomEntry(config AppConfig) roomentry.Config {

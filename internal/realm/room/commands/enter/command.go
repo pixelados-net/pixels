@@ -14,6 +14,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/layout"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
@@ -78,6 +79,8 @@ type Handler struct {
 	Entry *roomentry.Service
 	// Rights manages persistent room build rights.
 	Rights roomrights.Manager
+	// Moderation reads current room mute projections during activation.
+	Moderation roommoderation.Reader
 	// Control projects global room capabilities into Nitro controller state.
 	Control ControlPolicy
 }

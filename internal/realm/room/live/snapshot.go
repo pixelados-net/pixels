@@ -40,6 +40,40 @@ func (room *Room) Units() []UnitSnapshot {
 	return units
 }
 
+// Presences returns occupant and unit snapshots with one allocation and one lock.
+func (room *Room) Presences() []Presence {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	presences := make([]Presence, 0, len(room.occupants))
+	for playerID, occupant := range room.occupants {
+		roomUnit, found := room.world.units[playerID]
+		if !found {
+			continue
+		}
+		presences = append(presences, Presence{Occupant: occupant, Unit: unitSnapshot(playerID, roomUnit)})
+	}
+
+	return presences
+}
+
+// Unit returns one unit snapshot without allocating an audience slice.
+func (room *Room) Unit(playerID int64) (UnitSnapshot, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	roomUnit, found := room.world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+
+	return unitSnapshot(playerID, roomUnit), true
+}
+
 // SetUnitStatus stores one status on a player unit when its world is loaded.
 func (room *Room) SetUnitStatus(playerID int64, key string, value string) bool {
 	room.mutex.Lock()

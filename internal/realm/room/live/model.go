@@ -31,6 +31,21 @@ type Snapshot struct {
 
 	// MaxUsers stores the maximum active occupancy.
 	MaxUsers int
+
+	// ChatDistance stores the normal chat hearing radius in tiles.
+	ChatDistance int16
+
+	// ChatProtection stores the room flood-control tier.
+	ChatProtection int16
+}
+
+// Presence pairs one active occupant with its room unit state.
+type Presence struct {
+	// Occupant stores connection and visible identity state.
+	Occupant Occupant
+
+	// Unit stores position and room-local unit state.
+	Unit UnitSnapshot
 }
 
 // Occupancy describes active room population.
@@ -229,10 +244,12 @@ func (occupant Occupant) WithJoinTime(now time.Time) Occupant {
 }
 
 // UpdateSettings refreshes runtime metadata affected by persistent settings.
-func (room *Room) UpdateSettings(categoryID *int64, maxUsers int) {
+func (room *Room) UpdateSettings(categoryID *int64, maxUsers int, chatDistance int16, chatProtection int16) {
 	room.mutex.Lock()
 	room.snapshot.CategoryID = categoryID
 	room.snapshot.MaxUsers = maxUsers
+	room.snapshot.ChatDistance = chatDistance
+	room.snapshot.ChatProtection = chatProtection
 	room.mutex.Unlock()
 }
 
@@ -244,4 +261,37 @@ func (room *Room) SetMuteAll(muted bool) {
 // MuteAll reports whether non-privileged room chat is globally muted.
 func (room *Room) MuteAll() bool {
 	return room.muteAll.Load()
+}
+
+// ReplaceMutes replaces active room mute expirations.
+func (room *Room) ReplaceMutes(mutes map[int64]time.Time) {
+	room.mutex.Lock()
+	room.muted = mutes
+	room.mutex.Unlock()
+}
+
+// SetMuted stores or clears one active room mute expiration.
+func (room *Room) SetMuted(playerID int64, endsAt time.Time) {
+	room.mutex.Lock()
+	if endsAt.IsZero() {
+		delete(room.muted, playerID)
+	} else {
+		if room.muted == nil {
+			room.muted = make(map[int64]time.Time)
+		}
+		room.muted[playerID] = endsAt
+	}
+	room.mutex.Unlock()
+}
+
+// RemainingMute returns one active mute duration without persistence I/O.
+func (room *Room) RemainingMute(playerID int64, now time.Time) (time.Duration, bool) {
+	room.mutex.RLock()
+	endsAt, found := room.muted[playerID]
+	room.mutex.RUnlock()
+	if !found || !endsAt.After(now) {
+		return 0, false
+	}
+
+	return endsAt.Sub(now), true
 }

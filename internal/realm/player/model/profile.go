@@ -42,6 +42,9 @@ type Profile struct {
 	// AllowNameChange reports whether the player can change username.
 	AllowNameChange bool
 
+	// BubbleStyle stores the validated Nitro chat bubble style.
+	BubbleStyle int32
+
 	// Timestamps contains durable record timestamps.
 	sharedmodel.Timestamps
 

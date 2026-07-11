@@ -39,6 +39,9 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		if err := handler.loadRights(ctx, active, room.ID); err != nil {
 			return nil, err
 		}
+		if err := handler.loadMutes(ctx, active, room.ID); err != nil {
+			return nil, err
+		}
 		if err := handler.loadWorld(ctx, active, room, roomLayout); err != nil {
 			return nil, err
 		}
@@ -69,6 +72,25 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 	}
 
 	return active, handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID})
+}
+
+// loadMutes projects persistent active mutes into a newly loaded room.
+func (handler Handler) loadMutes(ctx context.Context, room *roomlive.Room, roomID int64) error {
+	if handler.Moderation == nil {
+		room.ReplaceMutes(nil)
+		return nil
+	}
+	mutes, err := handler.Moderation.ListMutes(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	projected := make(map[int64]time.Time, len(mutes))
+	for _, mute := range mutes {
+		projected[mute.PlayerID] = mute.EndsAt
+	}
+	room.ReplaceMutes(projected)
+
+	return nil
 }
 
 // loadRights projects persistent build rights into an active room.
@@ -235,5 +257,6 @@ func roomSnapshot(room roommodel.Room) roomlive.Snapshot {
 	return roomlive.Snapshot{
 		ID: room.ID, OwnerPlayerID: room.OwnerPlayerID,
 		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers,
+		ChatDistance: room.ChatDistance, ChatProtection: room.ChatProtection,
 	}
 }

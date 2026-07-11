@@ -123,7 +123,7 @@ func newEnterCommand(deps HandlerDeps) entercmd.Handler {
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
 		Layouts: deps.Layouts, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
-		Entry: deps.Entry, Rights: deps.Rights,
+		Entry: deps.Entry, Rights: deps.Rights, Moderation: deps.Moderation,
 		Control: entercmd.ControlPolicy{
 			Permissions:    deps.Permissions,
 			RightsAnyGrant: RightsAnyGrant, RightsAnyRevoke: RightsAnyRevoke,

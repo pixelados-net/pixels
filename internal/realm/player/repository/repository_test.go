@@ -95,6 +95,7 @@ func TestCreateProfileScansRecord(t *testing.T) {
 		"hello",
 		pgtype.Int8{Int64: homeRoomID, Valid: true},
 		true,
+		int32(3),
 		now,
 		now,
 		int64(2),
@@ -186,6 +187,8 @@ func assign(destination any, value any) {
 		*target = value.(int64)
 	case *int16:
 		*target = value.(int16)
+	case *int32:
+		*target = value.(int32)
 	case *string:
 		*target = value.(string)
 	case *bool:

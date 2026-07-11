@@ -226,6 +226,13 @@ func (store *fakeStore) CreateProfile(_ context.Context, params repository.Creat
 	return store.profile, store.profileErr
 }
 
+// UpdateBubbleStyle persists one bubble style for tests.
+func (store *fakeStore) UpdateBubbleStyle(_ context.Context, _ int64, bubbleStyle int32) (playermodel.Profile, error) {
+	store.profile.BubbleStyle = bubbleStyle
+
+	return store.profile, store.profileErr
+}
+
 // FindProfileByPlayerID finds a profile by player id for tests.
 func (store *fakeStore) FindProfileByPlayerID(context.Context, int64) (playermodel.Profile, bool, error) {
 	return store.profile, store.profileFound, store.profileErr

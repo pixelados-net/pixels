@@ -30,6 +30,9 @@ type Snapshot struct {
 	// AllowNameChange reports whether username changes are allowed.
 	AllowNameChange bool
 
+	// BubbleStyle stores the validated Nitro chat bubble style.
+	BubbleStyle int32
+
 	// Club contains the player's subscription entitlement.
 	Club playermodel.Club
 }
@@ -44,6 +47,7 @@ func SnapshotFromRecord(record playerservice.Record) Snapshot {
 		Motto:           record.Profile.Motto,
 		HomeRoomID:      record.Profile.HomeRoomID,
 		AllowNameChange: record.Profile.AllowNameChange,
+		BubbleStyle:     record.Profile.BubbleStyle,
 		Club:            record.Player.Club,
 	}
 }

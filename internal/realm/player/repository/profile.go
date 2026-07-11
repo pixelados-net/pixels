@@ -14,13 +14,19 @@ const (
 	createProfileSQL = `
 insert into player_profiles (player_id, look, gender, motto, home_room_id, allow_name_change)
 values ($1, $2, $3, $4, $5, $6)
-returning player_id, look, gender, motto, home_room_id, allow_name_change, created_at, updated_at, version`
+returning player_id, look, gender, motto, home_room_id, allow_name_change, bubble_style, created_at, updated_at, version`
 
 	// findProfileByPlayerIDSQL reads one player profile by player id.
 	findProfileByPlayerIDSQL = `
-select player_id, look, gender, motto, home_room_id, allow_name_change, created_at, updated_at, version
+select player_id, look, gender, motto, home_room_id, allow_name_change, bubble_style, created_at, updated_at, version
 from player_profiles
 where player_id = $1`
+
+	// updateBubbleStyleSQL persists one validated chat style.
+	updateBubbleStyleSQL = `
+update player_profiles set bubble_style=$2, updated_at=now(), version=version+1
+where player_id=$1
+returning player_id, look, gender, motto, home_room_id, allow_name_change, bubble_style, created_at, updated_at, version`
 )
 
 // CreateProfileParams contains profile creation data.
@@ -42,6 +48,16 @@ type CreateProfileParams struct {
 
 	// AllowNameChange reports whether the player can change username.
 	AllowNameChange bool
+}
+
+// UpdateBubbleStyle persists one validated chat bubble selection.
+func (repository *Repository) UpdateBubbleStyle(ctx context.Context, playerID int64, bubbleStyle int32) (playermodel.Profile, error) {
+	profile, err := scanProfile(repository.executor.QueryRow(ctx, updateBubbleStyleSQL, playerID, bubbleStyle))
+	if err != nil {
+		return playermodel.Profile{}, fmt.Errorf("update player %d bubble style: %w", playerID, err)
+	}
+
+	return profile, nil
 }
 
 // CreateProfile creates a player profile record.

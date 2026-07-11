@@ -21,6 +21,9 @@ type Room struct {
 	// rights stores persistent build-right holders while the room is active.
 	rights map[int64]struct{}
 
+	// muted stores active room mute expirations by player id.
+	muted map[int64]time.Time
+
 	// doorbell stores waiting entry requests and remains nil until first use.
 	doorbell atomic.Pointer[roomdoorbell.Queue]
 
@@ -158,6 +161,7 @@ func (room *Room) CloseWithDoorbell() (Occupancy, []roomdoorbell.Expired) {
 	room.closed = true
 	room.occupants = make(map[int64]Occupant)
 	room.rights = nil
+	room.muted = nil
 	if room.world != nil {
 		room.world.clearUnits()
 	}

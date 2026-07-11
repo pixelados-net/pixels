@@ -45,6 +45,14 @@ func adminOperations() []operation {
 		adminCatalog(http.MethodDelete, "/api/admin/catalog/items/{id}", "Delete catalog offer", &CatalogIDRequest{}, nil),
 		adminCatalog(http.MethodPost, "/api/admin/catalog/refresh", "Refresh and publish catalog", &APIKeyRequest{}, &CatalogRefreshResponse{}),
 		adminCatalog(http.MethodGet, "/api/admin/catalog/sanitize-list", "List definitions without offers", &APIKeyRequest{}, &CatalogDefinitionsResponse{}),
+		adminChat(http.MethodGet, "/api/admin/chat/filters", "List global chat filters", &APIKeyRequest{}, &ChatFilterListResponse{}, http.StatusOK),
+		adminChat(http.MethodPost, "/api/admin/chat/filters", "Add global chat filter", &ChatFilterRequest{}, &ChatMutationResponse{}, http.StatusCreated),
+		adminChat(http.MethodDelete, "/api/admin/chat/filters/{word}", "Remove global chat filter", &ChatFilterDeleteRequest{}, nil, http.StatusNoContent),
+		adminChat(http.MethodGet, "/api/admin/chat/bubbles", "List chat bubble thresholds", &APIKeyRequest{}, &ChatBubbleListResponse{}, http.StatusOK),
+		adminChat(http.MethodPut, "/api/admin/chat/bubbles/{bubbleId}", "Set chat bubble threshold", &ChatBubbleRequest{}, &ChatMutationResponse{}, http.StatusOK),
+		adminChat(http.MethodDelete, "/api/admin/chat/bubbles/{bubbleId}", "Remove chat bubble threshold", &ChatBubbleDeleteRequest{}, nil, http.StatusNoContent),
+		adminChat(http.MethodGet, "/api/admin/rooms/{id}/chat/history", "Read room chat history", &ChatHistoryRoomRequest{}, &ChatHistoryResponse{}, http.StatusOK),
+		adminChat(http.MethodGet, "/api/admin/players/{playerId}/chat/history", "Read player chat history", &ChatHistoryPlayerRequest{}, &ChatHistoryResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/nodes", "List registered permission nodes", &permissionapi.APIKeyRequest{}, &permissionapi.NodesResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/groups", "List permission groups", &permissionapi.APIKeyRequest{}, &permissionapi.GroupsResponse{}, http.StatusOK),
 		adminPermission(http.MethodPost, "/api/admin/permissions/groups", "Create permission group", &permissionapi.GroupCreateRequest{}, &permissionapi.GroupResponse{}, http.StatusCreated),
@@ -58,6 +66,19 @@ func adminOperations() []operation {
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/effective", "List effective player permissions", &permissionapi.PlayerRequest{}, &permissionapi.EffectiveResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/check", "Check player permission", &permissionapi.CheckRequest{}, &permissionapi.CheckResponse{}, http.StatusOK),
 	}
+}
+
+// adminChat creates a protected chat administration operation.
+func adminChat(method string, path string, summary string, request any, body any, status int) operation {
+	responses := errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusInternalServerError)
+	if body == nil {
+		responses = append([]response{emptyResponse(status, summary+".")}, responses...)
+	} else {
+		responses = append([]response{jsonResponse(status, body, summary+".")}, responses...)
+	}
+
+	return operation{method: method, path: path, tag: "Admin Chat", summary: summary,
+		description: summary + ".", request: request, responses: responses, secured: true}
 }
 
 // adminRoomAudit creates a protected room audit read operation.

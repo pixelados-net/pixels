@@ -31,6 +31,9 @@ type ProfileReader interface {
 type ProfileWriter interface {
 	// CreateProfile creates a player profile record.
 	CreateProfile(ctx context.Context, params CreateProfileParams) (playermodel.Profile, error)
+
+	// UpdateBubbleStyle persists one validated chat bubble selection.
+	UpdateBubbleStyle(ctx context.Context, playerID int64, bubbleStyle int32) (playermodel.Profile, error)
 }
 
 // Store reads and writes player persistence records.

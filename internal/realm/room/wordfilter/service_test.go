@@ -18,6 +18,19 @@ type storeForTest struct {
 	lists int
 }
 
+// TestCensor verifies whole-word replacement and unchanged fast paths.
+func TestCensor(t *testing.T) {
+	service := New(&storeForTest{words: []string{"bad", "niño"}}, roomsForTest{}, nil)
+	result, changed, err := service.Censor(context.Background(), 9, "bad badge niño")
+	if err != nil || !changed || result != "*** badge ****" {
+		t.Fatalf("result=%q changed=%v err=%v", result, changed, err)
+	}
+	result, changed, err = service.Censor(context.Background(), 9, "good")
+	if err != nil || changed || result != "good" {
+		t.Fatalf("result=%q changed=%v err=%v", result, changed, err)
+	}
+}
+
 // List lists in-memory words.
 func (store *storeForTest) List(context.Context, int64) ([]string, error) {
 	store.lists++

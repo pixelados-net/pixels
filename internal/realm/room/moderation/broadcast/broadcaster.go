@@ -4,6 +4,7 @@ package broadcast
 import (
 	"context"
 	"errors"
+	"time"
 
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/room/broadcast"
@@ -85,6 +86,14 @@ func (broadcaster *Broadcaster) Ban(ctx context.Context, roomID int64, playerID 
 
 // Mute sends the remaining mute duration to one active occupant.
 func (broadcaster *Broadcaster) Mute(ctx context.Context, roomID int64, playerID int64, seconds int64) error {
+	active, found := broadcaster.runtime.Find(roomID)
+	if found {
+		endsAt := time.Time{}
+		if seconds > 0 {
+			endsAt = time.Now().Add(time.Duration(seconds) * time.Second)
+		}
+		active.SetMuted(playerID, endsAt)
+	}
 	packet, err := outmuted.Encode(int32(seconds))
 	if err != nil {
 		return err
