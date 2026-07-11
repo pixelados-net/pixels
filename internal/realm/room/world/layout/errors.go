@@ -12,4 +12,7 @@ var (
 
 	// ErrInvalidLayoutID reports a malformed room layout id.
 	ErrInvalidLayoutID = errors.New("invalid room layout id")
+
+	// ErrCustomLayoutsUnsupported reports a store without custom layout persistence.
+	ErrCustomLayoutsUnsupported = errors.New("custom room layouts are unsupported")
 )

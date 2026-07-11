@@ -175,12 +175,12 @@ func (handler Handler) loadRoom(ctx context.Context, roomID int64) (roommodel.Ro
 		return roommodel.Room{}, layout.Layout{}, roomservice.ErrRoomNotFound
 	}
 
-	roomLayout, found, err := handler.Layouts.FindByName(ctx, room.ModelName)
+	roomLayout, err := layout.ResolveForRoom(ctx, handler.Layouts, room.ID, room.ModelName)
 	if err != nil {
+		if errors.Is(err, layout.ErrLayoutNotFound) {
+			return roommodel.Room{}, layout.Layout{}, roomservice.ErrLayoutNotAvailable
+		}
 		return roommodel.Room{}, layout.Layout{}, err
-	}
-	if !found {
-		return roommodel.Room{}, layout.Layout{}, roomservice.ErrLayoutNotAvailable
 	}
 
 	return room, roomLayout, nil

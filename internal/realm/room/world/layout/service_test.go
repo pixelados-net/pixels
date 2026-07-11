@@ -112,6 +112,47 @@ type fakeStore struct {
 
 	// err is returned by store calls.
 	err error
+
+	// custom stores a room-owned layout.
+	custom Layout
+
+	// customFound reports whether a custom layout exists.
+	customFound bool
+
+	// transactionCalled reports custom persistence work.
+	transactionCalled bool
+}
+
+// managerOnlyForTest hides custom room methods behind the fixed manager contract.
+type managerOnlyForTest struct {
+	Manager
+}
+
+// fixedStoreForTest hides custom persistence methods behind the fixed store contract.
+type fixedStoreForTest struct {
+	Store
+}
+
+// FindCustomByRoomID finds a custom room layout for tests.
+func (store *fakeStore) FindCustomByRoomID(context.Context, int64) (Layout, bool, error) {
+	return store.custom, store.customFound, store.err
+}
+
+// UpsertCustom stores a custom room layout for tests.
+func (store *fakeStore) UpsertCustom(_ context.Context, params CustomSaveParams) (Layout, error) {
+	store.transactionCalled = true
+	store.custom = Layout{
+		RoomID: params.RoomID, Name: "model_a", Heightmap: params.Heightmap,
+		DoorX: params.DoorX, DoorY: params.DoorY, DoorDirection: params.DoorDirection,
+		WallThickness: params.WallThickness, FloorThickness: params.FloorThickness, WallHeight: params.WallHeight,
+	}
+
+	return store.custom, store.err
+}
+
+// WithinTransaction runs custom persistence work for tests.
+func (store *fakeStore) WithinTransaction(ctx context.Context, work TransactionWork) error {
+	return work(ctx)
 }
 
 // Create creates a room layout record for tests.

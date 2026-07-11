@@ -364,6 +364,33 @@ minimum manual checks expected when touching it.
     and remove a filter word, toggle mute-all, and verify all current occupants
     receive the updated room information without reconnecting.
 
+### FEATURE: Room Floor Plan Editor
+
+- Owns `internal/realm/room/control/floorplan`, its commands and handlers,
+  `room_custom_layouts`, and floor plan packets under `networking`.
+- Resolves custom geometry by room id before falling back to the room's fixed
+  model. Nitro packet `875` persists the confirmed seven floor plan fields;
+  packet `3559` reuses the existing entry-tile handler and also projects room
+  thickness, while packet `1687` returns furniture-occupied tiles.
+- Validates 64 by 64 geometry, charset, row shape, usable tiles, door, rotation,
+  thickness, wall height, blocking furniture, and a distributed save cooldown.
+- Successful active-room saves replace the room world in place, move occupants
+  to the new door, and resend geometry, furniture, heightmap, and unit state.
+  Do not forward or reconnect occupants during a floor plan save.
+- Nitro does not send an auto-pickup field. The internal save contract supports
+  bounded transactional auto-pickup for controlled server callers, while the
+  Nitro packet handler always uses the conservative disabled value.
+- Test after changes:
+  - `go test ./internal/realm/room/control/floorplan ./internal/realm/room/control/commands/floorplan ./internal/realm/room/world/layout ./internal/realm/room/database/layout`
+  - `go test ./networking/inbound/room/floorplan/... ./networking/outbound/room/floorplan/...`
+  - Run `BenchmarkValidateSave` and `BenchmarkBlockedItems` with `-benchmem`.
+  - Open the editor as an owner, rights holder, ordinary visitor, and staff
+    member; verify only authorized users can request or save floor plans.
+  - Save an empty room and verify every occupant stays connected, respawns at
+    the new door, sees the same geometry, and receives no `ROOM_FORWARD`.
+  - Place furniture over a changed tile and verify save is rejected with a
+    localized floor-plan bubble until the furniture is removed.
+
 ### FEATURE: Closed Room Entry
 
 - Owns `internal/realm/room/access/entry`, `internal/realm/room/access/doorbell`, room

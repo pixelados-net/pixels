@@ -38,6 +38,18 @@ type Layout struct {
 
 	// Enabled reports whether the layout can be used for new rooms.
 	Enabled bool
+
+	// RoomID identifies the room owning a custom layout.
+	RoomID int64
+
+	// WallThickness stores the room wall rendering thickness.
+	WallThickness int
+
+	// FloorThickness stores the room floor rendering thickness.
+	FloorThickness int
+
+	// WallHeight stores the fixed wall height or -1 for automatic height.
+	WallHeight int
 }
 
 // NormalizeName returns the protocol model name accepted by room creation.

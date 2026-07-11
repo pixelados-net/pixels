@@ -42,4 +42,8 @@ var (
 	ModerationOwnPolicyManage = permission.RegisterNode("room.moderation.policy.own.manage", "")
 	// ModerationAnyPolicyManage allows staff to configure moderation policy in any room.
 	ModerationAnyPolicyManage = permission.RegisterNode("room.moderation.policy.any.manage", "")
+	// FloorplanOwnEdit allows local owners and rights holders to edit floor plans.
+	FloorplanOwnEdit = permission.RegisterNode("room.floorplan.own.edit", "")
+	// FloorplanAnyEdit allows staff to edit any room floor plan.
+	FloorplanAnyEdit = permission.RegisterNode("room.floorplan.any.edit", "")
 )

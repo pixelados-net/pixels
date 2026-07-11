@@ -5,6 +5,7 @@ import (
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
+	roomfloorplan "github.com/niflaot/pixels/internal/realm/room/control/floorplan"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	moderationbroadcast "github.com/niflaot/pixels/internal/realm/room/control/moderation/broadcast"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
@@ -34,10 +35,12 @@ var Module = fx.Module(
 	fx.Provide(
 		NewLayoutStore,
 		NewStore,
+		roomfloorplan.LoadConfig,
 		layout.NewService,
 		service.New,
 		NewLiveRegistry,
 		NewLayoutManager,
+		NewRoomLayoutManager,
 		NewManager,
 		NewConfigManager,
 		NewRightsStore,
@@ -54,6 +57,7 @@ var Module = fx.Module(
 		moderationbroadcast.New,
 		NewEntryService,
 		NewSettingsAuthorizer,
+		NewFloorplanAuthorizer,
 		NewWordFilterStore,
 		NewWordFilterService,
 		NewWordFilterManager,
@@ -89,6 +93,13 @@ func NewSettingsAuthorizer(permissions permissionservice.Checker) *roomsettings.
 	return roomsettings.New(permissions, roomsettings.Nodes{
 		OwnManage: SettingsOwnManage, AnyManage: SettingsAnyManage,
 		OwnPolicyManage: ModerationOwnPolicyManage, AnyPolicyManage: ModerationAnyPolicyManage,
+	})
+}
+
+// NewFloorplanAuthorizer creates shared floor plan authorization.
+func NewFloorplanAuthorizer(permissions permissionservice.Checker, rights *roomrights.Service) *roomfloorplan.Authorizer {
+	return roomfloorplan.NewAuthorizer(permissions, rights, roomfloorplan.Nodes{
+		OwnEdit: FloorplanOwnEdit, AnyEdit: FloorplanAnyEdit,
 	})
 }
 
@@ -185,6 +196,11 @@ func NewStore(pool *postgres.Pool) service.Store {
 
 // NewLayoutManager exposes the room layout management contract.
 func NewLayoutManager(service *layout.Service) layout.Manager {
+	return service
+}
+
+// NewRoomLayoutManager exposes room-owned layout management.
+func NewRoomLayoutManager(service *layout.Service) layout.RoomManager {
 	return service
 }
 

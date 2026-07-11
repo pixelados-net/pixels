@@ -48,16 +48,23 @@ order by name asc`
 type Repository struct {
 	// executor runs PostgreSQL queries.
 	executor postgres.Executor
+	// pool starts shared transaction scopes in production.
+	pool *postgres.Pool
 }
 
 // NewRepository creates a room layout repository.
 func NewRepository(executor postgres.Executor) *Repository {
-	return &Repository{executor: executor}
+	repository := &Repository{executor: executor}
+	if pool, ok := executor.(*postgres.Pool); ok {
+		repository.pool = pool
+	}
+
+	return repository
 }
 
 // Create creates a room layout record.
 func (repository *Repository) Create(ctx context.Context, params roomlayout.CreateRecordParams) (roomlayout.Layout, error) {
-	roomLayout, err := scanLayout(repository.executor.QueryRow(ctx, createLayoutSQL, layoutValues(params.Layout)...))
+	roomLayout, err := scanLayout(repository.executorFor(ctx).QueryRow(ctx, createLayoutSQL, layoutValues(params.Layout)...))
 	if err != nil {
 		return roomlayout.Layout{}, fmt.Errorf("create room layout: %w", err)
 	}
@@ -68,7 +75,7 @@ func (repository *Repository) Create(ctx context.Context, params roomlayout.Crea
 // Update updates a room layout record.
 func (repository *Repository) Update(ctx context.Context, params roomlayout.UpdateRecordParams) (roomlayout.Layout, bool, error) {
 	values := append([]any{params.ID}, layoutValues(params.Layout)...)
-	roomLayout, err := scanLayout(repository.executor.QueryRow(ctx, updateLayoutSQL, values...))
+	roomLayout, err := scanLayout(repository.executorFor(ctx).QueryRow(ctx, updateLayoutSQL, values...))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return roomlayout.Layout{}, false, nil
 	}
@@ -92,7 +99,7 @@ func (repository *Repository) FindByName(ctx context.Context, name string) (room
 
 // List lists active room layouts.
 func (repository *Repository) List(ctx context.Context) ([]roomlayout.Layout, error) {
-	rows, err := repository.executor.Query(ctx, listLayoutsSQL)
+	rows, err := repository.executorFor(ctx).Query(ctx, listLayoutsSQL)
 	if err != nil {
 		return nil, fmt.Errorf("list room layouts: %w", err)
 	}
@@ -103,7 +110,7 @@ func (repository *Repository) List(ctx context.Context) ([]roomlayout.Layout, er
 
 // find finds one room layout with a query.
 func (repository *Repository) find(ctx context.Context, query string, argument any) (roomlayout.Layout, bool, error) {
-	roomLayout, err := scanLayout(repository.executor.QueryRow(ctx, query, argument))
+	roomLayout, err := scanLayout(repository.executorFor(ctx).QueryRow(ctx, query, argument))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return roomlayout.Layout{}, false, nil
 	}
@@ -113,6 +120,11 @@ func (repository *Repository) find(ctx context.Context, query string, argument a
 	}
 
 	return roomLayout, true, nil
+}
+
+// executorFor returns the current transaction executor or the repository fallback.
+func (repository *Repository) executorFor(ctx context.Context) postgres.Executor {
+	return postgres.ExecutorFor(ctx, repository.executor)
 }
 
 // layoutValues returns SQL arguments for editable room layout fields.

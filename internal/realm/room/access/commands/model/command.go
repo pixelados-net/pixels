@@ -3,6 +3,7 @@ package model
 
 import (
 	"context"
+	"errors"
 
 	"github.com/niflaot/pixels/internal/command"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -61,12 +62,12 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return roomservice.ErrRoomNotFound
 	}
 
-	roomLayout, found, err := handler.Layouts.FindByName(ctx, room.ModelName)
+	roomLayout, err := layout.ResolveForRoom(ctx, handler.Layouts, room.ID, room.ModelName)
 	if err != nil {
+		if errors.Is(err, layout.ErrLayoutNotFound) {
+			return roomservice.ErrLayoutNotAvailable
+		}
 		return err
-	}
-	if !found {
-		return roomservice.ErrLayoutNotAvailable
 	}
 
 	return entercommand.SendGeometry(ctx, envelope.Command.Handler, roomLayout)

@@ -13,6 +13,9 @@ import (
 	modelcmd "github.com/niflaot/pixels/internal/realm/room/access/commands/model"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	entryhandler "github.com/niflaot/pixels/internal/realm/room/access/handlers/entry"
+	floorplancmd "github.com/niflaot/pixels/internal/realm/room/control/commands/floorplan"
+	roomfloorplan "github.com/niflaot/pixels/internal/realm/room/control/floorplan"
+	floorplanhandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/floorplan"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
 	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
@@ -29,6 +32,7 @@ import (
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/i18n"
+	"github.com/niflaot/pixels/pkg/redis"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -47,6 +51,8 @@ type HandlerDeps struct {
 	ConfigRooms roomservice.ConfigManager
 	// Layouts manages room layouts.
 	Layouts layout.Manager
+	// RoomLayouts resolves and persists room-owned layouts.
+	RoomLayouts layout.RoomManager
 	// Furniture manages placed and inventory furniture records.
 	Furniture furnitureservice.Manager
 	// PlayerDirectory resolves durable player identities for furniture owners not currently online.
@@ -69,6 +75,12 @@ type HandlerDeps struct {
 	Moderation *roommoderation.Service
 	// Settings authorizes room configuration changes.
 	Settings *roomsettings.Authorizer
+	// Floorplan authorizes room floor plan changes.
+	Floorplan *roomfloorplan.Authorizer
+	// FloorplanConfig stores floor plan limits and throttling.
+	FloorplanConfig roomfloorplan.Config
+	// Redis stores distributed floor plan save cooldowns.
+	Redis *redis.Client
 	// WordFilters manages room-specific chat filter words.
 	WordFilters roomwordfilter.Manager
 	// Votes manages durable room upvotes.
@@ -86,6 +98,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	registerModerationHandlers(handlers.Inbound, deps)
 	registerSettingsHandlers(handlers.Inbound, deps)
 	registerVoteHandlers(handlers.Inbound, deps)
+	registerFloorplanHandlers(handlers.Inbound, deps)
 
 	enterCommand := newEnterCommand(deps)
 	entryhandler.RegisterEnter(handlers.Inbound, entryhandler.NewEnter(enterCommand, deps.Log))
@@ -112,6 +125,20 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	entryhandler.RegisterDesktop(handlers.Inbound, entryhandler.NewDesktop(leavecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Events: deps.Events,
+	}, deps.Log))
+}
+
+// registerFloorplanHandlers registers floor plan editor packet adapters.
+func registerFloorplanHandlers(registry *netconn.HandlerRegistry, deps HandlerDeps) {
+	floorplanhandler.RegisterBlockedTiles(registry, floorplanhandler.NewBlockedTiles(floorplancmd.BlockedTilesHandler{
+		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
+		Runtime: deps.Runtime, Authorize: deps.Floorplan,
+	}, deps.Log))
+	floorplanhandler.RegisterSave(registry, floorplanhandler.NewSave(floorplancmd.SaveHandler{
+		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
+		Layouts: deps.RoomLayouts, Furniture: deps.Furniture, Runtime: deps.Runtime,
+		Connections: deps.Connections, Authorize: deps.Floorplan, Cooldowns: deps.Redis,
+		Config: deps.FloorplanConfig, Events: deps.Events, Translations: deps.Translations, Log: deps.Log,
 	}, deps.Log))
 }
 

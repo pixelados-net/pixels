@@ -11,4 +11,5 @@
     <include file="migrations/0004_create_room_word_filters.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0005_create_room_votes.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0006_reconcile_room_vote_scores.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_create_room_custom_layouts.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

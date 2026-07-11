@@ -7,7 +7,7 @@ import (
 
 // Footprint computes the occupied tiles for a furniture placement.
 func Footprint(origin grid.Point, width int, length int, rotation worldunit.Rotation) []grid.Point {
-	effectiveWidth, effectiveLength := rotatedDimensions(width, length, rotation)
+	effectiveWidth, effectiveLength := Dimensions(width, length, rotation)
 	points := make([]grid.Point, 0, effectiveWidth*effectiveLength)
 	for dy := 0; dy < effectiveLength; dy++ {
 		for dx := 0; dx < effectiveWidth; dx++ {
@@ -20,6 +20,11 @@ func Footprint(origin grid.Point, width int, length int, rotation worldunit.Rota
 	}
 
 	return points
+}
+
+// Dimensions returns footprint dimensions after rotation.
+func Dimensions(width int, length int, rotation worldunit.Rotation) (int, int) {
+	return rotatedDimensions(width, length, rotation)
 }
 
 // rotatedDimensions returns the effective width/length after rotation.

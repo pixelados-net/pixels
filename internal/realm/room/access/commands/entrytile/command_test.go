@@ -15,6 +15,7 @@ import (
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outentrytile "github.com/niflaot/pixels/networking/outbound/room/entrytile"
+	outthickness "github.com/niflaot/pixels/networking/outbound/room/thickness/updated"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
@@ -39,7 +40,7 @@ func TestHandleSendsEntryTile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("handle entry tile: %v", err)
 	}
-	if len(*sent) != 1 || (*sent)[0].Header != outentrytile.Header {
+	if len(*sent) != 2 || (*sent)[0].Header != outentrytile.Header || (*sent)[1].Header != outthickness.Header {
 		t.Fatalf("unexpected packets %#v", *sent)
 	}
 	values, err := codec.DecodePacketExact((*sent)[0], outentrytile.Definition)

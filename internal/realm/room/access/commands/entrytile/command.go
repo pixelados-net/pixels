@@ -3,6 +3,7 @@ package entrytile
 
 import (
 	"context"
+	"errors"
 
 	"github.com/niflaot/pixels/internal/command"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -12,6 +13,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outthickness "github.com/niflaot/pixels/networking/outbound/room/thickness/updated"
 )
 
 const (
@@ -62,13 +64,25 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if !found {
 		return roomservice.ErrRoomNotFound
 	}
-	roomLayout, found, err := handler.Layouts.FindByName(ctx, room.ModelName)
+	roomLayout, err := layout.ResolveForRoom(ctx, handler.Layouts, room.ID, room.ModelName)
+	if err != nil {
+		if errors.Is(err, layout.ErrLayoutNotFound) {
+			return roomservice.ErrLayoutNotAvailable
+		}
+		return err
+	}
+
+	if err = entercommand.SendEntryTile(ctx, envelope.Command.Handler, roomLayout); err != nil {
+		return err
+	}
+	wall, floor := room.WallThickness, room.FloorThickness
+	if roomLayout.RoomID > 0 {
+		wall, floor = roomLayout.WallThickness, roomLayout.FloorThickness
+	}
+	packet, err := outthickness.Encode(room.HideWalls, int32(wall), int32(floor))
 	if err != nil {
 		return err
 	}
-	if !found {
-		return roomservice.ErrLayoutNotAvailable
-	}
 
-	return entercommand.SendEntryTile(ctx, envelope.Command.Handler, roomLayout)
+	return envelope.Command.Handler.Send(ctx, packet)
 }

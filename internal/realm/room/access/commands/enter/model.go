@@ -201,7 +201,11 @@ func SendGeometry(ctx context.Context, connection netconn.Context, roomLayout la
 		return err
 	}
 
-	modelPacket, err := outmodel.Encode(true, DefaultWallHeight, roomLayout.Heightmap)
+	wallHeight := DefaultWallHeight
+	if roomLayout.RoomID > 0 {
+		wallHeight = int32(roomLayout.WallHeight)
+	}
+	modelPacket, err := outmodel.Encode(true, wallHeight, roomLayout.Heightmap)
 	if err != nil {
 		return err
 	}
