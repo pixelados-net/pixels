@@ -7,7 +7,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	"github.com/niflaot/pixels/internal/realm/chat/bubble"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomsession "github.com/niflaot/pixels/internal/realm/room/commands/session"
+	roomsession "github.com/niflaot/pixels/internal/realm/room/runtime/commands/session"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 )

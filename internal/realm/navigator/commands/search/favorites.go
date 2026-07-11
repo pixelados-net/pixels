@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 )
 
 // RightsChecker resolves room-scoped navigator visibility.

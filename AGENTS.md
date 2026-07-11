@@ -38,6 +38,12 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 - Place realm events under concise paths such as `internal/realm/player/events/disconnected/event.go`.
 - Event packages expose `Name` and, when needed, `Payload`; do not group several event names or payloads in one realm-level `event.go`.
 - Prefer deriving shared event behavior through small helpers at call sites over creating broad event registry packages.
+- Group packet handlers by stable realm capability, such as `handlers/entry`, `handlers/moderation`, `handlers/rights`, or `handlers/settings`; do not create a package for a handler that only decodes one packet and dispatches one command.
+- Keep each grouped handler in its own focused file with action-qualified constructors and registration functions, such as `NewBan` and `RegisterBan`.
+- Group small related commands by stable capability when their individual packages would contain only one stateless command file; keep action-qualified command and handler types in separate files.
+- Organize large realms by stable capability before technical role. Room code belongs under `access`, `control`, `record`, `runtime`, `world`, or `database`; place that capability's commands, handlers, and events inside the same subtree instead of restoring realm-wide `commands`, `handlers`, or `events` packages.
+- Domain capabilities define the persistence contracts they consume. Concrete PostgreSQL repositories belong under the realm's `database` subtree and must not be imported by domain services.
+- Keep substantial command workflows in dedicated packages when they own multiple files, private coordination, or focused tests.
 - Keep each package focused on one responsibility.
 - Keep each file focused on one responsibility.
 - Keep every Go source file at or below 250 lines.
@@ -277,6 +283,13 @@ minimum manual checks expected when touching it.
 ### FEATURE: Room Realm
 
 - Owns `internal/realm/room`.
+- Uses six top-level capabilities: `access` for admission and doorbells,
+  `control` for rights, moderation, settings, audit, and filtering, `record` for
+  persistent room metadata, `runtime` for live occupancy and projections,
+  `world` for layouts, tiles, furniture surfaces, units, and movement, and
+  `database` for PostgreSQL implementations plus migrations and seeds.
+- Commands, handlers, and events live under their owning capability. Do not add
+  realm-wide `room/commands`, `room/handlers`, or `room/events` trees.
 - Provides room layouts, categories, tags, persistent room metadata, runtime room
   registry, occupancy events, entry commands, model/heightmap packets, and tag
   packets.
@@ -313,7 +326,7 @@ minimum manual checks expected when touching it.
 
 ### FEATURE: Room Settings, Filters, and Mute-All
 
-- Owns `internal/realm/room/settings`, `internal/realm/room/wordfilter`, room
+- Owns `internal/realm/room/control/settings`, `internal/realm/room/control/wordfilter`, room
   settings commands/handlers, and the corresponding networking packets.
 - Provides owner/rights/staff settings authorization, protocol-native settings
   request/save, optimistic updates, bcrypt password replacement, atomic tag
@@ -322,7 +335,7 @@ minimum manual checks expected when touching it.
   packets and publish `room.settings_updated`; filter and mute-all changes publish
   their own realm events.
 - Test after changes:
-  - `go test -race ./internal/realm/room/settings ./internal/realm/room/wordfilter ./internal/realm/room/commands/settings/... ./internal/realm/room/commands/wordfilter/... ./internal/realm/room/commands/mute/...`
+  - `go test -race ./internal/realm/room/control/settings ./internal/realm/room/control/wordfilter ./internal/realm/room/control/commands/settings/...`
   - Run the room settings and word-filter packet tests under `networking/...`.
   - Run `BenchmarkContainsCached`, `BenchmarkCanManageOwner`, and
     `BenchmarkUpdateValidation` with `-benchmem`; hot lookups should allocate zero.
@@ -332,7 +345,7 @@ minimum manual checks expected when touching it.
 
 ### FEATURE: Closed Room Entry
 
-- Owns `internal/realm/room/entry`, `internal/realm/room/doorbell`, room
+- Owns `internal/realm/room/access/entry`, `internal/realm/room/access/doorbell`, room
   doorbell commands, and room doorbell packets.
 - Supports bcrypt room passwords, Redis-backed attempt windows and lockouts,
   doorbell approval queues, timeout cleanup on the existing room tick, localized
@@ -342,8 +355,8 @@ minimum manual checks expected when touching it.
   waiting requests. Owners and room-right holders bypass password, doorbell,
   and invisible modes through the `entry.RightsChecker` boundary.
 - Test after changes:
-  - `go test ./internal/realm/room/entry ./internal/realm/room/doorbell/...`
-  - `go test ./internal/realm/room/commands/doorbell/... ./networking/...`
+  - `go test ./internal/realm/room/access/entry ./internal/realm/room/access/doorbell/...`
+  - `go test ./internal/realm/room/access/commands/doorbell/... ./networking/...`
   - Enter password rooms with correct and incorrect passwords; verify lockout
     closes the password prompt and reports the configured localized duration.
   - Ring a doorbell, accept and reject it as owner and moderator, then verify the
@@ -404,8 +417,8 @@ minimum manual checks expected when touching it.
 
 ### FEATURE: Room Rights, Moderation, and Audit
 
-- Owns `internal/realm/room/rights`, `internal/realm/room/moderation`,
-  `internal/realm/room/audit`, their room packets, and room audit HTTP routes.
+- Owns `internal/realm/room/control/rights`, `internal/realm/room/control/moderation`,
+  `internal/realm/room/control/audit`, their room packets, and room audit HTTP routes.
 - Persists build rights, current mutes and bans, append-only rights history, and
   append-only moderation history. Kick has no current-state row but is audited.
 - Rights are projected into each active `live.Room`; do not add a separate
@@ -417,7 +430,7 @@ minimum manual checks expected when touching it.
 - Nitro has no confirmed room mute-list inbound packet. Read active mutes through
   the moderation service or protected HTTP route; do not invent packet headers.
 - Test after changes:
-  - `go test ./internal/realm/room/rights/... ./internal/realm/room/moderation/... ./internal/realm/room/audit/...`
+  - `go test ./internal/realm/room/control/rights/... ./internal/realm/room/control/moderation/... ./internal/realm/room/control/audit/...`
   - `go test ./networking/inbound/room/... ./networking/outbound/room/... ./pkg/http/room/routes`
   - Run room rights and moderation benchmarks with `-benchmem`.
   - Grant and revoke rights in Nitro; verify furniture controls and the rights

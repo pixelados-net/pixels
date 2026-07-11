@@ -7,7 +7,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	navsession "github.com/niflaot/pixels/internal/realm/navigator/commands/session"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outnosuch "github.com/niflaot/pixels/networking/outbound/navigator/nosuchflat"

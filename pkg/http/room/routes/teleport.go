@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
-	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outforward "github.com/niflaot/pixels/networking/outbound/room/forward"
 )

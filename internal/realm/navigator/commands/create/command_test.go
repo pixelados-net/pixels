@@ -3,7 +3,7 @@ package create
 import (
 	"testing"
 
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 )
 
 // TestCreateParamsMapsProtocolValues verifies create command mapping.

@@ -11,7 +11,7 @@ import (
 	chatfilter "github.com/niflaot/pixels/internal/realm/chat/filter"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"

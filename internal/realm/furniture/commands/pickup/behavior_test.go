@@ -7,7 +7,7 @@ import (
 
 	"github.com/niflaot/pixels/internal/command"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/pkg/bus"
 )
 

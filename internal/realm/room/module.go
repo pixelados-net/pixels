@@ -3,21 +3,22 @@ package room
 
 import (
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
-	roomaudit "github.com/niflaot/pixels/internal/realm/room/audit"
-	auditrepo "github.com/niflaot/pixels/internal/realm/room/audit/repository"
-	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
-	"github.com/niflaot/pixels/internal/realm/room/layout"
-	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
-	moderationbroadcast "github.com/niflaot/pixels/internal/realm/room/moderation/broadcast"
-	moderationrepo "github.com/niflaot/pixels/internal/realm/room/moderation/repository"
-	"github.com/niflaot/pixels/internal/realm/room/repository"
-	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
-	rightsbroadcast "github.com/niflaot/pixels/internal/realm/room/rights/broadcast"
-	rightsrepo "github.com/niflaot/pixels/internal/realm/room/rights/repository"
-	"github.com/niflaot/pixels/internal/realm/room/service"
-	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
-	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/wordfilter"
-	wordrepo "github.com/niflaot/pixels/internal/realm/room/wordfilter/repository"
+	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
+	moderationbroadcast "github.com/niflaot/pixels/internal/realm/room/control/moderation/broadcast"
+	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
+	rightsbroadcast "github.com/niflaot/pixels/internal/realm/room/control/rights/broadcast"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
+	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/control/wordfilter"
+	auditrepo "github.com/niflaot/pixels/internal/realm/room/database/audit"
+	layoutrepo "github.com/niflaot/pixels/internal/realm/room/database/layout"
+	moderationrepo "github.com/niflaot/pixels/internal/realm/room/database/moderation"
+	"github.com/niflaot/pixels/internal/realm/room/database/record"
+	rightsrepo "github.com/niflaot/pixels/internal/realm/room/database/rights"
+	wordrepo "github.com/niflaot/pixels/internal/realm/room/database/wordfilter"
+	"github.com/niflaot/pixels/internal/realm/room/record/service"
+	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/postgres"
@@ -71,12 +72,12 @@ func NewSettingsAuthorizer(permissions permissionservice.Checker) *roomsettings.
 }
 
 // NewWordFilterStore creates room word filter persistence.
-func NewWordFilterStore(pool *postgres.Pool) wordrepo.Store {
+func NewWordFilterStore(pool *postgres.Pool) roomwordfilter.Store {
 	return wordrepo.New(pool)
 }
 
 // NewWordFilterService creates room word filter behavior.
-func NewWordFilterService(store wordrepo.Store, rooms service.Manager, authorize *roomsettings.Authorizer) *roomwordfilter.Service {
+func NewWordFilterService(store roomwordfilter.Store, rooms service.Manager, authorize *roomsettings.Authorizer) *roomwordfilter.Service {
 	return roomwordfilter.New(store, rooms, authorize)
 }
 
@@ -95,12 +96,12 @@ func NewEntryService(config roomentry.Config, redisClient *redis.Client, permiss
 }
 
 // NewRightsStore creates room rights persistence.
-func NewRightsStore(pool *postgres.Pool) rightsrepo.Store {
+func NewRightsStore(pool *postgres.Pool) roomrights.Store {
 	return rightsrepo.New(pool)
 }
 
 // NewRightsService creates room rights behavior.
-func NewRightsService(store rightsrepo.Store, rooms *service.Service, permissions permissionservice.Checker, events bus.Publisher) *roomrights.Service {
+func NewRightsService(store roomrights.Store, rooms *service.Service, permissions permissionservice.Checker, events bus.Publisher) *roomrights.Service {
 	return roomrights.New(store, rooms, permissions, events, roomrights.Nodes{
 		OwnGrant: RightsOwnGrant, OwnRevoke: RightsOwnRevoke,
 		AnyGrant: RightsAnyGrant, AnyRevoke: RightsAnyRevoke,
@@ -113,12 +114,12 @@ func NewRightsManager(service *roomrights.Service) roomrights.Manager {
 }
 
 // NewModerationStore creates room moderation persistence.
-func NewModerationStore(pool *postgres.Pool) moderationrepo.Store {
+func NewModerationStore(pool *postgres.Pool) roommoderation.Store {
 	return moderationrepo.New(pool)
 }
 
 // NewModerationService creates room moderation behavior.
-func NewModerationService(config roommoderation.Config, store moderationrepo.Store, rooms *service.Service, rights *roomrights.Service, permissions permissionservice.Checker, events bus.Publisher) *roommoderation.Service {
+func NewModerationService(config roommoderation.Config, store roommoderation.Store, rooms *service.Service, rights *roomrights.Service, permissions permissionservice.Checker, events bus.Publisher) *roommoderation.Service {
 	return roommoderation.New(config, store, rooms, rights, permissions, events, roommoderation.Nodes{
 		OwnKick: ModerationOwnKick, OwnMute: ModerationOwnMute, OwnBan: ModerationOwnBan,
 		AnyKick: ModerationAnyKick, AnyMute: ModerationAnyMute, AnyBan: ModerationAnyBan,
@@ -137,12 +138,12 @@ func NewModerationManager(moderation *roommoderation.Service) roommoderation.Man
 }
 
 // NewAuditStore creates room rights and moderation audit persistence.
-func NewAuditStore(pool *postgres.Pool) auditrepo.Store {
+func NewAuditStore(pool *postgres.Pool) roomaudit.Store {
 	return auditrepo.New(pool)
 }
 
 // NewAuditService creates room audit query behavior.
-func NewAuditService(store auditrepo.Store) *roomaudit.Service {
+func NewAuditService(store roomaudit.Store) *roomaudit.Service {
 	return roomaudit.New(store)
 }
 
@@ -153,11 +154,11 @@ func NewAuditManager(audit *roomaudit.Service) roomaudit.Manager {
 
 // NewLayoutStore creates the room layout persistence store.
 func NewLayoutStore(pool *postgres.Pool) layout.Store {
-	return layout.NewRepository(pool)
+	return layoutrepo.NewRepository(pool)
 }
 
 // NewStore creates the room persistence store.
-func NewStore(pool *postgres.Pool) repository.Store {
+func NewStore(pool *postgres.Pool) service.Store {
 	return repository.New(pool)
 }
 

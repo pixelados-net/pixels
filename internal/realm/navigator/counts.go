@@ -7,7 +7,7 @@ import (
 	"time"
 
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
+	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/runtime/events/occupancychanged"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outcounts "github.com/niflaot/pixels/networking/outbound/navigator/categorycounts"
 	"github.com/niflaot/pixels/pkg/bus"

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/networking/codec"

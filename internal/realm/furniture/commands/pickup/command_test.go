@@ -9,7 +9,7 @@ import (
 	pickedupevent "github.com/niflaot/pixels/internal/realm/furniture/events/pickedup"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outrefresh "github.com/niflaot/pixels/networking/outbound/inventory/furniture/refresh"

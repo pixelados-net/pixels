@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	roomaudit "github.com/niflaot/pixels/internal/realm/room/audit"
-	auditmodel "github.com/niflaot/pixels/internal/realm/room/audit/model"
-	moderationmodel "github.com/niflaot/pixels/internal/realm/room/moderation/model"
+	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
+	auditmodel "github.com/niflaot/pixels/internal/realm/room/control/audit/model"
+	moderationmodel "github.com/niflaot/pixels/internal/realm/room/control/moderation/model"
 )
 
 // auditManagerForTest captures audit queries.

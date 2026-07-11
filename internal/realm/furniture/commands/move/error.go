@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
-	roomfurniture "github.com/niflaot/pixels/internal/realm/room/furniture"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	roomfurniture "github.com/niflaot/pixels/internal/realm/room/world/items"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outupdate "github.com/niflaot/pixels/networking/outbound/room/furniture/update"
 	outbubble "github.com/niflaot/pixels/networking/outbound/session/bubblealert"

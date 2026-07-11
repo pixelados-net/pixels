@@ -3,7 +3,7 @@ package navigator
 import (
 	"testing"
 
-	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
+	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/runtime/events/occupancychanged"
 )
 
 // TestCategoryEntryAggregatesRooms verifies category counts aggregate active rooms.

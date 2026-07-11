@@ -1,36 +1,28 @@
 package room
 
 import (
-	mutetogglecmd "github.com/niflaot/pixels/internal/realm/room/commands/mute/toggle"
-	settingsrequestcmd "github.com/niflaot/pixels/internal/realm/room/commands/settings/request"
-	settingssavecmd "github.com/niflaot/pixels/internal/realm/room/commands/settings/save"
-	filtermodifycmd "github.com/niflaot/pixels/internal/realm/room/commands/wordfilter/modify"
-	filterrequestcmd "github.com/niflaot/pixels/internal/realm/room/commands/wordfilter/request"
-	controlhandler "github.com/niflaot/pixels/internal/realm/room/handlers/control"
-	mutetogglehandler "github.com/niflaot/pixels/internal/realm/room/handlers/mute/toggle"
-	settingsrequesthandler "github.com/niflaot/pixels/internal/realm/room/handlers/settings/request"
-	settingssavehandler "github.com/niflaot/pixels/internal/realm/room/handlers/settings/save"
-	filtermodifyhandler "github.com/niflaot/pixels/internal/realm/room/handlers/wordfilter/modify"
-	filterrequesthandler "github.com/niflaot/pixels/internal/realm/room/handlers/wordfilter/request"
+	settingscmd "github.com/niflaot/pixels/internal/realm/room/control/commands/settings"
+	controlhandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/control"
+	settingshandler "github.com/niflaot/pixels/internal/realm/room/control/handlers/settings"
 	netconn "github.com/niflaot/pixels/networking/connection"
 )
 
 // registerSettingsHandlers registers room settings, filters, and mute-all packet adapters.
 func registerSettingsHandlers(registry *netconn.HandlerRegistry, deps HandlerDeps) {
-	settingsrequesthandler.Register(registry, controlhandler.Wrap(settingsrequesthandler.New(settingsrequestcmd.Handler{
+	settingshandler.RegisterRequest(registry, controlhandler.Wrap(settingshandler.NewRequest(settingscmd.RequestHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Authorize: deps.Settings,
 	}, deps.Log), deps.Translations, deps.Log))
-	settingssavehandler.Register(registry, controlhandler.Wrap(settingssavehandler.New(settingssavecmd.Handler{
+	settingshandler.RegisterSave(registry, controlhandler.Wrap(settingshandler.NewSave(settingscmd.SaveHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.ConfigRooms, Authorize: deps.Settings,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log), deps.Translations, deps.Log))
-	filterrequesthandler.Register(registry, controlhandler.Wrap(filterrequesthandler.New(filterrequestcmd.Handler{
+	settingshandler.RegisterFilterRequest(registry, controlhandler.Wrap(settingshandler.NewFilterRequest(settingscmd.FilterRequestHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Authorize: deps.Settings, Filters: deps.WordFilters,
 	}, deps.Log), deps.Translations, deps.Log))
-	filtermodifyhandler.Register(registry, controlhandler.Wrap(filtermodifyhandler.New(filtermodifycmd.Handler{
+	settingshandler.RegisterFilterModify(registry, controlhandler.Wrap(settingshandler.NewFilterModify(settingscmd.FilterModifyHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Filters: deps.WordFilters, Events: deps.Events,
 	}, deps.Log), deps.Translations, deps.Log))
-	mutetogglehandler.Register(registry, controlhandler.Wrap(mutetogglehandler.New(mutetogglecmd.Handler{
+	settingshandler.RegisterMuteAll(registry, controlhandler.Wrap(settingshandler.NewMuteAll(settingscmd.MuteAllHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Authorize: deps.Settings,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log), deps.Translations, deps.Log))

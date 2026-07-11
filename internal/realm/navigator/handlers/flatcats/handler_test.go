@@ -7,7 +7,7 @@ import (
 
 	flatcatscmd "github.com/niflaot/pixels/internal/realm/navigator/commands/flatcats"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"

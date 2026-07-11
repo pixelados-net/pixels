@@ -7,8 +7,8 @@ import (
 
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyconfig "github.com/niflaot/pixels/internal/realm/inventory/currency"
-	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
-	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
+	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	appconfig "github.com/niflaot/pixels/pkg/config/app"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/logger"

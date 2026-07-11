@@ -3,7 +3,7 @@ package info
 import (
 	"context"
 
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	outinfo "github.com/niflaot/pixels/networking/outbound/navigator/roominfo"
 )
 

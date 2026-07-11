@@ -6,30 +6,24 @@ import (
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
-	respondcmd "github.com/niflaot/pixels/internal/realm/room/commands/doorbell/respond"
-	entercmd "github.com/niflaot/pixels/internal/realm/room/commands/enter"
-	entrytilecmd "github.com/niflaot/pixels/internal/realm/room/commands/entrytile"
-	leavecmd "github.com/niflaot/pixels/internal/realm/room/commands/leave"
-	lookcmd "github.com/niflaot/pixels/internal/realm/room/commands/look"
-	modelcmd "github.com/niflaot/pixels/internal/realm/room/commands/model"
-	tagscmd "github.com/niflaot/pixels/internal/realm/room/commands/tags"
-	walkcmd "github.com/niflaot/pixels/internal/realm/room/commands/walk"
-	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
-	desktophandler "github.com/niflaot/pixels/internal/realm/room/handlers/desktop"
-	respondhandler "github.com/niflaot/pixels/internal/realm/room/handlers/doorbell/respond"
-	enterhandler "github.com/niflaot/pixels/internal/realm/room/handlers/enter"
-	entrytilehandler "github.com/niflaot/pixels/internal/realm/room/handlers/entrytile"
-	lookhandler "github.com/niflaot/pixels/internal/realm/room/handlers/look"
-	modelhandler "github.com/niflaot/pixels/internal/realm/room/handlers/model"
-	tagshandler "github.com/niflaot/pixels/internal/realm/room/handlers/tags"
-	walkhandler "github.com/niflaot/pixels/internal/realm/room/handlers/walk"
-	"github.com/niflaot/pixels/internal/realm/room/layout"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
-	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
-	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
-	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
-	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
-	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/wordfilter"
+	respondcmd "github.com/niflaot/pixels/internal/realm/room/access/commands/doorbell/respond"
+	entercmd "github.com/niflaot/pixels/internal/realm/room/access/commands/enter"
+	entrytilecmd "github.com/niflaot/pixels/internal/realm/room/access/commands/entrytile"
+	leavecmd "github.com/niflaot/pixels/internal/realm/room/access/commands/leave"
+	modelcmd "github.com/niflaot/pixels/internal/realm/room/access/commands/model"
+	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	entryhandler "github.com/niflaot/pixels/internal/realm/room/access/handlers/entry"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
+	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
+	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/control/wordfilter"
+	tagscmd "github.com/niflaot/pixels/internal/realm/room/record/commands/tags"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	lookcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/look"
+	walkcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/walk"
+	movementhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/movement"
+	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -90,28 +84,28 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	registerSettingsHandlers(handlers.Inbound, deps)
 
 	enterCommand := newEnterCommand(deps)
-	enterhandler.Register(handlers.Inbound, enterhandler.New(enterCommand, deps.Log))
-	respondhandler.Register(handlers.Inbound, respondhandler.New(respondcmd.Handler{
+	entryhandler.RegisterEnter(handlers.Inbound, entryhandler.NewEnter(enterCommand, deps.Log))
+	entryhandler.RegisterDoorbell(handlers.Inbound, entryhandler.NewDoorbell(respondcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Entry: deps.Entry,
 		Enter: enterCommand,
 	}, deps.Log))
-	modelhandler.Register(handlers.Inbound, modelhandler.New(modelcmd.Handler{
+	entryhandler.RegisterModel(handlers.Inbound, entryhandler.NewModel(modelcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Layouts: deps.Layouts,
 	}, deps.Log))
-	entrytilehandler.Register(handlers.Inbound, entrytilehandler.New(entrytilecmd.Handler{
+	entryhandler.RegisterEntryTile(handlers.Inbound, entryhandler.NewEntryTile(entrytilecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Layouts: deps.Layouts,
 	}, deps.Log))
-	tagshandler.Register(handlers.Inbound, tagshandler.New(tagscmd.Handler{
+	entryhandler.RegisterTags(handlers.Inbound, entryhandler.NewTags(tagscmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms,
 	}, deps.Log))
-	lookhandler.Register(handlers.Inbound, lookhandler.New(lookcmd.Handler{
+	movementhandler.RegisterLook(handlers.Inbound, movementhandler.NewLook(lookcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
 	}, deps.Log))
-	walkhandler.Register(handlers.Inbound, walkhandler.New(walkcmd.Handler{
+	movementhandler.RegisterWalk(handlers.Inbound, movementhandler.NewWalk(walkcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
 	}, deps.Log))
-	desktophandler.Register(handlers.Inbound, desktophandler.New(leavecmd.Handler{
+	entryhandler.RegisterDesktop(handlers.Inbound, entryhandler.NewDesktop(leavecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log))

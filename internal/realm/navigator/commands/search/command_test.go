@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
-	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	"github.com/niflaot/pixels/networking/outbound/navigator/roomcard"
 	outsearch "github.com/niflaot/pixels/networking/outbound/navigator/searchresult"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"

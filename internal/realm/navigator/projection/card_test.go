@@ -3,7 +3,7 @@ package projection
 import (
 	"testing"
 
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 

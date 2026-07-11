@@ -4,7 +4,7 @@ import (
 	"context"
 
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outcollapsed "github.com/niflaot/pixels/networking/outbound/navigator/collapsed"

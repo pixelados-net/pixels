@@ -7,9 +7,9 @@ import (
 
 	playerdisconnected "github.com/niflaot/pixels/internal/realm/player/events/disconnected"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomentry "github.com/niflaot/pixels/internal/realm/room/entry"
-	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/events/occupancychanged"
-	"github.com/niflaot/pixels/internal/realm/room/live"
+	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/runtime/events/occupancychanged"
+	"github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
 	"go.uber.org/fx/fxtest"

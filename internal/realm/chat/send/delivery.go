@@ -8,7 +8,7 @@ import (
 	shoutedevent "github.com/niflaot/pixels/internal/realm/chat/events/shouted"
 	talkedevent "github.com/niflaot/pixels/internal/realm/chat/events/talked"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/networking/codec"
 	outshout "github.com/niflaot/pixels/networking/outbound/chat/shout"
 	outtalk "github.com/niflaot/pixels/networking/outbound/chat/talk"

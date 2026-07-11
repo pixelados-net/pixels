@@ -3,8 +3,8 @@ package send
 import (
 	"context"
 
-	roomcontrol "github.com/niflaot/pixels/internal/realm/room/commands/control"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomcontrol "github.com/niflaot/pixels/internal/realm/room/control/commands/resolve"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outtyping "github.com/niflaot/pixels/networking/outbound/chat/typing"
 )

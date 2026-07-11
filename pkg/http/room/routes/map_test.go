@@ -3,8 +3,8 @@ package routes
 import (
 	"testing"
 
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 

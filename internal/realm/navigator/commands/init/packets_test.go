@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	outcollapsed "github.com/niflaot/pixels/networking/outbound/navigator/collapsed"
 	outevents "github.com/niflaot/pixels/networking/outbound/navigator/eventcategories"
 	outfavorites "github.com/niflaot/pixels/networking/outbound/navigator/favorites"

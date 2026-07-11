@@ -10,7 +10,7 @@ import (
 	navmodel "github.com/niflaot/pixels/internal/realm/navigator/model"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
-	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outmetadata "github.com/niflaot/pixels/networking/outbound/navigator/metadata"

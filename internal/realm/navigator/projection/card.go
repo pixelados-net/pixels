@@ -2,7 +2,7 @@
 package projection
 
 import (
-	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	"github.com/niflaot/pixels/networking/outbound/navigator/roomcard"
 )
 

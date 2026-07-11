@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	roomaudit "github.com/niflaot/pixels/internal/realm/room/audit"
-	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
-	moderationmodel "github.com/niflaot/pixels/internal/realm/room/moderation/model"
+	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
+	moderationmodel "github.com/niflaot/pixels/internal/realm/room/control/moderation/model"
 )
 
 const (

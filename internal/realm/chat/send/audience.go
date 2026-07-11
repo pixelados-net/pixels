@@ -7,7 +7,7 @@ import (
 
 	chatconfig "github.com/niflaot/pixels/internal/realm/chat/config"
 	whisperedevent "github.com/niflaot/pixels/internal/realm/chat/events/whispered"
-	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/networking/codec"
 )
 
