@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
 // TestCreateRoomScansReturnedRecord verifies room creation scans records.
@@ -91,6 +92,28 @@ func TestSoftDeleteRoomReportsRowsAffected(t *testing.T) {
 	}
 	if !deleted {
 		t.Fatal("expected deleted room")
+	}
+}
+
+// TestUpdateRoomWritesSettingsAndReplacesTags verifies the atomic mutation work sequence.
+func TestUpdateRoomWritesSettingsAndReplacesTags(t *testing.T) {
+	executor := &fakeExecutor{row: fakeRow{values: roomValuesForTest()}}
+	room := roommodel.Room{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}}, Name: "Updated", MaxUsers: 25}
+	updated, found, err := New(executor).UpdateRoom(context.Background(), UpdateRoomParams{Room: room, ExpectedVersion: 1}, []string{"social", "build"})
+	if err != nil || !found {
+		t.Fatalf("updated=%#v found=%v err=%v", updated, found, err)
+	}
+	if executor.execs != 3 || !strings.Contains(executor.query, "version=$2") {
+		t.Fatalf("execs=%d query=%q", executor.execs, executor.query)
+	}
+}
+
+// TestUpdateRoomReportsVersionConflict verifies missing optimistic rows skip tag replacement.
+func TestUpdateRoomReportsVersionConflict(t *testing.T) {
+	executor := &fakeExecutor{row: fakeRow{err: pgx.ErrNoRows}}
+	_, found, err := New(executor).UpdateRoom(context.Background(), UpdateRoomParams{Room: roommodel.Room{}, ExpectedVersion: 99}, []string{"social"})
+	if err != nil || found || executor.execs != 0 {
+		t.Fatalf("found=%v execs=%d err=%v", found, executor.execs, err)
 	}
 }
 

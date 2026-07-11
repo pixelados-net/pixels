@@ -14,17 +14,17 @@ const (
 	createPlayerSQL = `
 insert into players (username)
 values ($1)
-returning id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at`
+returning id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at`
 
 	// findPlayerByIDSQL reads one active player by id.
 	findPlayerByIDSQL = `
-select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at
+select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at
 from players
 where id = $1 and deleted_at is null`
 
 	// findPlayerByUsernameSQL reads one active player by username.
 	findPlayerByUsernameSQL = `
-select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at
+select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at
 from players
 where lower(username) = lower($1) and deleted_at is null`
 )

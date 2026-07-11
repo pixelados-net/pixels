@@ -78,7 +78,8 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if envelope.Command.Amount != 1 {
 		return handler.sendUnavailable(ctx, envelope.Command.Connection)
 	}
-	_, items, err := handler.Catalog.Page(ctx, envelope.Command.PageID, player.ID(), catalogsession.DefaultClub)
+	hasClub := catalogsession.HasClub(player)
+	_, items, err := handler.Catalog.Page(ctx, envelope.Command.PageID, player.ID(), hasClub)
 	if err != nil || !containsOffer(items, envelope.Command.OfferID) {
 		if err == nil {
 			err = catalogservice.ErrOfferNotFound
@@ -87,7 +88,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 	result, err := handler.Catalog.Purchase(ctx, catalogservice.PurchaseParams{
 		PlayerID: player.ID(), CatalogItemID: envelope.Command.OfferID,
-		HasClub: catalogsession.DefaultClub,
+		HasClub: hasClub,
 	})
 	if err != nil {
 		return handler.sendError(ctx, envelope.Command.Connection, envelope.Command.OfferID, err)

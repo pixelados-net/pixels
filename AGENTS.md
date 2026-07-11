@@ -208,6 +208,21 @@ minimum manual checks expected when touching it.
   - Authenticate with a seeded SSO ticket and verify user info bootstrap.
   - Enter and leave a room and verify live player room presence updates.
 
+### FEATURE: Club Entitlements
+
+- Owns player club fields, runtime entitlement projection, and HC gates.
+- Club level and expiration are loaded once with the player, projected through
+  Nitro permissions, and reused by catalog and room settings without hot-path
+  database reads.
+- HC controls only wall visibility and wall/floor thickness; chat remains a
+  normal room setting. Global settings managers may perform administrative
+  overrides.
+- Test after changes:
+  - `go test ./internal/realm/player/... ./internal/permission/broadcast/...`
+  - Login as seeded `demo` and verify Nitro receives club level `2`.
+  - Login as `bob` or `carol` and verify changing HC room fields is rejected.
+  - Verify club-only catalog pages and offers follow active expiration.
+
 ### FEATURE: Catalog Core
 
 - Owns `internal/realm/catalog` plus catalog-backed furniture grants.
@@ -277,6 +292,25 @@ minimum manual checks expected when touching it.
   - Change furniture during a walk and verify the unit stops on its current tile.
   - Fill a runtime room to capacity and verify `room.entry_error`.
   - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
+
+### FEATURE: Room Settings, Filters, and Mute-All
+
+- Owns `internal/realm/room/settings`, `internal/realm/room/wordfilter`, room
+  settings commands/handlers, and the corresponding networking packets.
+- Provides owner/rights/staff settings authorization, protocol-native settings
+  request/save, optimistic updates, bcrypt password replacement, atomic tag
+  replacement, live metadata refresh, room word filters, and ephemeral mute-all.
+- Settings changes broadcast Nitro room-info, visualization, and chat refresh
+  packets and publish `room.settings_updated`; filter and mute-all changes publish
+  their own realm events.
+- Test after changes:
+  - `go test -race ./internal/realm/room/settings ./internal/realm/room/wordfilter ./internal/realm/room/commands/settings/... ./internal/realm/room/commands/wordfilter/... ./internal/realm/room/commands/mute/...`
+  - Run the room settings and word-filter packet tests under `networking/...`.
+  - Run `BenchmarkContainsCached`, `BenchmarkCanManageOwner`, and
+    `BenchmarkUpdateValidation` with `-benchmem`; hot lookups should allocate zero.
+  - In Nitro, open room settings as owner and rights holder, save every tab, add
+    and remove a filter word, toggle mute-all, and verify all current occupants
+    receive the updated room information without reconnecting.
 
 ### FEATURE: Closed Room Entry
 

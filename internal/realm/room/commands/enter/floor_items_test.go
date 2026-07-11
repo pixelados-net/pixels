@@ -8,6 +8,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	outentryinfo "github.com/niflaot/pixels/networking/outbound/room/entryinfo"
 	outflooritems "github.com/niflaot/pixels/networking/outbound/room/furniture/flooritems"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
@@ -150,11 +151,11 @@ func TestHandleJoinsRoomWithFurnitureSendsFloorItemsPacket(t *testing.T) {
 	if err != nil {
 		t.Fatalf("handle command: %v", err)
 	}
-	if len(*sent) != 10 {
+	if len(*sent) != 11 {
 		t.Fatalf("expected entered, model, floor items, height map, and room state packets, got %#v", *sent)
 	}
-	if (*sent)[8].Header != 339 || (*sent)[9].Header != 780 {
-		t.Fatalf("expected owner and room rights bootstrap packets, got %#v", (*sent)[8:])
+	if (*sent)[8].Header != outentryinfo.Header || (*sent)[9].Header != 339 || (*sent)[10].Header != 780 {
+		t.Fatalf("expected identity, owner, and room rights bootstrap packets, got %#v", (*sent)[8:])
 	}
 
 	active, found := handler.Runtime.Find(9)

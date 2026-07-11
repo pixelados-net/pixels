@@ -81,7 +81,7 @@ func TestHandleJoinsRoomAndSendsEntryPackets(t *testing.T) {
 	if len(publisher.events) != 1 || publisher.events[0].Name != roomentered.Name {
 		t.Fatalf("unexpected events %#v", publisher.events)
 	}
-	if len(*sent) != 9 {
+	if len(*sent) != 10 {
 		t.Fatalf("expected entered, model, and height map packets, got %#v", *sent)
 	}
 }

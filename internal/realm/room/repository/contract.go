@@ -31,6 +31,9 @@ type RoomWriter interface {
 
 	// SoftDeleteRoom soft deletes a room record.
 	SoftDeleteRoom(ctx context.Context, id int64) (bool, error)
+
+	// UpdateRoom updates room settings and tags atomically with optimistic locking.
+	UpdateRoom(ctx context.Context, params UpdateRoomParams, tags []string) (roommodel.Room, bool, error)
 }
 
 // CategoryReader reads room category records.

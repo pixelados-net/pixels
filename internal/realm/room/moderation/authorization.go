@@ -18,6 +18,20 @@ type actionPolicy struct {
 	anyNode permission.Node
 }
 
+// CanModerate reports whether an actor may perform a room action before selecting a target.
+func (service *Service) CanModerate(ctx context.Context, room roommodel.Room, actorID int64, action moderationmodel.Action) (bool, error) {
+	if actorID <= 0 || room.ID <= 0 {
+		return false, ErrInvalidIdentity
+	}
+	policy := service.policy(room, action)
+	allowed, err := service.hasPermission(ctx, actorID, policy.anyNode)
+	if err != nil || allowed {
+		return allowed, err
+	}
+
+	return service.localAllowed(ctx, room, actorID, policy)
+}
+
 // authorize applies staff, owner, rights, local-node, and target protection policy.
 func (service *Service) authorize(ctx context.Context, roomID int64, actorID int64, targetID int64, action moderationmodel.Action) (roommodel.Room, error) {
 	if roomID <= 0 || actorID <= 0 || targetID <= 0 {

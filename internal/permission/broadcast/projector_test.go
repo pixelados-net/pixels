@@ -11,6 +11,7 @@ import (
 	permissionmodel "github.com/niflaot/pixels/internal/permission/model"
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outperks "github.com/niflaot/pixels/networking/outbound/session/perks"
@@ -73,7 +74,12 @@ func (connection *fakeConnection) Send(_ context.Context, packet codec.Packet) e
 // TestProjectorBuildsPermissionAndPerkPackets verifies Nitro permission state.
 func TestProjectorBuildsPermissionAndPerkPackets(t *testing.T) {
 	permissions := &fakePermissions{allowed: map[permission.Node]bool{testPerkNode: true}, group: permissionmodel.Group{Weight: 80}}
-	packets, err := NewProjector(permissions).Packets(context.Background(), 3)
+	players := playerlive.NewRegistry()
+	expiresAt := time.Now().Add(time.Hour)
+	peer, _ := playerlive.NewSessionPeer("club-connection", "websocket", time.Now())
+	player, _ := playerlive.NewPlayer(playerlive.Snapshot{ID: 3, Username: "club", Club: playermodel.Club{Level: playermodel.ClubLevelVIP, ExpiresAt: &expiresAt}}, peer)
+	_ = players.Add(player)
+	packets, err := NewProjector(permissions, players).Packets(context.Background(), 3)
 	if err != nil || len(packets) != 2 {
 		t.Fatalf("unexpected packets=%#v err=%v", packets, err)
 	}
@@ -81,7 +87,7 @@ func TestProjectorBuildsPermissionAndPerkPackets(t *testing.T) {
 		t.Fatalf("unexpected headers %d and %d", packets[0].Header, packets[1].Header)
 	}
 	values, err := codec.DecodePacketExact(packets[0], outpermissions.Definition)
-	if err != nil || values[1].Int32 != 80 || values[2].Boolean {
+	if err != nil || values[0].Int32 != int32(playermodel.ClubLevelVIP) || values[1].Int32 != 80 || values[2].Boolean {
 		t.Fatalf("unexpected permission values=%#v err=%v", values, err)
 	}
 	values, rest, err := codec.DecodePayload(nil, outperks.Definition, packets[1].Payload)
@@ -93,7 +99,7 @@ func TestProjectorBuildsPermissionAndPerkPackets(t *testing.T) {
 // TestProjectorPropagatesPermissionFailures verifies projection errors.
 func TestProjectorPropagatesPermissionFailures(t *testing.T) {
 	failure := errors.New("permission lookup failed")
-	_, err := NewProjector(&fakePermissions{err: failure}).Packets(context.Background(), 3)
+	_, err := NewProjector(&fakePermissions{err: failure}, nil).Packets(context.Background(), 3)
 	if !errors.Is(err, failure) {
 		t.Fatalf("expected projection failure, got %v", err)
 	}
@@ -121,7 +127,7 @@ func TestBroadcasterProjectsAffectedLivePlayersOnce(t *testing.T) {
 	}
 	groupID := int64(2)
 	event := bus.Event{Name: permissionchanged.Name, Payload: permissionchanged.Payload{PlayerID: 3, GroupID: &groupID}}
-	if err := New(NewProjector(permissions), permissions, players, connections).Handle(context.Background(), event); err != nil {
+	if err := New(NewProjector(permissions, players), permissions, players, connections).Handle(context.Background(), event); err != nil {
 		t.Fatalf("broadcast permission state: %v", err)
 	}
 	if len(connection.packets) != 2 {
@@ -131,7 +137,8 @@ func TestBroadcasterProjectsAffectedLivePlayersOnce(t *testing.T) {
 
 // TestBroadcasterIgnoresForeignEvents verifies payload type filtering.
 func TestBroadcasterIgnoresForeignEvents(t *testing.T) {
-	broadcaster := New(NewProjector(&fakePermissions{}), &fakePermissions{}, playerlive.NewRegistry(), netconn.NewRegistry())
+	players := playerlive.NewRegistry()
+	broadcaster := New(NewProjector(&fakePermissions{}, players), &fakePermissions{}, players, netconn.NewRegistry())
 	if err := broadcaster.Handle(context.Background(), bus.Event{Payload: "foreign"}); err != nil {
 		t.Fatalf("expected foreign event to be ignored, got %v", err)
 	}
@@ -140,7 +147,7 @@ func TestBroadcasterIgnoresForeignEvents(t *testing.T) {
 // BenchmarkProjectorPackets measures live permission protocol projection.
 func BenchmarkProjectorPackets(b *testing.B) {
 	permissions := &fakePermissions{allowed: map[permission.Node]bool{testPerkNode: true}, group: permissionmodel.Group{Weight: 100}}
-	projector := NewProjector(permissions)
+	projector := NewProjector(permissions, nil)
 	ctx := context.Background()
 	b.ReportAllocs()
 	for b.Loop() {
@@ -171,7 +178,7 @@ func BenchmarkBroadcasterHandle(b *testing.B) {
 	if err := connections.Register(connection); err != nil {
 		b.Fatalf("register connection: %v", err)
 	}
-	broadcaster := New(NewProjector(permissions), permissions, players, connections)
+	broadcaster := New(NewProjector(permissions, players), permissions, players, connections)
 	event := bus.Event{Name: permissionchanged.Name, Payload: permissionchanged.Payload{PlayerID: 3}}
 	ctx := context.Background()
 	b.ReportAllocs()

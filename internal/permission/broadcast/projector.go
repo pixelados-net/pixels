@@ -4,18 +4,16 @@ package broadcast
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/niflaot/pixels/internal/permission"
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	realmplayer "github.com/niflaot/pixels/internal/realm/player"
+	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	"github.com/niflaot/pixels/networking/codec"
 	outperks "github.com/niflaot/pixels/networking/outbound/session/perks"
 	outpermissions "github.com/niflaot/pixels/networking/outbound/session/permissions"
-)
-
-const (
-	// defaultClubLevel stores the unsupported club subscription level.
-	defaultClubLevel int32 = 0
 )
 
 // Projector builds and sends Nitro permission state.
@@ -24,11 +22,13 @@ type Projector struct {
 	permissions permissionservice.Manager
 	// clientPerks stores immutable client perk node groups.
 	clientPerks []perkRegistration
+	// players stores live subscription entitlements.
+	players *playerlive.Registry
 }
 
 // NewProjector creates a permission protocol projector.
-func NewProjector(permissions permissionservice.Manager) *Projector {
-	return &Projector{permissions: permissions, clientPerks: registeredPerks()}
+func NewProjector(permissions permissionservice.Manager, players *playerlive.Registry) *Projector {
+	return &Projector{permissions: permissions, clientPerks: registeredPerks(), players: players}
 }
 
 // perkRegistration groups nodes that unlock the same client perk.
@@ -53,7 +53,7 @@ func (projector *Projector) Packets(ctx context.Context, playerID int64) ([]code
 	if err != nil {
 		return nil, err
 	}
-	packet, err := outpermissions.Encode(defaultClubLevel, securityLevel, ambassador)
+	packet, err := outpermissions.Encode(int32(projector.clubLevel(playerID)), securityLevel, ambassador)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +69,19 @@ func (projector *Projector) Packets(ctx context.Context, playerID int64) ([]code
 	}
 
 	return append(packets, packet), nil
+}
+
+// clubLevel returns one live player's active Nitro club tier.
+func (projector *Projector) clubLevel(playerID int64) playermodel.ClubLevel {
+	if projector.players == nil {
+		return playermodel.ClubLevelNone
+	}
+	player, found := projector.players.Find(playerID)
+	if !found {
+		return playermodel.ClubLevelNone
+	}
+
+	return player.Snapshot().ClubLevelAt(time.Now())
 }
 
 // perks resolves every registered client perk into one allowance.

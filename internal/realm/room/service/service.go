@@ -12,9 +12,19 @@ type Service struct {
 
 	// layouts validates room layout references.
 	layouts layout.Manager
+
+	// profanity validates user-facing room text when configured.
+	profanity ProfanityChecker
 }
 
 // New creates a room service.
 func New(store repository.Store, layouts layout.Manager) *Service {
 	return &Service{store: store, layouts: layouts}
+}
+
+// WithProfanity configures optional global content validation.
+func (service *Service) WithProfanity(checker ProfanityChecker) *Service {
+	service.profanity = checker
+
+	return service
 }

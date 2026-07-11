@@ -34,4 +34,12 @@ var (
 	RightsAnyRevoke = permission.RegisterNode("room.rights.any.revoke", "")
 	// Unkickable protects a player from room moderation actions.
 	Unkickable = permission.RegisterNode("room.unkickable", "")
+	// SettingsOwnManage allows owners and rights holders to manage local room settings.
+	SettingsOwnManage = permission.RegisterNode("room.settings.own.manage", "")
+	// SettingsAnyManage allows staff to manage settings in any room.
+	SettingsAnyManage = permission.RegisterNode("room.settings.any.manage", "")
+	// ModerationOwnPolicyManage allows owners to configure room moderation policy.
+	ModerationOwnPolicyManage = permission.RegisterNode("room.moderation.policy.own.manage", "")
+	// ModerationAnyPolicyManage allows staff to configure moderation policy in any room.
+	ModerationAnyPolicyManage = permission.RegisterNode("room.moderation.policy.any.manage", "")
 )

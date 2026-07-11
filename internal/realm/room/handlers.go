@@ -28,6 +28,8 @@ import (
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
+	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/wordfilter"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -46,6 +48,8 @@ type HandlerDeps struct {
 	Bindings *binding.Registry
 	// Rooms manages room persistence.
 	Rooms roomservice.Manager
+	// ConfigRooms persists focused room settings updates.
+	ConfigRooms roomservice.ConfigManager
 	// Layouts manages room layouts.
 	Layouts layout.Manager
 	// Furniture manages placed and inventory furniture records.
@@ -68,6 +72,10 @@ type HandlerDeps struct {
 	Permissions permissionservice.Checker
 	// Moderation manages room sanctions and kicks.
 	Moderation *roommoderation.Service
+	// Settings authorizes room configuration changes.
+	Settings *roomsettings.Authorizer
+	// WordFilters manages room-specific chat filter words.
+	WordFilters roomwordfilter.Manager
 	// Translations resolves end-user room control messages.
 	Translations i18n.Translator
 }
@@ -79,6 +87,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	}
 	registerRightsHandlers(handlers.Inbound, deps)
 	registerModerationHandlers(handlers.Inbound, deps)
+	registerSettingsHandlers(handlers.Inbound, deps)
 
 	enterCommand := newEnterCommand(deps)
 	enterhandler.Register(handlers.Inbound, enterhandler.New(enterCommand, deps.Log))

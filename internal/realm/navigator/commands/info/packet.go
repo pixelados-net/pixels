@@ -38,9 +38,9 @@ func (handler Handler) userCount(roomID int64) int {
 // moderation maps room moderation settings.
 func moderation(room roommodel.Room) outinfo.ModerationSettings {
 	return outinfo.ModerationSettings{
-		AllowMute: int32(room.ChatProtection),
-		AllowKick: 0,
-		AllowBan:  0,
+		AllowMute: int32(room.ModerationMute),
+		AllowKick: int32(room.ModerationKick),
+		AllowBan:  int32(room.ModerationBan),
 	}
 }
 

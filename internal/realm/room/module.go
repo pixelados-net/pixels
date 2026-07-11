@@ -15,6 +15,9 @@ import (
 	rightsbroadcast "github.com/niflaot/pixels/internal/realm/room/rights/broadcast"
 	rightsrepo "github.com/niflaot/pixels/internal/realm/room/rights/repository"
 	"github.com/niflaot/pixels/internal/realm/room/service"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
+	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/wordfilter"
+	wordrepo "github.com/niflaot/pixels/internal/realm/room/wordfilter/repository"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"github.com/niflaot/pixels/pkg/postgres"
@@ -33,18 +36,24 @@ var Module = fx.Module(
 		NewLiveRegistry,
 		NewLayoutManager,
 		NewManager,
+		NewConfigManager,
 		NewRightsStore,
 		NewRightsService,
 		NewRightsManager,
 		NewModerationStore,
 		NewModerationService,
 		NewModerationReader,
+		NewModerationManager,
 		NewAuditStore,
 		NewAuditService,
 		NewAuditManager,
 		rightsbroadcast.New,
 		moderationbroadcast.New,
 		NewEntryService,
+		NewSettingsAuthorizer,
+		NewWordFilterStore,
+		NewWordFilterService,
+		NewWordFilterManager,
 	),
 	fx.Invoke(roomaudit.RegisterSubscriber),
 	fx.Invoke(rightsbroadcast.Register),
@@ -52,6 +61,29 @@ var Module = fx.Module(
 	fx.Invoke(RegisterRuntimeCleanup),
 	fx.Invoke(RegisterConnectionHandlers),
 )
+
+// NewSettingsAuthorizer creates shared room settings authorization.
+func NewSettingsAuthorizer(permissions permissionservice.Checker) *roomsettings.Authorizer {
+	return roomsettings.New(permissions, roomsettings.Nodes{
+		OwnManage: SettingsOwnManage, AnyManage: SettingsAnyManage,
+		OwnPolicyManage: ModerationOwnPolicyManage, AnyPolicyManage: ModerationAnyPolicyManage,
+	})
+}
+
+// NewWordFilterStore creates room word filter persistence.
+func NewWordFilterStore(pool *postgres.Pool) wordrepo.Store {
+	return wordrepo.New(pool)
+}
+
+// NewWordFilterService creates room word filter behavior.
+func NewWordFilterService(store wordrepo.Store, rooms service.Manager, authorize *roomsettings.Authorizer) *roomwordfilter.Service {
+	return roomwordfilter.New(store, rooms, authorize)
+}
+
+// NewWordFilterManager exposes room word filter behavior through its contract.
+func NewWordFilterManager(service *roomwordfilter.Service) roomwordfilter.Manager {
+	return service
+}
 
 // NewEntryService creates closed-room entry behavior.
 func NewEntryService(config roomentry.Config, redisClient *redis.Client, permissions permissionservice.Checker, translations i18n.Translator, rights *roomrights.Service, moderation *roommoderation.Service) *roomentry.Service {
@@ -99,6 +131,11 @@ func NewModerationReader(moderation *roommoderation.Service) roommoderation.Read
 	return moderation
 }
 
+// NewModerationManager exposes room moderation behavior through its contract.
+func NewModerationManager(moderation *roommoderation.Service) roommoderation.Manager {
+	return moderation
+}
+
 // NewAuditStore creates room rights and moderation audit persistence.
 func NewAuditStore(pool *postgres.Pool) auditrepo.Store {
 	return auditrepo.New(pool)
@@ -131,5 +168,10 @@ func NewLayoutManager(service *layout.Service) layout.Manager {
 
 // NewManager exposes the room management contract.
 func NewManager(roomService *service.Service) service.Manager {
+	return roomService
+}
+
+// NewConfigManager exposes room settings persistence through its focused contract.
+func NewConfigManager(roomService *service.Service) service.ConfigManager {
 	return roomService
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outentryinfo "github.com/niflaot/pixels/networking/outbound/room/entryinfo"
 )
 
 // TestHandleBroadcastsSecondPlayerToFirst verifies multi-user room synchronization.
@@ -47,11 +48,15 @@ func TestHandleBroadcastsSecondPlayerToFirst(t *testing.T) {
 	if !bytes.Contains((*firstSent)[firstCount+1].Payload, []byte("flatctrl 0")) {
 		t.Fatalf("expected visitor flat control in spawn status, got %#v", (*firstSent)[firstCount+1])
 	}
-	if len(*secondSent) != 8 {
+	if len(*secondSent) != 9 {
 		t.Fatalf("expected second player room snapshot, got %#v", *secondSent)
 	}
-	if (*secondSent)[7].Header != 780 {
-		t.Fatalf("expected room rights level bootstrap, got %#v", (*secondSent)[7:])
+	if (*secondSent)[7].Header != outentryinfo.Header || (*secondSent)[8].Header != 780 {
+		t.Fatalf("expected room identity and rights bootstrap, got %#v", (*secondSent)[7:])
+	}
+	values, err := codec.DecodePacketExact((*secondSent)[7], outentryinfo.Definition)
+	if err != nil || values[0].Int32 != 9 || values[1].Boolean {
+		t.Fatalf("unexpected visitor room identity values=%#v err=%v", values, err)
 	}
 }
 

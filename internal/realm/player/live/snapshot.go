@@ -1,6 +1,8 @@
 package live
 
 import (
+	"time"
+
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 )
@@ -27,6 +29,9 @@ type Snapshot struct {
 
 	// AllowNameChange reports whether username changes are allowed.
 	AllowNameChange bool
+
+	// Club contains the player's subscription entitlement.
+	Club playermodel.Club
 }
 
 // SnapshotFromRecord maps a persistent player record to a runtime snapshot.
@@ -39,7 +44,18 @@ func SnapshotFromRecord(record playerservice.Record) Snapshot {
 		Motto:           record.Profile.Motto,
 		HomeRoomID:      record.Profile.HomeRoomID,
 		AllowNameChange: record.Profile.AllowNameChange,
+		Club:            record.Player.Club,
 	}
+}
+
+// ClubLevelAt returns the active club tier at one instant.
+func (snapshot Snapshot) ClubLevelAt(now time.Time) playermodel.ClubLevel {
+	return snapshot.Club.LevelAt(now)
+}
+
+// HasClubAt reports whether club access is active at one instant.
+func (snapshot Snapshot) HasClubAt(now time.Time) bool {
+	return snapshot.Club.ActiveAt(now)
 }
 
 // Valid reports whether the snapshot can create a live player.

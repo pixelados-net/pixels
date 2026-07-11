@@ -3,15 +3,11 @@ package session
 
 import (
 	"errors"
+	"time"
 
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
-)
-
-const (
-	// DefaultClub stores catalog club access until subscriptions are implemented.
-	DefaultClub bool = false
 )
 
 var (
@@ -36,4 +32,9 @@ func Player(handler netconn.Context, bindings *binding.Registry, players *player
 	}
 
 	return player, nil
+}
+
+// HasClub reports whether a live player has an active club entitlement.
+func HasClub(player *playerlive.Player) bool {
+	return player != nil && player.Snapshot().HasClubAt(time.Now())
 }

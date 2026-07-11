@@ -30,6 +30,36 @@ var (
 
 	// ErrLayoutNotAvailable reports a missing or disabled room layout.
 	ErrLayoutNotAvailable = errors.New("room layout not available")
+
+	// ErrVersionConflict reports a stale room settings mutation.
+	ErrVersionConflict = errors.New("room settings version conflict")
+
+	// ErrPasswordRequired reports password mode without a configured password.
+	ErrPasswordRequired = errors.New("room password required")
+
+	// ErrInvalidTag reports malformed room settings tags.
+	ErrInvalidTag = errors.New("invalid room tag")
+
+	// ErrReservedTag reports a staff-only room tag.
+	ErrReservedTag = errors.New("reserved room tag")
+
+	// ErrProhibitedName reports a globally filtered room name.
+	ErrProhibitedName = errors.New("room name contains prohibited text")
+
+	// ErrProhibitedDescription reports a globally filtered room description.
+	ErrProhibitedDescription = errors.New("room description contains prohibited text")
+
+	// ErrProhibitedTag reports a globally filtered room tag.
+	ErrProhibitedTag = errors.New("room tag contains prohibited text")
+
+	// ErrInvalidChatSettings reports unsupported room chat settings.
+	ErrInvalidChatSettings = errors.New("invalid room chat settings")
+
+	// ErrInvalidModerationSettings reports unsupported room moderation settings.
+	ErrInvalidModerationSettings = errors.New("invalid room moderation settings")
+
+	// ErrInvalidCategory reports a missing or non-selectable room category.
+	ErrInvalidCategory = errors.New("invalid room category")
 )
 
 const (
@@ -50,4 +80,7 @@ const (
 
 	// MaxRoomTags is the maximum tag count per room.
 	MaxRoomTags = 5
+
+	// MaxRoomTagLength is the maximum room tag length.
+	MaxRoomTagLength = 32
 )

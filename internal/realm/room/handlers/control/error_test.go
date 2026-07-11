@@ -8,6 +8,8 @@ import (
 	roomcommand "github.com/niflaot/pixels/internal/realm/room/commands/control"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
+	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/wordfilter"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/i18n"
@@ -25,11 +27,14 @@ func TestTranslationKeyClassifiesOnlyDomainRejections(t *testing.T) {
 		soft bool
 	}{
 		{name: "rights denied", err: roomrights.ErrAccessDenied, soft: true},
+		{name: "settings denied", err: roomsettings.ErrAccessDenied, soft: true},
+		{name: "club required", err: roomsettings.ErrClubRequired, soft: true},
 		{name: "protected", err: roommoderation.ErrTargetProtected, soft: true},
 		{name: "owner", err: roommoderation.ErrTargetOwner, soft: true},
 		{name: "self", err: roommoderation.ErrSelfTarget, soft: true},
 		{name: "invalid", err: roommoderation.ErrInvalidMuteDuration, soft: true},
 		{name: "target absent", err: roomcommand.ErrTargetNotInRoom, soft: true},
+		{name: "invalid filter", err: roomwordfilter.ErrInvalidWord, soft: true},
 		{name: "unexpected", err: errors.New("database unavailable"), soft: false},
 	}
 	for _, test := range tests {

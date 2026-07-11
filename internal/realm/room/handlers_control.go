@@ -44,5 +44,8 @@ func registerModerationHandlers(registry *netconn.HandlerRegistry, deps HandlerD
 	), deps.Translations, deps.Log))
 	banhandler.Register(registry, controlhandler.Wrap(banhandler.New(bancmd.Handler{Players: deps.Players, Bindings: deps.Bindings, Moderation: deps.Moderation, Runtime: deps.Runtime}, deps.Log), deps.Translations, deps.Log))
 	unbanhandler.Register(registry, controlhandler.Wrap(unbanhandler.New(unbancmd.Handler{Players: deps.Players, Bindings: deps.Bindings, Moderation: deps.Moderation}, deps.Log), deps.Translations, deps.Log))
-	listbanshandler.Register(registry, controlhandler.Wrap(listbanshandler.New(listbanscmd.Handler{Players: deps.Players, Bindings: deps.Bindings, Moderation: deps.Moderation}, deps.Log), deps.Translations, deps.Log))
+	listbanshandler.Register(registry, controlhandler.Wrap(listbanshandler.New(listbanscmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Moderation: deps.Moderation,
+		Rooms: deps.Rooms, Authorize: deps.Settings,
+	}, deps.Log), deps.Translations, deps.Log))
 }

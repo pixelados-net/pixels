@@ -15,8 +15,10 @@ func scanPlayer(row pgx.Row) (playermodel.Player, error) {
 	var lastLoginAt pgtype.Timestamptz
 	var lastLogoutAt pgtype.Timestamptz
 	var lastSeenAt pgtype.Timestamptz
+	var clubLevel int16
+	var clubExpiresAt pgtype.Timestamptz
 
-	err := row.Scan(&player.ID, &player.Username, &player.CreatedAt, &player.UpdatedAt, &deletedAt, &player.Version.Version, &lastLoginAt, &lastLogoutAt, &lastSeenAt)
+	err := row.Scan(&player.ID, &player.Username, &player.CreatedAt, &player.UpdatedAt, &deletedAt, &player.Version.Version, &lastLoginAt, &lastLogoutAt, &lastSeenAt, &clubLevel, &clubExpiresAt)
 	if err != nil {
 		return playermodel.Player{}, err
 	}
@@ -25,6 +27,8 @@ func scanPlayer(row pgx.Row) (playermodel.Player, error) {
 	player.LastLoginAt = timePointer(lastLoginAt)
 	player.LastLogoutAt = timePointer(lastLogoutAt)
 	player.LastSeenAt = timePointer(lastSeenAt)
+	player.Club.Level = playermodel.ClubLevel(clubLevel)
+	player.Club.ExpiresAt = timePointer(clubExpiresAt)
 
 	return player, nil
 }

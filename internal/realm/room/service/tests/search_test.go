@@ -33,6 +33,11 @@ func (store *fakeStore) CreateRoom(context.Context, repository.CreateRoomParams)
 	return roommodel.Room{}, nil
 }
 
+// UpdateRoom updates a room for tests.
+func (store *fakeStore) UpdateRoom(context.Context, repository.UpdateRoomParams, []string) (roommodel.Room, bool, error) {
+	return roommodel.Room{}, false, nil
+}
+
 // FindRoomByID finds a room for tests.
 func (store *fakeStore) FindRoomByID(context.Context, int64) (roommodel.Room, bool, error) {
 	return roommodel.Room{}, false, nil

@@ -227,3 +227,21 @@ func (occupant Occupant) WithJoinTime(now time.Time) Occupant {
 
 	return occupant
 }
+
+// UpdateSettings refreshes runtime metadata affected by persistent settings.
+func (room *Room) UpdateSettings(categoryID *int64, maxUsers int) {
+	room.mutex.Lock()
+	room.snapshot.CategoryID = categoryID
+	room.snapshot.MaxUsers = maxUsers
+	room.mutex.Unlock()
+}
+
+// SetMuteAll replaces the active room mute-all state.
+func (room *Room) SetMuteAll(muted bool) {
+	room.muteAll.Store(muted)
+}
+
+// MuteAll reports whether non-privileged room chat is globally muted.
+func (room *Room) MuteAll() bool {
+	return room.muteAll.Load()
+}

@@ -172,3 +172,25 @@ func TestRoomRightsProjectionControlsFurniture(t *testing.T) {
 		t.Fatalf("unexpected projected rights revoked=%v granted=%v", room.HasRights(2), room.HasRights(3))
 	}
 }
+
+// TestRoomSettingsRuntimeStateIsAtomicAndEphemeral verifies active settings projection.
+func TestRoomSettingsRuntimeStateIsAtomicAndEphemeral(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, OwnerPlayerID: 1, MaxUsers: 2})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	categoryID := int64(4)
+	room.UpdateSettings(&categoryID, 8)
+	room.SetMuteAll(true)
+	snapshot := room.Snapshot()
+	if snapshot.CategoryID == nil || *snapshot.CategoryID != 4 || snapshot.MaxUsers != 8 || !room.MuteAll() {
+		t.Fatalf("unexpected active settings snapshot=%#v muted=%v", snapshot, room.MuteAll())
+	}
+	reloaded, err := NewRoom(snapshot)
+	if err != nil {
+		t.Fatalf("reload room: %v", err)
+	}
+	if reloaded.MuteAll() {
+		t.Fatal("mute-all must not persist across runtime reload")
+	}
+}

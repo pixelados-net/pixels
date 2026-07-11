@@ -23,6 +23,7 @@ import (
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/live"
+	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/rights"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/service"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
@@ -64,10 +65,11 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Events:   deps.Events,
 	}, deps.Log))
 	infohandler.Register(handlers.Inbound, infohandler.New(infocmd.Handler{
-		Players:  deps.Players,
-		Bindings: deps.Bindings,
-		Rooms:    deps.Rooms,
-		Runtime:  deps.Runtime,
+		Players:    deps.Players,
+		Bindings:   deps.Bindings,
+		Rooms:      deps.Rooms,
+		Runtime:    deps.Runtime,
+		Moderation: deps.Moderation,
 	}, deps.Log))
 	forwardhandler.Register(handlers.Inbound, forwardhandler.New(forwardcmd.Handler{
 		Players:  deps.Players,
@@ -106,6 +108,8 @@ type HandlerDeps struct {
 	Runtime *roomlive.Registry
 	// Rights resolves persistent room-scoped visibility.
 	Rights roomrights.Manager
+	// Moderation resolves viewer room moderation capability.
+	Moderation roommoderation.Manager
 	// Counts stores current navigator category counts.
 	Counts *CategoryCountBroadcaster
 	// Events publishes realm events.

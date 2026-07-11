@@ -34,6 +34,8 @@ type Reader interface {
 // Manager reads and mutates room moderation state.
 type Manager interface {
 	Reader
+	// CanModerate reports whether an actor may perform a room action before selecting a target.
+	CanModerate(ctx context.Context, room roommodel.Room, actorID int64, action moderationmodel.Action) (bool, error)
 	// Kick immediately removes a target through event projection.
 	Kick(ctx context.Context, roomID int64, actorID int64, targetID int64) error
 	// Mute creates or replaces a room mute.

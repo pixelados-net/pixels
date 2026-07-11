@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
+	"github.com/niflaot/pixels/pkg/postgres"
 )
 
 const (
@@ -36,6 +37,15 @@ returning ` + roomColumns
 
 	// softDeleteRoomSQL soft deletes one active room.
 	softDeleteRoomSQL = `update rooms set deleted_at = now(), updated_at = now(), version = version + 1 where id = $1 and deleted_at is null`
+
+	// updateRoomSQL replaces editable settings using optimistic locking.
+	updateRoomSQL = `
+update rooms set name=$3, description=$4, door_mode=$5, password_hash=$6, max_users=$7,
+category_id=$8, trade_mode=$9, allow_walkthrough=$10, allow_pets=$11, allow_pets_eat=$12,
+hide_walls=$13, wall_thickness=$14, floor_thickness=$15, chat_mode=$16, chat_weight=$17,
+chat_speed=$18, chat_distance=$19, chat_protection=$20, moderation_mute=$21,
+moderation_kick=$22, moderation_ban=$23, updated_at=now(), version=version+1
+where id=$1 and version=$2 and deleted_at is null returning ` + roomColumns
 )
 
 // CreateRoomParams contains room creation data.
@@ -66,6 +76,14 @@ type CreateRoomParams struct {
 
 	// TradeMode describes trading behavior.
 	TradeMode roommodel.TradeMode
+}
+
+// UpdateRoomParams contains a complete editable room settings snapshot.
+type UpdateRoomParams struct {
+	// Room contains the updated room values.
+	Room roommodel.Room
+	// ExpectedVersion prevents lost concurrent updates.
+	ExpectedVersion int64
 }
 
 // CreateRoom creates a room record.
@@ -111,6 +129,45 @@ func (repository *Repository) SoftDeleteRoom(ctx context.Context, id int64) (boo
 	}
 
 	return tag.RowsAffected() > 0, nil
+}
+
+// UpdateRoom updates room settings and tags atomically with optimistic locking.
+func (repository *Repository) UpdateRoom(ctx context.Context, params UpdateRoomParams, tags []string) (roommodel.Room, bool, error) {
+	var updated roommodel.Room
+	var found bool
+	err := repository.withinTx(ctx, func(txCtx context.Context, executor postgres.Executor) error {
+		room := params.Room
+		var err error
+		updated, err = scanRoom(executor.QueryRow(txCtx, updateRoomSQL,
+			room.ID, params.ExpectedVersion, room.Name, room.Description, room.DoorMode,
+			room.PasswordHash, room.MaxUsers, room.CategoryID, room.TradeMode,
+			room.AllowWalkthrough, room.AllowPets, room.AllowPetsEat, room.HideWalls,
+			room.WallThickness, room.FloorThickness, room.ChatMode, room.ChatWeight,
+			room.ChatSpeed, room.ChatDistance, room.ChatProtection, room.ModerationMute,
+			room.ModerationKick, room.ModerationBan))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("update room settings: %w", err)
+		}
+		found = true
+		if _, err = executor.Exec(txCtx, deleteRoomTagsSQL, room.ID); err != nil {
+			return fmt.Errorf("delete room tags: %w", err)
+		}
+		for _, tag := range tags {
+			if _, err = executor.Exec(txCtx, insertRoomTagSQL, room.ID, tag); err != nil {
+				return fmt.Errorf("insert room tag: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return roommodel.Room{}, false, err
+	}
+
+	return updated, found, nil
 }
 
 // findRoom finds one room with a query.

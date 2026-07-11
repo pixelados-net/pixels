@@ -6,5 +6,7 @@
     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <include file="development/0001_demo_player.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0002_demo_club.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_player.sql" relativeToChangelogFile="true" contextFilter="test"/>
+    <include file="test/0002_test_club.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

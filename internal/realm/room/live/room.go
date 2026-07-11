@@ -13,10 +13,8 @@ import (
 type Room struct {
 	// mutex protects active room state.
 	mutex sync.RWMutex
-
 	// snapshot stores stable room metadata.
 	snapshot Snapshot
-
 	// occupants stores occupants by player id.
 	occupants map[int64]Occupant
 
@@ -25,6 +23,9 @@ type Room struct {
 
 	// doorbell stores waiting entry requests and remains nil until first use.
 	doorbell atomic.Pointer[roomdoorbell.Queue]
+
+	// muteAll reports whether non-privileged room chat is globally muted.
+	muteAll atomic.Bool
 
 	// world stores loaded room world behavior.
 	world *World

@@ -33,6 +33,12 @@ type Finder interface {
 	ListTags(ctx context.Context, roomID int64) ([]roommodel.Tag, error)
 }
 
+// Updater updates editable room settings.
+type Updater interface {
+	// Update applies a partial settings mutation with optimistic locking.
+	Update(ctx context.Context, roomID int64, expectedVersion int64, params UpdateParams) (roommodel.Room, error)
+}
+
 // Manager creates, reads, and deletes room records.
 type Manager interface {
 	Creator
@@ -45,5 +51,14 @@ type Manager interface {
 	ListCategories(ctx context.Context) ([]roommodel.Category, error)
 }
 
+// ConfigManager combines ordinary room reads with settings updates.
+type ConfigManager interface {
+	Manager
+	Updater
+}
+
 // managerAssertion verifies Service implements Manager.
 var managerAssertion Manager = (*Service)(nil)
+
+// configManagerAssertion verifies Service implements ConfigManager.
+var configManagerAssertion ConfigManager = (*Service)(nil)

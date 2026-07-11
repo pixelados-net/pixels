@@ -13,6 +13,7 @@ import (
 	roommodel "github.com/niflaot/pixels/internal/realm/room/model"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outentryinfo "github.com/niflaot/pixels/networking/outbound/room/entryinfo"
 	outentrytile "github.com/niflaot/pixels/networking/outbound/room/entrytile"
 	outmodel "github.com/niflaot/pixels/networking/outbound/room/model"
 	outmodelname "github.com/niflaot/pixels/networking/outbound/room/modelname"
@@ -52,6 +53,16 @@ func SendModel(ctx context.Context, connection netconn.Context, room roommodel.R
 	}
 
 	return SendGeometry(ctx, connection, roomLayout)
+}
+
+// sendEntryInfo identifies the entered room and its persistent owner to Nitro.
+func sendEntryInfo(ctx context.Context, connection netconn.Context, room roommodel.Room, playerID int64) error {
+	packet, err := outentryinfo.Encode(int32(room.ID), room.OwnerPlayerID == playerID)
+	if err != nil {
+		return err
+	}
+
+	return connection.Send(ctx, packet)
 }
 
 // entryErrorCode maps internal entry errors to protocol codes.

@@ -125,6 +125,8 @@ type fakeStore struct {
 	tags []string
 	// limit stores the last list limit.
 	limit int
+	// categories stores optional category fixtures.
+	categories []roommodel.Category
 }
 
 // CreateRoom creates a room for tests.
@@ -167,6 +169,9 @@ func (store *fakeStore) SoftDeleteRoom(context.Context, int64) (bool, error) {
 
 // ListCategories lists categories for tests.
 func (store *fakeStore) ListCategories(context.Context) ([]roommodel.Category, error) {
+	if store.categories != nil {
+		return store.categories, nil
+	}
 	return []roommodel.Category{{Caption: "Social"}}, nil
 }
 

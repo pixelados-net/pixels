@@ -26,6 +26,8 @@ func TestCreatePlayerScansRecord(t *testing.T) {
 		pgtype.Timestamptz{Time: now, Valid: true},
 		pgtype.Timestamptz{},
 		pgtype.Timestamptz{Time: now, Valid: true},
+		int16(playermodel.ClubLevelVIP),
+		pgtype.Timestamptz{Time: now.Add(time.Hour), Valid: true},
 	}}}
 
 	player, err := New(executor).CreatePlayer(context.Background(), CreatePlayerParams{Username: "ian"})
@@ -39,6 +41,9 @@ func TestCreatePlayerScansRecord(t *testing.T) {
 
 	if player.LastLoginAt == nil {
 		t.Fatal("expected last login time")
+	}
+	if player.Club.Level != playermodel.ClubLevelVIP || player.Club.ExpiresAt == nil {
+		t.Fatalf("expected active club record, got %#v", player.Club)
 	}
 
 	if !strings.Contains(executor.query, "insert into players") {
@@ -179,6 +184,8 @@ func assign(destination any, value any) {
 	switch target := destination.(type) {
 	case *int64:
 		*target = value.(int64)
+	case *int16:
+		*target = value.(int16)
 	case *string:
 		*target = value.(string)
 	case *bool:

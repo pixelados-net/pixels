@@ -6,6 +6,7 @@ import (
 	"time"
 
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 )
@@ -22,6 +23,25 @@ func TestPlayerResolvesCatalogSession(t *testing.T) {
 	resolved, err := Player(connection, bindings, players)
 	if err != nil || resolved.ID() != 7 {
 		t.Fatalf("unexpected player %#v error %v", resolved, err)
+	}
+}
+
+// TestHasClubAppliesLiveExpiration verifies catalog entitlement projection.
+func TestHasClubAppliesLiveExpiration(t *testing.T) {
+	expiresAt := time.Now().Add(time.Hour)
+	peer, _ := playerlive.NewSessionPeer("club", "websocket", time.Now())
+	player, _ := playerlive.NewPlayer(playerlive.Snapshot{
+		ID: 8, Username: "club", Club: playermodel.Club{Level: playermodel.ClubLevelHC, ExpiresAt: &expiresAt},
+	}, peer)
+	if !HasClub(player) {
+		t.Fatal("expected active club")
+	}
+	expiresAt = time.Now().Add(-time.Second)
+	player, _ = playerlive.NewPlayer(playerlive.Snapshot{
+		ID: 8, Username: "expired", Club: playermodel.Club{Level: playermodel.ClubLevelHC, ExpiresAt: &expiresAt},
+	}, peer)
+	if HasClub(player) {
+		t.Fatal("expected expired club rejection")
 	}
 }
 

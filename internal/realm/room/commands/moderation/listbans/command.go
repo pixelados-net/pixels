@@ -8,6 +8,7 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/room/commands/control"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/moderation"
+	roomsettings "github.com/niflaot/pixels/internal/realm/room/settings"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outbanlist "github.com/niflaot/pixels/networking/outbound/room/moderation/banlist"
@@ -34,6 +35,10 @@ type Handler struct {
 	Bindings *binding.Registry
 	// Moderation reads room moderation.
 	Moderation roommoderation.Reader
+	// Rooms reads room ownership.
+	Rooms roommoderation.RoomFinder
+	// Authorize protects moderation configuration reads.
+	Authorize *roomsettings.Authorizer
 }
 
 // CommandName returns the stable command name.
@@ -41,11 +46,21 @@ func (Command) CommandName() command.Name { return Name }
 
 // Handle sends active room bans.
 func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Command]) error {
-	_, roomID, err := control.Actor(envelope.Command.Handler, handler.Bindings, handler.Players)
+	player, roomID, err := control.Actor(envelope.Command.Handler, handler.Bindings, handler.Players)
 	if err != nil {
 		return err
 	}
 	if err := control.MatchRoom(roomID, envelope.Command.RoomID); err != nil {
+		return err
+	}
+	room, found, err := handler.Rooms.FindByID(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return roommoderation.ErrRoomNotFound
+	}
+	if err := handler.Authorize.Authorize(ctx, room, player.ID()); err != nil {
 		return err
 	}
 	bans, err := handler.Moderation.ListBans(ctx, roomID)

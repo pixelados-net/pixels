@@ -205,6 +205,9 @@ func (handler Handler) sendEntered(ctx context.Context, connection netconn.Conte
 	if err := handler.sendRoomState(ctx, connection, active, 0); err != nil {
 		return err
 	}
+	if err := sendEntryInfo(ctx, connection, room, playerID); err != nil {
+		return err
+	}
 
 	return handler.sendRights(ctx, connection, room, active, playerID)
 }

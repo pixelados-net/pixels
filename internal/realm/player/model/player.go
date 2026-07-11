@@ -24,6 +24,9 @@ type Player struct {
 
 	// LastSeenAt is the last time the player was seen by profile systems.
 	LastSeenAt *time.Time
+
+	// Club contains the player's subscription entitlement.
+	Club Club
 }
 
 // HolderID identifies the player permission holder.
