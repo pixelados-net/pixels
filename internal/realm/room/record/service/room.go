@@ -44,6 +44,13 @@ func (service *Service) Create(ctx context.Context, params CreateParams) (roommo
 	if err := validateCreate(params); err != nil {
 		return roommodel.Room{}, err
 	}
+	if err := service.validateCategory(ctx, params.CategoryID, false); err != nil {
+		return roommodel.Room{}, err
+	}
+	tags := normalizeTags(params.Tags)
+	if err := service.validateContent(ctx, roommodel.Room{Name: params.Name, Description: params.Description}, tags); err != nil {
+		return roommodel.Room{}, err
+	}
 
 	roomLayout, found, err := service.layouts.FindByName(ctx, params.ModelName)
 	if err != nil {
@@ -58,7 +65,7 @@ func (service *Service) Create(ctx context.Context, params CreateParams) (roommo
 		return roommodel.Room{}, err
 	}
 
-	if err := service.store.ReplaceRoomTags(ctx, room.ID, normalizeTags(params.Tags)); err != nil {
+	if err := service.store.ReplaceRoomTags(ctx, room.ID, tags); err != nil {
 		return roommodel.Room{}, fmt.Errorf("replace room tags: %w", err)
 	}
 

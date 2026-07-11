@@ -9,19 +9,23 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
+	roomlayout "github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/i18n"
 )
 
 // TestRoutesServeCurrencyConfigAndLocalizedTexts verifies Nitro extension resources.
 func TestRoutesServeCurrencyConfigAndLocalizedTexts(t *testing.T) {
 	app := fiber.New()
-	Register(app, fakeReader{}, i18n.NewCatalog(i18n.Config{DefaultLocale: "es"}, map[i18n.Locale]map[i18n.Key]string{
+	Register(app, fakeReader{}, fakeLayouts{}, i18n.NewCatalog(i18n.Config{DefaultLocale: "es"}, map[i18n.Locale]map[i18n.Key]string{
 		"es": {"currency.name.credits": "Créditos", "currency.name.diamonds": "Diamantes"},
 	}))
 
 	config := requestBody(t, app, UIConfigPath)
 	if !strings.Contains(config, `"system.currency.types":[-1,5]`) {
 		t.Fatalf("unexpected config %s", config)
+	}
+	if !strings.Contains(config, `"navigator.room.models":[{"clubLevel":0,"tileSize":104,"name":"a"}]`) {
+		t.Fatalf("unexpected room models %s", config)
 	}
 	texts := requestBody(t, app, "/client/texts/es/ExternalTexts.json")
 	if !strings.Contains(texts, `"purse.seasonal.currency.5":"Diamantes"`) {
@@ -67,3 +71,34 @@ func (fakeReader) Balance(context.Context, int64, int32) (int64, error) { return
 func (fakeReader) Types(context.Context) ([]currencymodel.Definition, error) {
 	return []currencymodel.Definition{{Type: -1, Key: "credits"}, {Type: 5, Key: "diamonds"}}, nil
 }
+
+// fakeLayouts provides Nitro room models.
+type fakeLayouts struct{}
+
+// Create creates no layout.
+func (fakeLayouts) Create(context.Context, roomlayout.SaveParams) (roomlayout.Layout, error) {
+	return roomlayout.Layout{}, nil
+}
+
+// Update updates no layout.
+func (fakeLayouts) Update(context.Context, int64, roomlayout.SaveParams) (roomlayout.Layout, error) {
+	return roomlayout.Layout{}, nil
+}
+
+// FindByID finds no layout.
+func (fakeLayouts) FindByID(context.Context, int64) (roomlayout.Layout, bool, error) {
+	return roomlayout.Layout{}, false, nil
+}
+
+// FindByName finds no layout.
+func (fakeLayouts) FindByName(context.Context, string) (roomlayout.Layout, bool, error) {
+	return roomlayout.Layout{}, false, nil
+}
+
+// List lists enabled and disabled layouts.
+func (fakeLayouts) List(context.Context) ([]roomlayout.Layout, error) {
+	return []roomlayout.Layout{{Name: "model_a", TileSize: 104, ClubLevel: 2, Enabled: true}, {Name: "model_b", TileSize: 94}}, nil
+}
+
+// Catalog returns no layout catalog.
+func (fakeLayouts) Catalog(context.Context) (*roomlayout.Catalog, error) { return nil, nil }

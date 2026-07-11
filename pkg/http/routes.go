@@ -12,6 +12,7 @@ import (
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	roomlayout "github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/build"
 	"github.com/niflaot/pixels/pkg/config"
 	catalogroutes "github.com/niflaot/pixels/pkg/http/catalog/routes"
@@ -30,11 +31,11 @@ import (
 const development = "development"
 
 // registerPublic registers routes that do not require authentication.
-func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, websocket *ws.Adapter, currencies currencyservice.Reader, translations i18n.Translator) {
+func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, websocket *ws.Adapter, currencies currencyservice.Reader, layouts roomlayout.Manager, translations i18n.Translator) {
 	app.Get("/status", statusHandler(config, info))
 	app.Get("/ws", websocketGate, fiberws.New(websocket.Handle))
 	app.Get("/docs", docsHandler(config))
-	clientconfig.Register(app, currencies, translations)
+	clientconfig.Register(app, currencies, layouts, translations)
 }
 
 // registerPrivate registers private authenticated fallback routes.

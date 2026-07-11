@@ -271,13 +271,25 @@ minimum manual checks expected when touching it.
 - Owns `internal/realm/navigator`.
 - Provides navigator persistence, embedded viewer state, init/search/create/info
   handlers, room forwarding, favorites data, saved searches, preferences, lifted
-  rooms, category preferences, and debounced live category counts.
+  rooms, category preferences, and debounced live category counts. Room creation
+  validates selectable categories and enabled server layouts, enforces the
+  current 100-room ownership limit, and converts expected validation failures
+  into localized client alerts without disconnecting the session.
+- Development seeds provide every Nitro room-creator layout from `model_a`
+  through `model_9`, using the real Arcturus heightmaps and doors. All layouts
+  remain non-HC until subscription policy is implemented. The public
+  `/client/ui-config.json` projects enabled layouts back to Nitro using model
+  suffixes, tile sizes, and zero club level without requiring client changes.
 - Test after changes:
   - `go test ./internal/realm/navigator/...`
   - In Nitro, open navigator and verify metadata tabs, flat categories, settings,
     saved searches, favorites, lifted rooms, and collapsed categories.
   - Search hotel/myworld/official views and verify room cards show live counts.
   - Create a room and verify `navigator.room_created`.
+  - Create rooms with small, elevated, and multi-level models; verify their
+    heightmaps and doors render, and invalid models produce a localized alert.
+  - Reach the room ownership limit and verify Nitro receives its native limit
+    response instead of creating another room.
   - Request room info and verify missing rooms return `navigator.nosuchflat`.
 
 ### FEATURE: Room Realm

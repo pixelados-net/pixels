@@ -2,9 +2,11 @@ package clientconfig
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	roomlayout "github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/i18n"
 )
 
@@ -12,13 +14,25 @@ import (
 type UIConfigResponse struct {
 	// CurrencyTypes stores every configured protocol currency type.
 	CurrencyTypes []int32 `json:"system.currency.types"`
+	// RoomModels stores server-enabled Nitro room creator models.
+	RoomModels []RoomModel `json:"navigator.room.models"`
+}
+
+// RoomModel describes one Nitro room creator model.
+type RoomModel struct {
+	// ClubLevel stores the client entitlement level.
+	ClubLevel int `json:"clubLevel"`
+	// TileSize stores the displayed usable tile count.
+	TileSize int `json:"tileSize"`
+	// Name stores the model suffix expected by Nitro.
+	Name string `json:"name"`
 }
 
 // ExternalTextsResponse stores Nitro text keys and localized values.
 type ExternalTextsResponse map[string]string
 
 // uiConfigHandler serves configured Nitro currency types.
-func uiConfigHandler(currencies currencyservice.Reader) fiber.Handler {
+func uiConfigHandler(currencies currencyservice.Reader, layouts roomlayout.Manager) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		definitions, err := currencies.Types(ctx.Context())
 		if err != nil {
@@ -28,10 +42,21 @@ func uiConfigHandler(currencies currencyservice.Reader) fiber.Handler {
 		for _, definition := range definitions {
 			types = append(types, definition.Type)
 		}
+		available, err := layouts.List(ctx.Context())
+		if err != nil {
+			return err
+		}
+		models := make([]RoomModel, 0, len(available))
+		for _, roomModel := range available {
+			if !roomModel.Enabled {
+				continue
+			}
+			models = append(models, RoomModel{ClubLevel: 0, TileSize: roomModel.TileSize, Name: strings.TrimPrefix(roomModel.Name, "model_")})
+		}
 
 		allowClientConfigOrigin(ctx)
 
-		return ctx.JSON(UIConfigResponse{CurrencyTypes: types})
+		return ctx.JSON(UIConfigResponse{CurrencyTypes: types, RoomModels: models})
 	}
 }
 

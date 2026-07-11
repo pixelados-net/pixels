@@ -11,6 +11,7 @@
     <include file="development/0004_refresh_default_room_doors.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0005_closed_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0006_reconcile_room_vote_scores.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0007_nitro_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_room_layouts.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_rooms.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0003_reconcile_room_vote_scores.sql" relativeToChangelogFile="true" contextFilter="test"/>

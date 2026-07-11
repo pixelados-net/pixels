@@ -4,6 +4,7 @@ package clientconfig
 import (
 	"github.com/gofiber/fiber/v2"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	roomlayout "github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/i18n"
 )
 
@@ -15,8 +16,8 @@ const (
 	ExternalTextsPath = "/client/texts/:locale/ExternalTexts.json"
 )
 
-// Register registers public Nitro currency configuration routes.
-func Register(app *fiber.App, currencies currencyservice.Reader, translations i18n.Translator) {
-	app.Get(UIConfigPath, uiConfigHandler(currencies))
+// Register registers public data-driven Nitro configuration routes.
+func Register(app *fiber.App, currencies currencyservice.Reader, layouts roomlayout.Manager, translations i18n.Translator) {
+	app.Get(UIConfigPath, uiConfigHandler(currencies, layouts))
 	app.Get(ExternalTextsPath, externalTextsHandler(currencies, translations))
 }

@@ -42,7 +42,7 @@ func publicOperations() []operation {
 			tag:         "Client Config",
 			summary:     "Read Nitro currency configuration",
 			description: "Returns a partial Nitro UI configuration containing every configured currency type.",
-			responses:   []response{jsonResponse(http.StatusOK, &CurrencyUIConfigResponse{}, "Nitro currency UI configuration.")},
+			responses:   []response{jsonResponse(http.StatusOK, &CurrencyUIConfigResponse{}, "Nitro currency and room model UI configuration.")},
 		},
 		{
 			method:      http.MethodGet,

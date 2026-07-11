@@ -1,9 +1,13 @@
 package create
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // TestCreateParamsMapsProtocolValues verifies create command mapping.
@@ -25,5 +29,26 @@ func TestCreateParamsMapsProtocolValues(t *testing.T) {
 	}
 	if params.TradeMode != roommodel.TradeModeAllowed {
 		t.Fatalf("unexpected trade mode %d", params.TradeMode)
+	}
+}
+
+// TestCommandIdentityAndLogging verifies command routing and diagnostics.
+func TestCommandIdentityAndLogging(t *testing.T) {
+	input := Command{RoomName: "Room", ModelName: "model_a", CategoryID: 1, MaxVisitors: 25, TradeType: 2}
+	if input.CommandName() != Name {
+		t.Fatalf("name=%q", input.CommandName())
+	}
+	var output bytes.Buffer
+	logger := zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&output), zap.DebugLevel))
+	logger.Debug("command", zap.Object("command", input))
+	if !strings.Contains(output.String(), "model_a") {
+		t.Fatalf("log=%s", output.String())
+	}
+}
+
+// TestCategoryIDMapsOptionalValues verifies nullable categories.
+func TestCategoryIDMapsOptionalValues(t *testing.T) {
+	if categoryID(0) != nil || categoryID(-1) != nil {
+		t.Fatal("expected nil category")
 	}
 }

@@ -132,6 +132,28 @@ func TestValidateCategoryHonorsVisibilityAndStaffCapability(t *testing.T) {
 	}
 }
 
+// TestCreateValidatesCategoryAndContent verifies creation uses shared policies.
+func TestCreateValidatesCategoryAndContent(t *testing.T) {
+	categoryID := int64(4)
+	store := newFakeStore()
+	store.categories = []roommodel.Category{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: categoryID}}, Visible: true}}
+	params := validCreateForTest()
+	params.CategoryID = &categoryID
+	if _, err := New(store, fakeLayouts{found: true, enabled: true}).Create(context.Background(), params); err != nil {
+		t.Fatalf("create valid category: %v", err)
+	}
+	missingID := int64(5)
+	params.CategoryID = &missingID
+	if _, err := New(store, fakeLayouts{found: true, enabled: true}).Create(context.Background(), params); !errors.Is(err, ErrInvalidCategory) {
+		t.Fatalf("missing category error=%v", err)
+	}
+	params.CategoryID = &categoryID
+	params.Name = "blocked"
+	if _, err := New(store, fakeLayouts{found: true, enabled: true}).WithProfanity(profanityForTest("blocked")).Create(context.Background(), params); !errors.Is(err, ErrProhibitedName) {
+		t.Fatalf("prohibited name error=%v", err)
+	}
+}
+
 // BenchmarkUpdateValidation measures in-memory settings merge and validation.
 func BenchmarkUpdateValidation(b *testing.B) {
 	service := New(newFakeStore(), fakeLayouts{})

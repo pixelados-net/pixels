@@ -14,11 +14,10 @@ type Creator interface {
 
 // Finder reads room records.
 type Finder interface {
+	OwnerLister
+
 	// FindByID finds a room by id.
 	FindByID(ctx context.Context, id int64) (roommodel.Room, bool, error)
-
-	// ListByOwner lists rooms owned by a player.
-	ListByOwner(ctx context.Context, ownerPlayerID int64) ([]roommodel.Room, error)
 
 	// ListPopular lists popular rooms.
 	ListPopular(ctx context.Context, limit int) ([]roommodel.Room, error)
@@ -31,6 +30,12 @@ type Finder interface {
 
 	// ListTags lists normalized room tags.
 	ListTags(ctx context.Context, roomID int64) ([]roommodel.Tag, error)
+}
+
+// OwnerLister reads rooms belonging to one player.
+type OwnerLister interface {
+	// ListByOwner lists rooms owned by a player.
+	ListByOwner(ctx context.Context, ownerPlayerID int64) ([]roommodel.Room, error)
 }
 
 // Updater updates editable room settings.

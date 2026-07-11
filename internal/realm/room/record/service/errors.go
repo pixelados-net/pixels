@@ -78,6 +78,9 @@ const (
 	// MaxRoomUsers is the maximum supported room capacity.
 	MaxRoomUsers = 100
 
+	// MaxRoomsPerPlayer is the room ownership limit before subscriptions exist.
+	MaxRoomsPerPlayer = 100
+
 	// MaxRoomTags is the maximum tag count per room.
 	MaxRoomTags = 5
 

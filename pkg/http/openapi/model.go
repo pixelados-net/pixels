@@ -30,10 +30,22 @@ type StatusResponse struct {
 	Version string `json:"version" required:"true" example:"0.1.0-abcdef12"`
 }
 
-// CurrencyUIConfigResponse is the public Nitro currency configuration extension.
+// CurrencyUIConfigResponse is the public data-driven Nitro configuration extension.
 type CurrencyUIConfigResponse struct {
 	// CurrencyTypes stores configured protocol currency ids.
 	CurrencyTypes []int32 `json:"system.currency.types" required:"true"`
+	// RoomModels stores enabled room creator models.
+	RoomModels []ClientRoomModel `json:"navigator.room.models" required:"true"`
+}
+
+// ClientRoomModel describes one Nitro room creator model.
+type ClientRoomModel struct {
+	// ClubLevel stores the client entitlement level.
+	ClubLevel int `json:"clubLevel" required:"true"`
+	// TileSize stores the displayed usable tile count.
+	TileSize int `json:"tileSize" required:"true"`
+	// Name stores the model suffix expected by Nitro.
+	Name string `json:"name" required:"true"`
 }
 
 // CurrencyExternalTextsResponse contains localized Nitro currency text entries.

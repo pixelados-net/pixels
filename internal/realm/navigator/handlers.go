@@ -28,6 +28,7 @@ import (
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/pkg/bus"
+	"github.com/niflaot/pixels/pkg/i18n"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -57,12 +58,15 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	cancreatehandler.Register(handlers.Inbound, cancreatehandler.New(cancreatecmd.Handler{
 		Players:  deps.Players,
 		Bindings: deps.Bindings,
+		Rooms:    deps.Rooms,
 	}, deps.Log))
 	createhandler.Register(handlers.Inbound, createhandler.New(createcmd.Handler{
-		Players:  deps.Players,
-		Bindings: deps.Bindings,
-		Rooms:    deps.Rooms,
-		Events:   deps.Events,
+		Players:      deps.Players,
+		Bindings:     deps.Bindings,
+		Rooms:        deps.Rooms,
+		Events:       deps.Events,
+		Translations: deps.Translations,
+		Log:          deps.Log,
 	}, deps.Log))
 	infohandler.Register(handlers.Inbound, infohandler.New(infocmd.Handler{
 		Players:    deps.Players,
@@ -116,4 +120,6 @@ type HandlerDeps struct {
 	Events *bus.Bus
 	// Log records command dispatch.
 	Log *zap.Logger
+	// Translations resolves localized navigator feedback.
+	Translations i18n.Translator
 }

@@ -14,6 +14,8 @@ import (
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outcreated "github.com/niflaot/pixels/networking/outbound/navigator/roomcreated"
 	"github.com/niflaot/pixels/pkg/bus"
+	"github.com/niflaot/pixels/pkg/i18n"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -47,9 +49,19 @@ type Handler struct {
 	// Bindings stores player connection bindings.
 	Bindings *binding.Registry
 	// Rooms creates persistent rooms.
-	Rooms roomservice.Manager
+	Rooms RoomManager
 	// Events publishes room lifecycle events.
 	Events bus.Publisher
+	// Translations resolves localized creation feedback.
+	Translations i18n.Translator
+	// Log records rejected creation attempts.
+	Log *zap.Logger
+}
+
+// RoomManager combines the focused room creation dependencies.
+type RoomManager interface {
+	roomservice.Creator
+	roomservice.OwnerLister
 }
 
 // CommandName returns the stable command name.
@@ -75,10 +87,17 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err != nil {
 		return err
 	}
+	rooms, err := handler.Rooms.ListByOwner(ctx, player.ID())
+	if err != nil {
+		return err
+	}
+	if len(rooms) >= roomservice.MaxRoomsPerPlayer {
+		return handler.sendLimit(ctx, envelope.Command.Handler)
+	}
 
 	room, err := handler.Rooms.Create(ctx, createParams(envelope.Command, player.ID(), player.Username()))
 	if err != nil {
-		return err
+		return handler.handleCreateError(ctx, envelope.Command, player.ID(), err)
 	}
 	if err := handler.publish(ctx, room.ID, player.ID()); err != nil {
 		return err
