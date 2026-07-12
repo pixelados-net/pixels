@@ -26,6 +26,10 @@ const (
 	ControlExitingRoom
 	// ControlTeleporting reserves movement for a teleport sequence.
 	ControlTeleporting
+	// ControlFurnitureInteraction reserves movement for a furniture workflow.
+	ControlFurnitureInteraction
+	// ControlFrozen temporarily rejects player movement without assigning a path.
+	ControlFrozen
 )
 
 // Unit stores runtime state for an entity inside a room.
@@ -71,6 +75,9 @@ type Unit struct {
 
 	// statuses stores current unit statuses.
 	statuses statuses
+
+	// handItem stores the currently carried protocol hand item id.
+	handItem int32
 }
 
 // New creates a room unit.

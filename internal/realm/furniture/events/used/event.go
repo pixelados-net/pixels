@@ -1,4 +1,4 @@
-// Package used contains the furniture item used event, planned for future interactions.
+// Package used contains the furniture item used event.
 package used
 
 import "github.com/niflaot/pixels/pkg/bus"

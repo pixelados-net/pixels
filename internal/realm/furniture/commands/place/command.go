@@ -119,7 +119,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 
 	rotation := furnituremodel.Rotation(envelope.Command.Rotation)
-	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item.ID, item.DefinitionID, envelope.Command.X, envelope.Command.Y, rotation)
+	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item, envelope.Command.X, envelope.Command.Y, rotation)
 	if err != nil {
 		return handler.handleSoftError(ctx, envelope.Command, err)
 	}

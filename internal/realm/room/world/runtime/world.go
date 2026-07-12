@@ -144,7 +144,7 @@ func furnitureFixtures(items []worldfurniture.Item) ([]surface.Fixture, map[int6
 		}
 		fixtures = append(fixtures, itemFixtures...)
 		index[item.ID] = item
-		if item.Definition.InteractionType != "" && item.Definition.InteractionType != "default" {
+		if interactive(item) {
 			if interactions == nil {
 				interactions = make(map[grid.Point]int64)
 			}
@@ -159,7 +159,7 @@ func furnitureFixtures(items []worldfurniture.Item) ([]surface.Fixture, map[int6
 
 // addInteraction indexes one interactive furniture footprint.
 func (world *World) addInteraction(item worldfurniture.Item) {
-	if item.Definition.InteractionType == "" || item.Definition.InteractionType == "default" {
+	if !interactive(item) {
 		return
 	}
 	if world.interactions == nil {
@@ -168,6 +168,12 @@ func (world *World) addInteraction(item worldfurniture.Item) {
 	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
 		world.interactions[point] = item.ID
 	}
+}
+
+// interactive reports whether an item participates in movement interaction events.
+func interactive(item worldfurniture.Item) bool {
+	return item.Definition.InteractionType != "" &&
+		(item.Definition.InteractionType != "default" || item.Definition.InteractionModesCount > 1)
 }
 
 // removeInteraction removes one interactive furniture footprint.

@@ -37,15 +37,15 @@ func TestRoomMoveToAndTickAdvancesUnit(t *testing.T) {
 	if len(second) != 1 || second[0].Unit.Position.Point != pointForTest(t, 2, 0) {
 		t.Fatalf("unexpected second tick %#v", second)
 	}
-	if second[0].Unit.Moving || !second[0].Moved || second[0].Settled {
-		t.Fatalf("expected movement completed %#v", second[0].Unit)
+	if !second[0].Unit.Moving || !second[0].Moved || second[0].Settled {
+		t.Fatalf("expected final movement projection %#v", second[0].Unit)
 	}
 	if !hasStatus(second[0].Unit.Statuses, worldunit.StatusMove) {
 		t.Fatalf("expected final move status %#v", second[0].Unit.Statuses)
 	}
 
 	third := room.Tick()
-	if len(third) != 1 || third[0].Moved || !third[0].Settled {
+	if len(third) != 1 || third[0].Moved || !third[0].Settled || third[0].Unit.Moving {
 		t.Fatalf("unexpected settle tick %#v", third)
 	}
 	if hasStatus(third[0].Unit.Statuses, worldunit.StatusMove) {

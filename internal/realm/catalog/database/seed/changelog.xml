@@ -8,4 +8,7 @@
     <include file="development/0001_default_catalog.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0002_interaction_catalog.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0003_teleport_pair_amount.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0004_generic_interaction_examples.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0005_essential_interactions.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0006_essential_animation_variants.sql" relativeToChangelogFile="true" contextFilter="development"/>
 </databaseChangeLog>

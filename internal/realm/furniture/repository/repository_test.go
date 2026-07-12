@@ -156,6 +156,28 @@ func TestPickupItemReportsNoRowsAsNotUpdated(t *testing.T) {
 	}
 }
 
+// TestUpdateItemStateUsesCompareAndSwap verifies state query guards and arguments.
+func TestUpdateItemStateUsesCompareAndSwap(t *testing.T) {
+	executor := &fakeExecutor{row: fakeRow{values: itemValuesForTest(placedRoomID, placedX, placedY, placedZ)}}
+	_, updated, err := New(executor).UpdateItemState(context.Background(), UpdateItemStateParams{
+		ID: 1, RoomID: 9, Expected: "0", Next: "1",
+	})
+	if err != nil {
+		t.Fatalf("update item state: %v", err)
+	}
+	if !updated || !strings.Contains(executor.query, "extra_data = $3") || len(executor.arguments) != 4 {
+		t.Fatalf("unexpected state query %q arguments=%#v", executor.query, executor.arguments)
+	}
+}
+
+// TestUpdateItemStateReportsConflict verifies a failed compare-and-swap.
+func TestUpdateItemStateReportsConflict(t *testing.T) {
+	_, updated, err := New(&fakeExecutor{row: fakeRow{err: pgx.ErrNoRows}}).UpdateItemState(context.Background(), UpdateItemStateParams{ID: 1, RoomID: 9})
+	if err != nil || updated {
+		t.Fatalf("expected unmatched state update updated=%v err=%v", updated, err)
+	}
+}
+
 var (
 	// placedRoomID stores a placed item room id fixture.
 	placedRoomID = pgtype.Int8{Int64: 1, Valid: true}

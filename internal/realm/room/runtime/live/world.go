@@ -50,7 +50,9 @@ func (room *Room) ReloadFurniture(sourceID int64, item *worldfurniture.Item) ([]
 func (room *Room) UnloadWorld() {
 	room.mutex.Lock()
 	room.world = nil
+	clear(room.interactionLocks)
 	room.mutex.Unlock()
+	room.tasks.Clear()
 }
 
 // WorldLoaded reports whether world behavior is loaded.
@@ -166,6 +168,28 @@ func (room *Room) SetFurnitureExtraData(itemID int64, value string) (worldfurnit
 	}
 
 	return room.world.SetFurnitureExtraData(itemID, value)
+}
+
+// UpdateFurnitureState atomically changes one item snapshot and its optional fixtures.
+func (room *Room) UpdateFurnitureState(itemID int64, value string, rebuild bool) (worldfurniture.Item, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, ErrWorldNotLoaded
+	}
+
+	return room.world.UpdateFurnitureState(itemID, value, rebuild)
+}
+
+// HasUnitInFurnitureFootprint reports whether a unit occupies an item's rotated footprint.
+func (room *Room) HasUnitInFurnitureFootprint(item worldfurniture.Item) bool {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return false
+	}
+
+	return room.world.HasUnitInFurnitureFootprint(item)
 }
 
 // TeleportUnit repositions one unit authoritatively.

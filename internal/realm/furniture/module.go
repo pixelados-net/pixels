@@ -3,6 +3,8 @@ package furniture
 
 import (
 	"context"
+	"github.com/niflaot/pixels/internal/realm/furniture/interactions"
+	essential "github.com/niflaot/pixels/internal/realm/furniture/interactions/essential"
 	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
 	teleportdb "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/database"
 	teleportpair "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/pair"
@@ -19,8 +21,11 @@ var Module = fx.Module(
 		NewStore,
 		service.New,
 		NewManager,
+		NewStateUpdater,
 		NewGranter,
 		NewDefinitionGranter,
+		interactions.NewRegistry,
+		essential.New,
 		teleport.LoadConfig,
 		teleportdb.New,
 		NewTeleportPairService,
@@ -28,6 +33,7 @@ var Module = fx.Module(
 		teleport.NewService,
 	),
 	fx.Invoke(teleport.Register),
+	fx.Invoke(essential.Register),
 	fx.Invoke(RegisterConnectionHandlers),
 )
 
@@ -61,6 +67,11 @@ func NewStore(pool *postgres.Pool) repository.Store {
 
 // NewManager exposes the furniture management contract.
 func NewManager(furnitureService *service.Service) service.Manager {
+	return furnitureService
+}
+
+// NewStateUpdater exposes guarded furniture interaction state mutations.
+func NewStateUpdater(furnitureService *service.Service) service.StateUpdater {
 	return furnitureService
 }
 

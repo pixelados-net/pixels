@@ -1,4 +1,4 @@
-// Package walkedoff contains the furniture item walked-off event, planned for future interactions.
+// Package walkedoff contains the furniture item walked-off event.
 package walkedoff
 
 import "github.com/niflaot/pixels/pkg/bus"

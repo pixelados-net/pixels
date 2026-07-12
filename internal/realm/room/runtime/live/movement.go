@@ -1,6 +1,9 @@
 package live
 
 import (
+	"time"
+
+	roomtask "github.com/niflaot/pixels/internal/realm/room/runtime/live/task"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -109,13 +112,116 @@ func (room *Room) FaceTo(playerID int64, target grid.Point) (UnitSnapshot, error
 	return room.world.FaceTo(playerID, target)
 }
 
-// Tick advances room world movement once.
-func (room *Room) Tick() []Movement {
+// SetHandItem replaces one unit's carried hand item.
+func (room *Room) SetHandItem(playerID int64, itemID int32) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+
+	return room.world.SetHandItem(playerID, itemID)
+}
+
+// ReleaseUnitControl clears one unit's server-owned movement workflow.
+func (room *Room) ReleaseUnitControl(playerID int64) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+
+	return room.world.ReleaseControl(playerID)
+}
+
+// SetUnitControl assigns one server-owned movement workflow.
+func (room *Room) SetUnitControl(playerID int64, control worldunit.ControlKind) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+
+	return room.world.SetUnitControl(playerID, control)
+}
+
+// CanChangeFurnitureHeight reports whether an item has no furniture stacked above it.
+func (room *Room) CanChangeFurnitureHeight(itemID int64) bool {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return false
+	}
+
+	return room.world.CanChangeFurnitureHeight(itemID)
+}
+
+// ResettleFurnitureUnits updates units standing over one changed furniture item.
+func (room *Room) ResettleFurnitureUnits(itemID int64) []UnitSnapshot {
 	room.mutex.Lock()
 	defer room.mutex.Unlock()
 	if room.world == nil {
 		return nil
 	}
 
-	return room.world.Tick()
+	return room.world.ResettleFurnitureUnits(itemID)
+}
+
+// Tick advances room world movement once.
+func (room *Room) Tick() []Movement {
+	room.mutex.Lock()
+	if room.world == nil {
+		room.mutex.Unlock()
+		room.runDueTasks(time.Now())
+		return nil
+	}
+	movements := room.world.Tick()
+	room.mutex.Unlock()
+	room.runDueTasks(time.Now())
+
+	return movements
+}
+
+// Schedule queues independent room-owned work after a delay.
+func (room *Room) Schedule(after time.Duration, run func(time.Time)) {
+	room.tasks.Schedule(time.Now().Add(after), run)
+}
+
+// ScheduleReplacing queues work after replacing the same non-zero key.
+func (room *Room) ScheduleReplacing(key roomtask.Key, after time.Duration, run func(time.Time)) {
+	room.tasks.Replace(key, time.Now().Add(after), run)
+}
+
+// RunScheduled executes work due at the supplied time.
+func (room *Room) RunScheduled(now time.Time) {
+	room.runDueTasks(now)
+}
+
+// runDueTasks executes callbacks after queue locks have been released.
+func (room *Room) runDueTasks(now time.Time) {
+	for _, run := range room.tasks.Due(now) {
+		run(now)
+	}
+}
+
+// TryLockInteraction acquires one furniture cooldown until a deadline.
+func (room *Room) TryLockInteraction(itemID int64, until time.Time) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if deadline, found := room.interactionLocks[itemID]; found && deadline.After(time.Now()) {
+		return false
+	}
+	if room.interactionLocks == nil {
+		room.interactionLocks = make(map[int64]time.Time)
+	}
+	room.interactionLocks[itemID] = until
+
+	return true
+}
+
+// UnlockInteraction releases one furniture cooldown.
+func (room *Room) UnlockInteraction(itemID int64) {
+	room.mutex.Lock()
+	delete(room.interactionLocks, itemID)
+	room.mutex.Unlock()
 }

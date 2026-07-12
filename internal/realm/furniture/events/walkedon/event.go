@@ -1,4 +1,4 @@
-// Package walkedon contains the furniture item walked-on event, planned for future interactions.
+// Package walkedon contains the furniture item walked-on event.
 package walkedon
 
 import "github.com/niflaot/pixels/pkg/bus"

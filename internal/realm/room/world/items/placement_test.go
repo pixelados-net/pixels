@@ -17,7 +17,9 @@ func TestResolveWorldItemBuildsResolvedItem(t *testing.T) {
 	active := roomForPlacementTest(t)
 	manager := &fakeManager{definitions: []furnituremodel.Definition{chairDefinitionForTest()}}
 
-	item, definition, err := ResolveWorldItem(context.Background(), active, manager, 7, 2, 3, 0, furnituremodel.RotationNorth)
+	persisted := furnituremodel.Item{DefinitionID: 2, OwnerPlayerID: 9, ExtraData: "3"}
+	persisted.ID = 7
+	item, definition, err := ResolveWorldItem(context.Background(), active, manager, persisted, 3, 0, furnituremodel.RotationNorth)
 	if err != nil {
 		t.Fatalf("resolve world item: %v", err)
 	}
@@ -27,6 +29,9 @@ func TestResolveWorldItemBuildsResolvedItem(t *testing.T) {
 	if definition.ID != 2 {
 		t.Fatalf("unexpected resolved definition %#v", definition)
 	}
+	if item.OwnerPlayerID != 9 || item.ExtraData != "3" {
+		t.Fatalf("placement state was not preserved: %#v", item)
+	}
 }
 
 // TestResolveWorldItemRejectsInvalidRotation verifies rotation validation.
@@ -34,7 +39,9 @@ func TestResolveWorldItemRejectsInvalidRotation(t *testing.T) {
 	active := roomForPlacementTest(t)
 	manager := &fakeManager{definitions: []furnituremodel.Definition{chairDefinitionForTest()}}
 
-	_, _, err := ResolveWorldItem(context.Background(), active, manager, 7, 2, 3, 3, furnituremodel.Rotation(1))
+	item := furnituremodel.Item{DefinitionID: 2}
+	item.ID = 7
+	_, _, err := ResolveWorldItem(context.Background(), active, manager, item, 3, 3, furnituremodel.Rotation(1))
 	if !errors.Is(err, ErrInvalidTarget) {
 		t.Fatalf("expected invalid target, got %v", err)
 	}
@@ -45,7 +52,9 @@ func TestResolveWorldItemRejectsMissingDefinition(t *testing.T) {
 	active := roomForPlacementTest(t)
 	manager := &fakeManager{}
 
-	_, _, err := ResolveWorldItem(context.Background(), active, manager, 7, 2, 3, 3, furnituremodel.RotationNorth)
+	item := furnituremodel.Item{DefinitionID: 2}
+	item.ID = 7
+	_, _, err := ResolveWorldItem(context.Background(), active, manager, item, 3, 3, furnituremodel.RotationNorth)
 	if !errors.Is(err, ErrDefinitionNotFound) {
 		t.Fatalf("expected definition not found, got %v", err)
 	}

@@ -75,6 +75,62 @@ func topExcludingSource(column surface.Column, sourceID int64) (surface.Section,
 	return surface.Section{}, false
 }
 
+// CanChangeFurnitureHeight reports whether no other item is stacked above one item.
+func (world *World) CanChangeFurnitureHeight(itemID int64) bool {
+	item, found := world.furniture[itemID]
+	if !found {
+		return false
+	}
+	for otherID, other := range world.furniture {
+		if otherID == itemID || other.Z < item.Top() {
+			continue
+		}
+		if footprintsOverlap(item, other) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ResettleFurnitureUnits updates unit heights over one furniture footprint.
+func (world *World) ResettleFurnitureUnits(itemID int64) []UnitSnapshot {
+	item, found := world.furniture[itemID]
+	if !found {
+		return nil
+	}
+	width, length := worldfurniture.Dimensions(item.Definition.Width, item.Definition.Length, item.Rotation)
+	minX, minY := int(item.Point.X), int(item.Point.Y)
+	maxX, maxY := minX+width, minY+length
+	var snapshots []UnitSnapshot
+	for playerID, roomUnit := range world.units {
+		point := roomUnit.Position().Point
+		x, y := int(point.X), int(point.Y)
+		if x < minX || x >= maxX || y < minY || y >= maxY {
+			continue
+		}
+		section, err := world.resolver.TopSection(point)
+		if err != nil {
+			continue
+		}
+		roomUnit.SetHeight(section.Z())
+		snapshots = append(snapshots, unitSnapshot(playerID, roomUnit))
+	}
+
+	return snapshots
+}
+
+// footprintsOverlap reports whether two rectangular rotated footprints intersect.
+func footprintsOverlap(first worldfurniture.Item, second worldfurniture.Item) bool {
+	firstWidth, firstLength := worldfurniture.Dimensions(first.Definition.Width, first.Definition.Length, first.Rotation)
+	secondWidth, secondLength := worldfurniture.Dimensions(second.Definition.Width, second.Definition.Length, second.Rotation)
+	firstX, firstY := int(first.Point.X), int(first.Point.Y)
+	secondX, secondY := int(second.Point.X), int(second.Point.Y)
+
+	return firstX < secondX+secondWidth && firstX+firstWidth > secondX &&
+		firstY < secondY+secondLength && firstY+firstLength > secondY
+}
+
 // reconcileSlotOccupants updates units affected by one changed furniture item.
 func (world *World) reconcileSlotOccupants(previousSlots []worldfurniture.Slot, item *worldfurniture.Item) []UnitSnapshot {
 	var updatedSlots []worldfurniture.Slot

@@ -48,7 +48,7 @@ func ToWorldItem(item furnituremodel.Item, definitions map[int64]furnituremodel.
 		return worldfurniture.Item{}, false, err
 	}
 
-	return worldfurniture.Item{
+	worldItem := worldfurniture.Item{
 		ID:            item.ID,
 		OwnerPlayerID: item.OwnerPlayerID,
 		Definition:    worldDefinition,
@@ -56,7 +56,10 @@ func ToWorldItem(item furnituremodel.Item, definitions map[int64]furnituremodel.
 		Z:             RoundHeight(*item.Z),
 		Rotation:      worldunit.Rotation(item.Rotation),
 		ExtraData:     item.ExtraData,
-	}, true, nil
+	}
+	worldItem.Definition.StackHeight = worldItem.Definition.HeightAtState(worldItem.ExtraData)
+
+	return worldItem, true, nil
 }
 
 // ToWorldDefinition converts a persisted furniture definition into a room world definition.
@@ -67,16 +70,19 @@ func ToWorldDefinition(definition furnituremodel.Definition) (worldfurniture.Def
 	}
 
 	return worldfurniture.Definition{
-		SpriteID:        definition.SpriteID,
-		InteractionType: definition.InteractionType,
-		Width:           definition.Width,
-		Length:          definition.Length,
-		StackHeight:     RoundHeight(definition.StackHeight),
-		AllowStack:      definition.AllowStack,
-		AllowWalk:       definition.AllowWalk,
-		AllowSit:        definition.AllowSit,
-		AllowLay:        definition.AllowLay,
-		Slots:           slots,
+		SpriteID:              definition.SpriteID,
+		InteractionType:       definition.InteractionType,
+		InteractionModesCount: definition.InteractionModesCount,
+		Multiheight:           definition.Multiheight,
+		CustomParams:          definition.CustomParams,
+		Width:                 definition.Width,
+		Length:                definition.Length,
+		StackHeight:           RoundHeight(definition.StackHeight),
+		AllowStack:            definition.AllowStack,
+		AllowWalk:             definition.AllowWalk,
+		AllowSit:              definition.AllowSit,
+		AllowLay:              definition.AllowLay,
+		Slots:                 slots,
 	}, nil
 }
 

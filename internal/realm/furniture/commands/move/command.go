@@ -120,10 +120,11 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 
 	rotation := furnituremodel.Rotation(envelope.Command.Rotation)
-	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item.ID, item.DefinitionID, envelope.Command.X, envelope.Command.Y, rotation)
+	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item, envelope.Command.X, envelope.Command.Y, rotation)
 	if err != nil {
 		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
 	}
+	previousWorld, previousFound := active.FurnitureItem(item.ID)
 
 	moved, err := handler.Furniture.Move(ctx, furnitureservice.MoveParams{
 		ItemID:        item.ID,
@@ -159,7 +160,10 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		)
 	}
 
-	return handler.publish(ctx, player.ID(), moved.ID, roomID, envelope.Command.X, envelope.Command.Y, envelope.Command.Rotation)
+	return errors.Join(
+		handler.publishWalkedOff(ctx, active, previousWorld, previousFound, worldItem),
+		handler.publish(ctx, player.ID(), moved.ID, roomID, envelope.Command.X, envelope.Command.Y, envelope.Command.Rotation),
+	)
 }
 
 // broadcastUpdate notifies all room occupants that a floor item moved, rotated, or changed state.

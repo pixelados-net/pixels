@@ -52,6 +52,11 @@ func (unit *Unit) Moving() bool {
 	return len(unit.steps) > 0
 }
 
+// InMotion reports whether the unit has pending steps or awaits its final settled projection.
+func (unit *Unit) InMotion() bool {
+	return len(unit.steps) > 0 || unit.settling
+}
+
 // Goal returns the active movement goal.
 func (unit *Unit) Goal() (path.Position, bool) {
 	return unit.goal, unit.hasGoal

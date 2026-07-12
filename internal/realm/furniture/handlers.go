@@ -3,6 +3,7 @@ package furniture
 import (
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
+	interactcmd "github.com/niflaot/pixels/internal/realm/furniture/commands/interact"
 	inventorycmd "github.com/niflaot/pixels/internal/realm/furniture/commands/inventory"
 	movecmd "github.com/niflaot/pixels/internal/realm/furniture/commands/move"
 	pickupcmd "github.com/niflaot/pixels/internal/realm/furniture/commands/pickup"
@@ -11,8 +12,10 @@ import (
 	movehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/move"
 	pickuphandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/pickup"
 	placehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/place"
+	usehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/use"
+	"github.com/niflaot/pixels/internal/realm/furniture/interactions"
+	essential "github.com/niflaot/pixels/internal/realm/furniture/interactions/essential"
 	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
-	teleportuse "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/use"
 	"github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
@@ -34,6 +37,8 @@ type HandlerDeps struct {
 	Bindings *binding.Registry
 	// Furniture manages placed and inventory furniture records.
 	Furniture service.Manager
+	// FurnitureStates changes durable furniture interaction state.
+	FurnitureStates service.StateUpdater
 	// Runtime stores active rooms.
 	Runtime *roomlive.Registry
 	// Permissions resolves global furniture management authority.
@@ -48,6 +53,10 @@ type HandlerDeps struct {
 	Log *zap.Logger
 	// Teleports coordinates paired furniture travel.
 	Teleports *teleport.Service
+	// Interactions resolves generic furniture state behavior.
+	Interactions *interactions.Registry
+	// EssentialInteractions coordinates specialized furniture behavior.
+	EssentialInteractions *essential.Service
 }
 
 // RegisterConnectionHandlers registers furniture packet handlers.
@@ -71,7 +80,14 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Players: deps.Players, Bindings: deps.Bindings, Furniture: deps.Furniture,
 		Runtime: deps.Runtime, Permissions: deps.Permissions, Connections: deps.Connections, Events: deps.Events, Translations: deps.Translations, Log: deps.Log,
 	}, deps.Log))
-	teleportuse.Register(handlers.Inbound, teleportuse.New(teleportuse.Handler{
-		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Teleports: deps.Teleports,
-	}, deps.Log))
+	interactionHandler := interactcmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Furniture: deps.Furniture, States: deps.FurnitureStates,
+		Runtime: deps.Runtime, Permissions: deps.Permissions, Connections: deps.Connections,
+		Events: deps.Events, Translations: deps.Translations, Behaviors: deps.Interactions, Teleports: deps.Teleports, Essentials: deps.EssentialInteractions, Log: deps.Log,
+	}
+	usehandler.Register(handlers.Inbound, usehandler.New(interactionHandler, deps.Log))
+	usehandler.RegisterDedicated(handlers.Inbound,
+		usehandler.NewDiceActivate(interactionHandler, deps.Log), usehandler.NewDiceClose(interactionHandler, deps.Log),
+		usehandler.NewColorWheel(interactionHandler, deps.Log),
+	)
 }

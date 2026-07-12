@@ -39,3 +39,13 @@ func (unit *Unit) SetHeight(z grid.Height) {
 func (unit *Unit) Statuses() []Status {
 	return unit.statuses.snapshot()
 }
+
+// SetHandItem replaces the currently carried hand item.
+func (unit *Unit) SetHandItem(itemID int32) {
+	unit.handItem = itemID
+}
+
+// HandItem returns the currently carried hand item.
+func (unit *Unit) HandItem() int32 {
+	return unit.handItem
+}

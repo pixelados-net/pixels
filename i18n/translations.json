@@ -75,6 +75,17 @@
       "catalog.item.cannon": "Cañón",
       "catalog.item.information_terminal": "Terminal de información",
       "catalog.item.hand_item_tester": "Probador de objetos de mano",
+      "catalog.item.flatscreen_tv": "Televisor de pantalla plana",
+      "catalog.item.table_lamp": "Lámpara de mesa",
+      "catalog.item.color_wheel": "Ruleta de colores",
+      "catalog.item.pressure_plate": "Placa de presión",
+      "catalog.item.floor_switch": "Interruptor de suelo",
+      "catalog.item.pink_pura_block": "Bloque Pura rosa",
+      "catalog.item.magic_crystal_random": "Bola de cristal aleatoria",
+      "catalog.item.arrow_color_plate": "Placa de colores con flecha",
+      "catalog.item.remote_floor_switch": "Interruptor de suelo remoto",
+      "catalog.item.pura_fridge_no_sides": "Nevera Pura omnidireccional",
+      "catalog.item.sink_hand_item": "Dispensador de mano del lavabo",
       "catalog.item.aqua_roller": "Roller aguamarina",
       "catalog.item.telephone_box": "Cabina telefónica",
       "catalog.item.one_way_gate": "Puerta de una dirección",
@@ -89,7 +100,8 @@
       "catalog.item.wallpaper": "Papel tapiz",
       "catalog.item.landscape": "Paisaje",
       "catalog.alert.published.title": "Catálogo actualizado",
-      "catalog.alert.published.message": "El catálogo del hotel fue actualizado."
+      "catalog.alert.published.message": "El catálogo del hotel fue actualizado.",
+      "room.furniture.cannon.kicked": "Un cañón te expulsó de la sala."
     },
     "en": {
       "session.bubble.furniture.invalid_move": "You cannot place that there.",
@@ -165,6 +177,17 @@
       "catalog.item.cannon": "Cannon",
       "catalog.item.information_terminal": "Information terminal",
       "catalog.item.hand_item_tester": "Hand item tester",
+      "catalog.item.flatscreen_tv": "Flatscreen TV",
+      "catalog.item.table_lamp": "Table lamp",
+      "catalog.item.color_wheel": "Color wheel",
+      "catalog.item.pressure_plate": "Pressure plate",
+      "catalog.item.floor_switch": "Floor switch",
+      "catalog.item.pink_pura_block": "Pink Pura block",
+      "catalog.item.magic_crystal_random": "Random magic crystal ball",
+      "catalog.item.arrow_color_plate": "Arrow color plate",
+      "catalog.item.remote_floor_switch": "Remote floor switch",
+      "catalog.item.pura_fridge_no_sides": "All-sides Pura refrigerator",
+      "catalog.item.sink_hand_item": "Sink hand-item dispenser",
       "catalog.item.aqua_roller": "Aqua roller",
       "catalog.item.telephone_box": "Telephone box",
       "catalog.item.one_way_gate": "One way gate",
@@ -179,7 +202,8 @@
       "catalog.item.wallpaper": "Wallpaper",
       "catalog.item.landscape": "Landscape",
       "catalog.alert.published.title": "Catalog updated",
-      "catalog.alert.published.message": "The hotel catalog was updated."
+      "catalog.alert.published.message": "The hotel catalog was updated.",
+      "room.furniture.cannon.kicked": "A cannon fired you out of the room."
     }
   }
 }

@@ -39,3 +39,38 @@ func adjacent(first grid.Point, second grid.Point) bool {
 
 	return (dx != 0 || dy != 0) && dx <= 1 && dy <= 1
 }
+
+// SetHandItem replaces one unit's carried hand item and returns its snapshot.
+func (world *World) SetHandItem(playerID int64, itemID int32) (UnitSnapshot, error) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, ErrUnitNotFound
+	}
+	roomUnit.SetHandItem(itemID)
+
+	return unitSnapshot(playerID, roomUnit), nil
+}
+
+// ReleaseControl clears server control and pending movement for one unit.
+func (world *World) ReleaseControl(playerID int64) (UnitSnapshot, error) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, ErrUnitNotFound
+	}
+	roomUnit.ClearPath()
+	roomUnit.SetControl(worldunit.ControlNone)
+
+	return unitSnapshot(playerID, roomUnit), nil
+}
+
+// SetUnitControl assigns server control and clears pending movement.
+func (world *World) SetUnitControl(playerID int64, control worldunit.ControlKind) (UnitSnapshot, error) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, ErrUnitNotFound
+	}
+	roomUnit.ClearPath()
+	roomUnit.SetControl(control)
+
+	return unitSnapshot(playerID, roomUnit), nil
+}

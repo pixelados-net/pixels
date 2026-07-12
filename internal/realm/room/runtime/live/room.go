@@ -9,6 +9,7 @@ import (
 	roomdoorbell "github.com/niflaot/pixels/internal/realm/room/access/doorbell"
 	rightsstate "github.com/niflaot/pixels/internal/realm/room/control/rights/state"
 	roomowner "github.com/niflaot/pixels/internal/realm/room/runtime/live/owner"
+	roomtask "github.com/niflaot/pixels/internal/realm/room/runtime/live/task"
 	worldruntime "github.com/niflaot/pixels/internal/realm/room/world/runtime"
 )
 
@@ -38,6 +39,10 @@ type Room struct {
 	closed bool
 	// loop owns the room's periodic movement and doorbell cycle.
 	loop roomowner.Loop
+	// tasks stores delayed work owned by this room lifecycle.
+	tasks roomtask.Queue
+	// interactionLocks stores temporary furniture cooldown deadlines.
+	interactionLocks map[int64]time.Time
 }
 
 // NewRoom creates an active room.
@@ -146,9 +151,11 @@ func (room *Room) CloseWithDoorbell() (Occupancy, []roomdoorbell.Expired) {
 	room.stopLoop()
 	room.mutex.Lock()
 	room.closed = true
+	room.tasks.Clear()
 	room.occupants = make(map[int64]Occupant)
 	room.rights.Clear()
 	room.muted = nil
+	room.interactionLocks = nil
 	if room.world != nil {
 		room.world.ClearUnits()
 	}

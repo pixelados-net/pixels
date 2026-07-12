@@ -44,7 +44,7 @@ func TestUnitAdvancesPath(t *testing.T) {
 	if !ok || goal != positionForTest(2, 2, 1) {
 		t.Fatalf("unexpected goal %#v found=%v", goal, ok)
 	}
-	if !roomUnit.Moving() || roomUnit.PendingSteps() != 2 {
+	if !roomUnit.Moving() || !roomUnit.InMotion() || roomUnit.PendingSteps() != 2 {
 		t.Fatalf("expected pending movement")
 	}
 	assertStatus(t, roomUnit, StatusMove, "2,1,0")
@@ -62,7 +62,7 @@ func TestUnitAdvancesPath(t *testing.T) {
 	assertStatus(t, roomUnit, StatusMove, "2,1,0")
 
 	_, moved, settled = roomUnit.Advance()
-	if !moved || settled || roomUnit.Moving() || roomUnit.PendingSteps() != 0 {
+	if !moved || settled || roomUnit.Moving() || !roomUnit.InMotion() || roomUnit.PendingSteps() != 0 {
 		t.Fatalf("expected completed movement")
 	}
 	if _, ok := roomUnit.Goal(); ok {
@@ -73,6 +73,9 @@ func TestUnitAdvancesPath(t *testing.T) {
 	_, moved, settled = roomUnit.Advance()
 	if moved || !settled {
 		t.Fatalf("expected settled movement moved=%v settled=%v", moved, settled)
+	}
+	if roomUnit.InMotion() {
+		t.Fatal("expected movement lifecycle to be settled")
 	}
 	assertNoStatus(t, roomUnit, StatusMove)
 }

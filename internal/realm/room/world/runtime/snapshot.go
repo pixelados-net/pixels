@@ -93,9 +93,48 @@ func (world *World) SetFurnitureExtraData(itemID int64, value string) (worldfurn
 		return worldfurniture.Item{}, false
 	}
 	item.ExtraData = value
+	item.Definition.StackHeight = item.Definition.HeightAtState(value)
 	world.furniture[itemID] = item
 
 	return item, true
+}
+
+// UpdateFurnitureState atomically changes one item snapshot and its optional fixtures.
+func (world *World) UpdateFurnitureState(itemID int64, value string, rebuild bool) (worldfurniture.Item, error) {
+	item, found := world.furniture[itemID]
+	if !found {
+		return worldfurniture.Item{}, ErrFurnitureNotFound
+	}
+	item.ExtraData = value
+	item.Definition.StackHeight = item.Definition.HeightAtState(value)
+	if rebuild {
+		fixtures, err := worldfurniture.Fixtures(item)
+		if err != nil {
+			return worldfurniture.Item{}, err
+		}
+		if err := world.resolver.ReplaceFixtures(itemID, fixtures); err != nil {
+			return worldfurniture.Item{}, err
+		}
+	}
+	world.furniture[itemID] = item
+
+	return item, nil
+}
+
+// HasUnitInFurnitureFootprint reports whether a unit occupies an item's rotated footprint.
+func (world *World) HasUnitInFurnitureFootprint(item worldfurniture.Item) bool {
+	width, length := worldfurniture.Dimensions(item.Definition.Width, item.Definition.Length, item.Rotation)
+	minX, minY := int(item.Point.X), int(item.Point.Y)
+	maxX, maxY := minX+width, minY+length
+	for _, roomUnit := range world.units {
+		point := roomUnit.Position().Point
+		x, y := int(point.X), int(point.Y)
+		if x >= minX && x < maxX && y >= minY && y < maxY {
+			return true
+		}
+	}
+
+	return false
 }
 
 // SurfaceHeights returns current tile heights in row-major order.
@@ -151,6 +190,6 @@ func unitSnapshot(playerID int64, roomUnit *worldunit.Unit) UnitSnapshot {
 	return UnitSnapshot{
 		PlayerID: playerID, UnitID: roomUnit.ID(), Position: roomUnit.Position(), Previous: roomUnit.Previous(),
 		BodyRotation: roomUnit.BodyRotation(), HeadRotation: roomUnit.HeadRotation(),
-		Moving: roomUnit.Moving(), Statuses: roomUnit.Statuses(),
+		Moving: roomUnit.InMotion(), Statuses: roomUnit.Statuses(), HandItem: roomUnit.HandItem(),
 	}
 }

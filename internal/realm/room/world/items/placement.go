@@ -14,7 +14,7 @@ import (
 // ResolveWorldItem validates a target placement against a room's live world and the item's definition,
 // returning the fully resolved world item ready to apply via Room.ReloadFurniture, along with the
 // persisted definition used to build the protocol-facing broadcast afterward.
-func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnitureservice.DefinitionFinder, itemID int64, definitionID int64, x int, y int, rotation furnituremodel.Rotation) (worldfurniture.Item, furnituremodel.Definition, error) {
+func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnitureservice.DefinitionFinder, persisted furnituremodel.Item, x int, y int, rotation furnituremodel.Rotation) (worldfurniture.Item, furnituremodel.Definition, error) {
 	if !rotation.Valid() {
 		return worldfurniture.Item{}, furnituremodel.Definition{}, ErrInvalidTarget
 	}
@@ -23,7 +23,7 @@ func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnit
 		return worldfurniture.Item{}, furnituremodel.Definition{}, ErrInvalidTarget
 	}
 
-	definition, found, err := manager.FindDefinitionByID(ctx, definitionID)
+	definition, found, err := manager.FindDefinitionByID(ctx, persisted.DefinitionID)
 	if err != nil {
 		return worldfurniture.Item{}, furnituremodel.Definition{}, err
 	}
@@ -37,17 +37,19 @@ func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnit
 	}
 
 	footprint := worldfurniture.Footprint(point, worldDefinition.Width, worldDefinition.Length, worldunit.Rotation(rotation))
-	height, err := active.ResolveFurniturePlacement(itemID, footprint)
+	height, err := active.ResolveFurniturePlacement(persisted.ID, footprint)
 	if err != nil {
 		return worldfurniture.Item{}, furnituremodel.Definition{}, err
 	}
 
 	item := worldfurniture.Item{
-		ID:         itemID,
-		Definition: worldDefinition,
-		Point:      point,
-		Z:          height,
-		Rotation:   worldunit.Rotation(rotation),
+		ID:            persisted.ID,
+		OwnerPlayerID: persisted.OwnerPlayerID,
+		Definition:    worldDefinition,
+		Point:         point,
+		Z:             height,
+		Rotation:      worldunit.Rotation(rotation),
+		ExtraData:     persisted.ExtraData,
 	}
 
 	return item, definition, nil

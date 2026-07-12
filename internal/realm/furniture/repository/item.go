@@ -48,6 +48,13 @@ update furniture_items
 set room_id = null, x = null, y = null, z = null, updated_at = now(), version = version + 1
 where id = $1 and owner_player_id = $2 and room_id is not null and deleted_at is null
 returning ` + itemColumns
+
+	// updateItemStateSQL changes state only when the runtime snapshot still matches persistence.
+	updateItemStateSQL = `
+update furniture_items
+set extra_data = $4, updated_at = now(), version = version + 1
+where id = $1 and room_id = $2 and extra_data = $3 and deleted_at is null
+returning ` + itemColumns
 )
 
 // PlaceItemParams contains input for placing an owned inventory item into a room.
@@ -84,6 +91,21 @@ type PickupItemParams struct {
 
 	// OwnerPlayerID identifies the required current owner.
 	OwnerPlayerID int64
+}
+
+// UpdateItemStateParams contains one guarded furniture state mutation.
+type UpdateItemStateParams struct {
+	// ID identifies the furniture item.
+	ID int64
+
+	// RoomID identifies the required current room.
+	RoomID int64
+
+	// Expected stores the state observed by the active room.
+	Expected string
+
+	// Next stores the state to persist.
+	Next string
 }
 
 // CreateItems creates inventory items for one owner and definition.
@@ -125,6 +147,11 @@ func (repository *Repository) MoveItem(ctx context.Context, params MoveItemParam
 // PickupItem returns an owned, placed item to inventory.
 func (repository *Repository) PickupItem(ctx context.Context, params PickupItemParams) (furnituremodel.Item, bool, error) {
 	return repository.queryItem(ctx, pickupItemSQL, params.ID, params.OwnerPlayerID)
+}
+
+// UpdateItemState changes one placed item's state with compare-and-swap semantics.
+func (repository *Repository) UpdateItemState(ctx context.Context, params UpdateItemStateParams) (furnituremodel.Item, bool, error) {
+	return repository.queryItem(ctx, updateItemStateSQL, params.ID, params.RoomID, params.Expected, params.Next)
 }
 
 // queryItem runs one row-returning query and reports whether a row was found.

@@ -60,6 +60,12 @@ type Manager interface {
 	Pickup(ctx context.Context, params PickupParams) (furnituremodel.Item, error)
 }
 
+// StateUpdater changes durable furniture interaction state.
+type StateUpdater interface {
+	// UpdateState changes a placed item's protocol-facing state.
+	UpdateState(ctx context.Context, params StateParams) (furnituremodel.Item, error)
+}
+
 // managerAssertion verifies Service implements Manager.
 var managerAssertion Manager = (*Service)(nil)
 
@@ -68,3 +74,6 @@ var granterAssertion Granter = (*Service)(nil)
 
 // definitionGranterAssertion verifies Service implements DefinitionGranter.
 var definitionGranterAssertion DefinitionGranter = (*Service)(nil)
+
+// stateUpdaterAssertion verifies Service implements StateUpdater.
+var stateUpdaterAssertion StateUpdater = (*Service)(nil)

@@ -39,6 +39,17 @@ func tileFixture(item Item, point grid.Point, top grid.Height, slotsByPoint map[
 		})
 	}
 
+	if gateOpen(item) {
+		return surface.NewFixture(surface.FixtureParams{
+			Point:    point,
+			Z:        item.Z,
+			Top:      top,
+			Stacking: item.Definition.AllowStack,
+			State:    surface.StateOpen,
+			SourceID: item.ID,
+		})
+	}
+
 	if item.Definition.AllowWalk {
 		return surface.NewFixture(surface.FixtureParams{
 			Point:    point,
@@ -58,6 +69,11 @@ func tileFixture(item Item, point grid.Point, top grid.Height, slotsByPoint map[
 		State:    surface.StateBlocked,
 		SourceID: item.ID,
 	})
+}
+
+// gateOpen reports whether a gate exposes a walkable fixture.
+func gateOpen(item Item) bool {
+	return item.Definition.InteractionType == "gate" && item.ExtraData == "1"
 }
 
 // slotState maps a slot status to its resolver section state.

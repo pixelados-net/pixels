@@ -26,6 +26,8 @@ var (
 	ErrTileOccupied = errors.New("furniture placement tile is occupied")
 	// ErrCannotStack reports a furniture footprint with a blocked stacking surface.
 	ErrCannotStack = errors.New("furniture cannot stack on target surface")
+	// ErrFurnitureNotFound reports a missing runtime furniture item.
+	ErrFurnitureNotFound = errors.New("room world furniture not found")
 )
 
 // Config stores loaded room world input.
@@ -60,10 +62,12 @@ type UnitSnapshot struct {
 	BodyRotation worldunit.Rotation
 	// HeadRotation stores the unit head rotation.
 	HeadRotation worldunit.Rotation
-	// Moving reports whether the unit has pending steps.
+	// Moving reports whether the unit is moving or awaiting its final settled projection.
 	Moving bool
 	// Statuses stores ordered unit statuses.
 	Statuses []worldunit.Status
+	// HandItem stores the currently carried protocol hand item id.
+	HandItem int32
 }
 
 // Movement stores one unit tick movement.

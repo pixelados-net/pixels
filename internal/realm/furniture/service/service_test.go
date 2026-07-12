@@ -145,7 +145,7 @@ func placedItemForTest() furnituremodel.Item {
 
 // newFakeStore creates a furniture store for tests.
 func newFakeStore() *fakeStore {
-	return &fakeStore{found: true, placeUpdated: true, moveUpdated: true, pickupUpdated: true}
+	return &fakeStore{found: true, placeUpdated: true, moveUpdated: true, pickupUpdated: true, stateUpdated: true}
 }
 
 // fakeStore records furniture store calls for tests.
@@ -168,6 +168,10 @@ type fakeStore struct {
 	pickupParams repository.PickupItemParams
 	// created stores items returned by CreateItems.
 	created []furnituremodel.Item
+	// stateUpdated reports whether UpdateItemState matched a row.
+	stateUpdated bool
+	// stateParams stores the latest state mutation input.
+	stateParams repository.UpdateItemStateParams
 }
 
 // FindDefinitionByID finds a definition for tests.
@@ -227,4 +231,11 @@ func (store *fakeStore) PickupItem(_ context.Context, params repository.PickupIt
 	store.pickupParams = params
 
 	return store.pickupResult, store.pickupUpdated, nil
+}
+
+// UpdateItemState changes item state for tests.
+func (store *fakeStore) UpdateItemState(_ context.Context, params repository.UpdateItemStateParams) (furnituremodel.Item, bool, error) {
+	store.stateParams = params
+
+	return store.item, store.stateUpdated, nil
 }

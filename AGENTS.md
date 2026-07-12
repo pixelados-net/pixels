@@ -517,6 +517,76 @@ minimum manual checks expected when touching it.
   - Activate both endpoints concurrently with different users and verify one
     transition completes before the pair accepts the next user.
 
+### FEATURE: Toggle and Gate Furniture
+
+- Owns `internal/realm/furniture/commands/interact`,
+  `internal/realm/furniture/interactions/toggle`,
+  `internal/realm/furniture/interactions/gate`, and the compact furniture state
+  packet under `networking/outbound/room/furniture/state`.
+- Packet `99` has one generic adapter. It delegates paired teleports before
+  resolving build-right-protected `default`, `toggle`, and `gate` behavior; do
+  not register competing handlers for the same packet.
+- Generic toggles cycle `interaction_modes_count` defensively. Invalid durable
+  state is logged and treated as state zero without aborting the interaction.
+- Gate state `1` is open and walkable; every other value is closed. Closing or
+  opening rebuilds the resolver fixture atomically with the runtime snapshot,
+  while PostgreSQL uses compare-and-swap to prevent concurrent click drift.
+- A gate cannot change while any unit occupies any tile in its rotated
+  footprint. The occupancy check must remain allocation-free.
+- Furniture state changes broadcast Nitro `FURNITURE_STATE` packet `2376` and
+  publish `furniture.used`. Accepted movement publishes `furniture.walked_on`
+  and `furniture.walked_off`; moving a generic interaction out from beneath a
+  unit publishes a synthetic walk-off, except for rollers.
+- Test after changes:
+  - `go test -race ./internal/realm/furniture/... ./internal/realm/room/... ./networking/outbound/room/furniture/state`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/furniture/interactions/toggle ./internal/realm/furniture/interactions/gate`
+  - Click a normal multi-state item repeatedly and verify every occupant sees
+    the complete state cycle without a full furniture-position update.
+  - Buy and place the seeded Aquamarine Gate, open it, walk through it, and
+    close it; verify a unit on any footprint tile prevents closing.
+  - Start a path through an open gate and close it before arrival; verify the
+    unit receives a neutral stop and does not cross the closed fixture.
+  - Move a togglable item from beneath a unit and verify one
+    `furniture.walked_off` event; moving a roller must not duplicate that event.
+
+### FEATURE: Essential Furniture Interactions
+
+- Owns `internal/realm/furniture/interactions/essential`, the room-owned task
+  queue under `internal/realm/room/runtime/live/task`, and outbound unit hand
+  item packet `1474`.
+- Provides delayed dice/color-wheel/random-state resolution, pressure and color
+  plates, controlled one-way gates and switches, physical multiheight updates,
+  vending/hand-item delivery, and environmental cannon kicks.
+- Nitro dice uses inbound packets `1990`/`1533` and outbound packet `3431`;
+  color-wheel clicks use inbound packet `2144`. Keep these dedicated routes in
+  addition to generic furniture use packet `99`.
+- Placing or moving furniture must preserve the persisted owner and extra data
+  in the runtime item. Losing the initial extra data breaks guarded delayed
+  state resolution and leaves random furniture in its rolling animation.
+- Delayed animation state is runtime-only. Final random, switch, and multiheight
+  state uses guarded persistence; room close cancels every pending callback.
+- Furniture workflows reserve unit control and must release it after success,
+  failure, pickup, room leave, or target disappearance. Never create a timer or
+  goroutine per furniture use.
+- Hand items live on the room unit, not `Player`, and are projected to every room
+  occupant. Avatar effects remain deferred until the complete effect holder and
+  protocol behavior are implemented.
+- Test after changes:
+  - `go test -race ./internal/realm/furniture/interactions/essential ./internal/realm/room/runtime/live/...`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/room/runtime/live/task ./internal/realm/furniture/interactions/essential`
+  - Roll and close a Holodice; verify headers `1990`, `1533`, and `3431`, that
+    `-1` prevents concurrent rolls, and that a final value appears.
+  - Walk on/off the seeded Pressure Plate and verify every occupant sees `1/0`.
+  - Use the Floor Switch from a distance and verify one controlled approach and
+    exactly one state transition.
+  - Cycle the Pink Pura Block with and without furniture stacked above it; verify
+    heightmap and standing-unit Z updates remain synchronized.
+  - Use the Mini-bar and Hand Item Tester and verify carried items are visible to
+    all occupants.
+  - Click a Cannon while Nitro is still walking to it; verify the click survives
+    arrival, the shot follows `rotation + 6`, and owner/`room.unkickable` users
+    remain while vulnerable users return to desktop with a localized notice.
+
 ### FEATURE: Room Rights, Moderation, and Audit
 
 - Owns `internal/realm/room/control/rights`, `internal/realm/room/control/moderation`,

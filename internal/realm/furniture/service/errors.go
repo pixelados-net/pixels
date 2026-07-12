@@ -38,4 +38,7 @@ var (
 
 	// ErrItemNotInRoom reports an item outside the room authorized for a mutation.
 	ErrItemNotInRoom = errors.New("furniture item not in authorized room")
+
+	// ErrStateConflict reports a concurrent furniture state mutation.
+	ErrStateConflict = errors.New("furniture state changed concurrently")
 )

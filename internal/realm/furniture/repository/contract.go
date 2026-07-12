@@ -40,6 +40,9 @@ type ItemWriter interface {
 
 	// PickupItem returns an owned, placed item to inventory.
 	PickupItem(ctx context.Context, params PickupItemParams) (furnituremodel.Item, bool, error)
+
+	// UpdateItemState changes one placed item's protocol-facing state with compare-and-swap.
+	UpdateItemState(ctx context.Context, params UpdateItemStateParams) (furnituremodel.Item, bool, error)
 }
 
 // Store reads and writes furniture persistence records.

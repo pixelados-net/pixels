@@ -2,6 +2,10 @@
 package furniture
 
 import (
+	"math"
+	"strconv"
+	"strings"
+
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
@@ -32,6 +36,27 @@ type SlotDefinition struct {
 	BodyRotation worldunit.Rotation
 }
 
+// HeightAtState resolves a multiheight state while preserving the static fallback.
+func (definition Definition) HeightAtState(state string) grid.Height {
+	if definition.InteractionType != "multiheight" || definition.Multiheight == "" {
+		return definition.StackHeight
+	}
+	index, err := strconv.Atoi(state)
+	if err != nil || index < 0 {
+		index = 0
+	}
+	heights := strings.Split(definition.Multiheight, ";")
+	if index >= len(heights) {
+		index = 0
+	}
+	value, err := strconv.ParseFloat(strings.TrimSpace(heights[index]), 64)
+	if err != nil {
+		return definition.StackHeight
+	}
+
+	return grid.Height(math.Round(value))
+}
+
 // Definition stores the minimal furniture definition snapshot used by the room world.
 type Definition struct {
 	// SpriteID stores the Nitro rendering class id.
@@ -39,6 +64,15 @@ type Definition struct {
 
 	// InteractionType identifies the furniture behavior.
 	InteractionType string
+
+	// InteractionModesCount stores the number of protocol-facing visual states.
+	InteractionModesCount int
+
+	// Multiheight stores definition-specific variable top heights.
+	Multiheight string
+
+	// CustomParams stores definition-specific behavior configuration.
+	CustomParams string
 
 	// Width stores the footprint width at rotation 0.
 	Width int
@@ -63,4 +97,11 @@ type Definition struct {
 
 	// Slots stores declared sit/lay slots in unrotated local coordinates.
 	Slots []SlotDefinition
+}
+
+// EmitsWalkEvents reports whether movement should publish item footprint transitions.
+func (definition Definition) EmitsWalkEvents() bool {
+	return definition.InteractionType == "gate" ||
+		definition.InteractionType == "toggle" ||
+		(definition.InteractionType == "default" && definition.InteractionModesCount > 1)
 }
