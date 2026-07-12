@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/pixels/internal/realm/messenger/delivery"
-	messengerservice "github.com/niflaot/pixels/internal/realm/messenger/service"
+	messengerservice "github.com/niflaot/pixels/internal/realm/messenger/core"
+	"github.com/niflaot/pixels/internal/realm/messenger/runtime/delivery"
 	"go.uber.org/fx"
 )
 

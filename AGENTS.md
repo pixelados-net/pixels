@@ -29,6 +29,8 @@ This repository contains Pixels, a fast and idiomatic Go emulator for the pixel 
 - Prefer direct functional package names such as `networking/outbound/session/hotel/availability`.
 - Avoid one-word ladder paths for packet names, such as `closed/and/opens/at`.
 - When packets share a functional concept, classify them by inbound or outbound and use a concise package name.
+- Classify Messenger packets below `messenger/friend`, `messenger/session`, or
+  `messenger/social`; do not restore a flat package for every Messenger action.
 
 ## Package Rules
 
@@ -296,6 +298,13 @@ minimum manual checks expected when touching it.
 
 - Owns `internal/realm/messenger`, messenger packets under `networking`, and
   `pkg/http/messenger/routes`.
+- Uses capability-first packages: `friend` owns friendship mutations and their
+  events, `session` owns bootstrap/search/profile requests and ignore handling,
+  `profile` owns presence and observed-profile refreshes, `social` owns invites,
+  follow, and private messages, `runtime` owns delivery and async chat logging,
+  `record` owns domain records/contracts, and `database` owns PostgreSQL.
+- Do not restore realm-wide `events`, `repository`, `service`, `privacy`, or
+  `presence` packages. Events belong below the capability that publishes them.
 - Provides directional friendships, unilateral relationship markers, pending
   requests, Nitro-native friend-list bootstrap and deltas, Redis-cached prefix
   search, room invitations, follow and populated-room discovery, private chat,
@@ -315,7 +324,7 @@ minimum manual checks expected when touching it.
   `messenger.relation.changed`; do not add a profile-viewer registry.
 - Test after changes:
   - `go test -race ./internal/realm/messenger/... ./networking/inbound/messenger/... ./networking/outbound/messenger/...`
-  - `go test ./internal/realm/messenger/service -run '^$' -bench . -benchmem`
+  - `go test ./internal/realm/messenger/core -run '^$' -bench . -benchmem`
   - Open Nitro with two seeded friends and verify online/offline and room
     presence change without refreshing the friend list.
   - Send, accept, decline, and remove friend requests; verify both online and

@@ -3,7 +3,7 @@ package social
 import (
 	"testing"
 
-	messengerservice "github.com/niflaot/pixels/internal/realm/messenger/service"
+	messengerservice "github.com/niflaot/pixels/internal/realm/messenger/core"
 )
 
 // TestFollowErrorCodeMapsDomainFailures verifies native follow error mapping.

@@ -6,9 +6,9 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
-	infollow "github.com/niflaot/pixels/networking/inbound/messenger/follow"
-	ininvite "github.com/niflaot/pixels/networking/inbound/messenger/invite"
-	inprivate "github.com/niflaot/pixels/networking/inbound/messenger/privatechat"
+	infollow "github.com/niflaot/pixels/networking/inbound/messenger/social/follow"
+	ininvite "github.com/niflaot/pixels/networking/inbound/messenger/social/invite"
+	inprivate "github.com/niflaot/pixels/networking/inbound/messenger/social/privatechat"
 	inprivacy "github.com/niflaot/pixels/networking/inbound/user/settings/roominvites"
 	"go.uber.org/zap"
 )

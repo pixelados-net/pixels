@@ -4,14 +4,13 @@ import (
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	chatfilter "github.com/niflaot/pixels/internal/realm/chat/filter"
 	realmconn "github.com/niflaot/pixels/internal/realm/connection"
-	"github.com/niflaot/pixels/internal/realm/messenger/delivery"
-	"github.com/niflaot/pixels/internal/realm/messenger/friends"
-	"github.com/niflaot/pixels/internal/realm/messenger/presence"
-	"github.com/niflaot/pixels/internal/realm/messenger/privacy"
-	"github.com/niflaot/pixels/internal/realm/messenger/privatechat"
+	messengercore "github.com/niflaot/pixels/internal/realm/messenger/core"
+	messengerdatabase "github.com/niflaot/pixels/internal/realm/messenger/database"
+	"github.com/niflaot/pixels/internal/realm/messenger/friend"
 	"github.com/niflaot/pixels/internal/realm/messenger/profile"
-	"github.com/niflaot/pixels/internal/realm/messenger/repository"
-	"github.com/niflaot/pixels/internal/realm/messenger/service"
+	messengerrecord "github.com/niflaot/pixels/internal/realm/messenger/record"
+	"github.com/niflaot/pixels/internal/realm/messenger/runtime/chatlog"
+	"github.com/niflaot/pixels/internal/realm/messenger/runtime/delivery"
 	"github.com/niflaot/pixels/internal/realm/messenger/session"
 	"github.com/niflaot/pixels/internal/realm/messenger/social"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -28,34 +27,34 @@ import (
 // Module provides messenger persistence, behavior, and packet routing.
 var Module = fx.Module(
 	"realm-messenger",
-	fx.Provide(NewStore, NewPrivateChatWriter, NewService, delivery.New, presence.New, NewProfileBroadcaster),
-	fx.Invoke(RegisterConnectionHandlers, presence.Register, profile.Register, privatechat.RegisterLifecycle),
+	fx.Provide(NewStore, NewPrivateChatWriter, NewService, delivery.New, profile.NewPresence, NewProfileBroadcaster),
+	fx.Invoke(RegisterConnectionHandlers, profile.RegisterPresence, profile.RegisterRelationships, chatlog.RegisterLifecycle),
 )
 
 // NewProfileBroadcaster creates targeted live profile relationship projection.
-func NewProfileBroadcaster(messenger *service.Service, sender *delivery.Sender, log *zap.Logger) *profile.Broadcaster {
-	return profile.New(messenger, sender, log)
+func NewProfileBroadcaster(messenger *messengercore.Service, sender *delivery.Sender, log *zap.Logger) *profile.RelationshipBroadcaster {
+	return profile.NewRelationships(messenger, sender, log)
 }
 
 // NewStore creates messenger persistence behavior.
-func NewStore(pool *postgres.Pool) repository.Store {
-	return repository.New(pool)
+func NewStore(pool *postgres.Pool) messengerrecord.Store {
+	return messengerdatabase.New(pool)
 }
 
 // NewService creates configured messenger behavior.
-func NewService(config Config, store repository.Store, players playerservice.Manager, livePlayers *playerlive.Registry, rooms *roomlive.Registry, permissions permissionservice.Checker, redisClient *redis.Client, filter *chatfilter.Service, messageLog *privatechat.Writer) *service.Service {
+func NewService(config Config, store messengerrecord.Store, players playerservice.Manager, livePlayers *playerlive.Registry, rooms *roomlive.Registry, permissions permissionservice.Checker, redisClient *redis.Client, filter *chatfilter.Service, messageLog *chatlog.Writer) *messengercore.Service {
 	config = config.Normalize()
-	return service.New(service.Options{
+	return messengercore.New(messengercore.Options{
 		MaxFriends: config.MaxFriends, MaxFriendsClub: config.MaxFriendsClub,
 		MaxSearchResults: config.MaxSearchResults, SearchCacheTTL: config.SearchCacheTTL,
 		SearchThrottle: config.SearchThrottle, ChatThrottle: config.ChatThrottle,
 		ChatFilterEnabled: config.ChatFilterEnabled, ChatLogEnabled: config.ChatLogEnabled,
-	}, store, players, livePlayers, rooms, permissions, redisClient, filter, service.Nodes{FriendsUnlimited: FriendsUnlimited, FollowAny: FollowAny}, messageLog)
+	}, store, players, livePlayers, rooms, permissions, redisClient, filter, messengercore.Nodes{FriendsUnlimited: FriendsUnlimited, FollowAny: FollowAny}, messageLog)
 }
 
 // NewPrivateChatWriter creates optional asynchronous private-message persistence.
-func NewPrivateChatWriter(config Config, store repository.Store, log *zap.Logger) *privatechat.Writer {
-	return privatechat.New(privatechat.Config{Enabled: config.ChatLogEnabled}, store, log)
+func NewPrivateChatWriter(config Config, store messengerrecord.Store, log *zap.Logger) *chatlog.Writer {
+	return chatlog.New(chatlog.Config{Enabled: config.ChatLogEnabled}, store, log)
 }
 
 // HandlerDeps contains messenger packet handler dependencies.
@@ -63,7 +62,7 @@ type HandlerDeps struct {
 	fx.In
 
 	// Messenger stores messenger behavior.
-	Messenger *service.Service
+	Messenger *messengercore.Service
 	// Delivery sends packets through authenticated bindings.
 	Delivery *delivery.Sender
 	// Events publishes completed messenger actions.
@@ -80,7 +79,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, dependencies Handl
 		return
 	}
 	session.RegisterHandlers(handlers.Inbound, session.Handler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery}, dependencies.Log)
-	friends.RegisterHandlers(handlers.Inbound, friends.Handler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery, Events: dependencies.Events}, dependencies.Log)
+	friend.RegisterHandlers(handlers.Inbound, friend.Handler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery, Events: dependencies.Events}, dependencies.Log)
 	social.RegisterHandlers(handlers.Inbound, social.Handler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery, Events: dependencies.Events, Translations: dependencies.Translations}, dependencies.Log)
-	privacy.RegisterHandlers(handlers.Inbound, privacy.Handler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery}, dependencies.Log)
+	session.RegisterPrivacyHandlers(handlers.Inbound, session.PrivacyHandler{Messenger: dependencies.Messenger, Delivery: dependencies.Delivery}, dependencies.Log)
 }

@@ -4,8 +4,8 @@ package profile
 import (
 	"context"
 
-	"github.com/niflaot/pixels/internal/realm/messenger/delivery"
-	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/model"
+	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/record"
+	"github.com/niflaot/pixels/internal/realm/messenger/runtime/delivery"
 	"github.com/niflaot/pixels/networking/codec"
 	"go.uber.org/zap"
 )
@@ -24,8 +24,8 @@ type Sender interface {
 	Send(context.Context, int64, codec.Packet) (bool, error)
 }
 
-// Broadcaster refreshes profile relationship summaries for active observers.
-type Broadcaster struct {
+// RelationshipBroadcaster refreshes relationship summaries for active profile observers.
+type RelationshipBroadcaster struct {
 	// reader supplies current relationship and viewer state.
 	reader Reader
 	// sender delivers refresh packets.
@@ -35,15 +35,15 @@ type Broadcaster struct {
 }
 
 // New creates a profile relationship broadcaster.
-func New(reader Reader, sender Sender, log *zap.Logger) *Broadcaster {
+func NewRelationships(reader Reader, sender Sender, log *zap.Logger) *RelationshipBroadcaster {
 	if log == nil {
 		log = zap.NewNop()
 	}
-	return &Broadcaster{reader: reader, sender: sender, log: log}
+	return &RelationshipBroadcaster{reader: reader, sender: sender, log: log}
 }
 
 // Refresh sends one relationship snapshot to every current profile observer.
-func (broadcaster *Broadcaster) Refresh(ctx context.Context, playerID int64) error {
+func (broadcaster *RelationshipBroadcaster) Refresh(ctx context.Context, playerID int64) error {
 	items, err := broadcaster.reader.Relationships(ctx, playerID)
 	if err != nil {
 		return err

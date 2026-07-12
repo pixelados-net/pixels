@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/model"
+	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/record"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
-	outupdate "github.com/niflaot/pixels/networking/outbound/messenger/update"
+	outupdate "github.com/niflaot/pixels/networking/outbound/messenger/friend/update"
 )
 
 // friendsHandler lists durable friendships with live presence projection.

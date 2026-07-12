@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/model"
+	messengermodel "github.com/niflaot/pixels/internal/realm/messenger/record"
 	"github.com/niflaot/pixels/networking/codec"
 	outrelationships "github.com/niflaot/pixels/networking/outbound/user/relationships"
 )
@@ -38,7 +38,7 @@ func (sender *senderForTest) Send(_ context.Context, playerID int64, packet code
 // TestRefreshSendsCurrentSummaryOnlyToObservers verifies targeted live projection.
 func TestRefreshSendsCurrentSummaryOnlyToObservers(t *testing.T) {
 	sender := &senderForTest{}
-	broadcaster := New(readerForTest{}, sender, nil)
+	broadcaster := NewRelationships(readerForTest{}, sender, nil)
 	if err := broadcaster.Refresh(context.Background(), 1); err != nil {
 		t.Fatalf("refresh: %v", err)
 	}
