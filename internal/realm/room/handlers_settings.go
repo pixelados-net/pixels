@@ -16,6 +16,10 @@ func registerSettingsHandlers(registry *netconn.HandlerRegistry, deps HandlerDep
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.ConfigRooms, Authorize: deps.Settings,
 		Runtime: deps.Runtime, Connections: deps.Connections, Events: deps.Events,
 	}, deps.Log), deps.Translations, deps.Log))
+	settingshandler.RegisterQuick(registry, controlhandler.Wrap(settingshandler.NewQuick(settingscmd.QuickHandler{
+		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.ConfigRooms, Authorize: deps.Settings, Runtime: deps.Runtime,
+		Connections: deps.Connections, Events: deps.Events,
+	}, deps.Log), deps.Translations, deps.Log))
 	settingshandler.RegisterFilterRequest(registry, controlhandler.Wrap(settingshandler.NewFilterRequest(settingscmd.FilterRequestHandler{
 		Players: deps.Players, Bindings: deps.Bindings, Rooms: deps.Rooms, Authorize: deps.Settings, Filters: deps.WordFilters,
 	}, deps.Log), deps.Translations, deps.Log))

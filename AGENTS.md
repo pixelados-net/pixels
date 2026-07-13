@@ -759,6 +759,55 @@ minimum manual checks expected when touching it.
     the same score with their own eligibility.
   - Open `/docs` and verify the `Admin Room Votes` route group.
 
+### FEATURE: Marketplace and Direct Trade
+
+- Owns `internal/realm/marketplace`, `internal/realm/trade`, Marketplace and
+  Trade packets under `networking`, focused furniture/player trading fields,
+  and `pkg/http/trading/routes`.
+- Marketplace preserves seller ownership while an item is durably reserved in
+  limbo, hides it from inventory, applies upward-rounded buyer commission, and
+  settles purchase, delivery, cancellation, expiry, tokens, and redemption in
+  shared PostgreSQL transactions.
+- Nitro exposes Marketplace through the seeded `marketplace` and
+  `marketplace_own_items` catalog layouts; keep both pages in the catalog tree.
+- Before opening the Marketplace posting form, Nitro must request packet `848`.
+  A zero token balance must offer packet `1866`, wait for packet `54`, and open
+  the form only after the server confirms a positive balance. Do not silently
+  buy tokens from the listing handler.
+- Direct Trade keeps sessions and staged items in synchronized runtime indexes.
+  Every offer mutation resets agreement; settlement revalidates every item and
+  transfers or consumes both offers atomically. Room leave and disconnect cancel
+  the trade and clear unit status.
+- Trade protocol participant fields are durable player/web ids, not room-local
+  unit ids. Unit ids remain internal to room targeting and status projection.
+- After durable settlement, send Nitro `TRADE_COMPLETED` before furniture
+  inventory invalidation packet `3151` to both participants. The invalidation
+  clears staged client groups and reloads transferred ownership; packet `3928`
+  is only the server ping and must never substitute for an inventory refresh.
+- Trade rejection packet `217` must preserve Nitro's native reasons: `1` for a
+  globally disabled hotel, `6` for room policy, `7` for the requester cooldown
+  or busy state, and `8` for an unavailable target. Do not collapse room policy
+  into the global-disabled message.
+- Community Goals packets remain deferred until a real implementation or wire
+  reference exists; do not invent those twelve packet shapes.
+- Test after changes:
+  - `go test -race ./internal/realm/marketplace/... ./internal/realm/trade/...`
+  - `go test ./networking/inbound/marketplace/... ./networking/outbound/marketplace/... ./networking/inbound/trade/... ./networking/outbound/trade/...`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/marketplace/core/tests ./internal/realm/trade/core ./internal/realm/trade/runtime`
+  - Apply Liquibase and verify Marketplace listing/token/stat tables, trade
+    audit logs, furniture flags/LTD reservation, and the player trade lock.
+  - Click Sell with zero tokens, confirm the configured token purchase, and
+    verify credits and token balance refresh before the posting form opens.
+  - Initiate a trade as a normal member in the seeded Pixels Lobby and verify it
+    opens; disable room trading and verify Nitro reports the room-specific error.
+  - List/buy/cancel/expire/redeem regular and LTD items, then race two buyers
+    against one listing and verify exactly one wins.
+  - Trade regular and redeemable-credit furniture, mutate offers after accept,
+    leave/disconnect mid-trade, and verify no item can be staged, placed, or
+    listed in two workflows at once.
+  - Open `/docs` and verify `Admin Trading`; lock/unlock one player, read their
+    trade log, and force-close an open Marketplace listing.
+
 ## SDK Rules
 
 - Treat `sdk/` as a controlled extension surface.

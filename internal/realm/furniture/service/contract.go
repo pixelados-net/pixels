@@ -70,7 +70,6 @@ type Manager interface {
 
 	// Pickup returns a placed item to inventory.
 	Pickup(ctx context.Context, params PickupParams) (furnituremodel.Item, error)
-
 }
 
 // StateUpdater changes durable furniture interaction state.

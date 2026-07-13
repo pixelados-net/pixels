@@ -10,11 +10,25 @@ import (
 type Service struct {
 	// store reads and writes furniture persistence records.
 	store repository.Store
+
+	// staged reports inventory items temporarily locked by direct trades.
+	staged StagedChecker
 }
 
 // New creates a furniture service.
 func New(store repository.Store) *Service {
 	return &Service{store: store}
+}
+
+// StagedChecker reports whether a furniture item is locked by a live trade.
+type StagedChecker interface {
+	// Contains reports whether the item is currently staged.
+	Contains(itemID int64) bool
+}
+
+// SetStagedChecker attaches the live direct-trade item projection.
+func (service *Service) SetStagedChecker(staged StagedChecker) {
+	service.staged = staged
 }
 
 // validateActor validates common item and actor identifiers.

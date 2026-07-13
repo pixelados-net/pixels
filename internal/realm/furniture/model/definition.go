@@ -59,6 +59,15 @@ type Definition struct {
 	// AllowInventoryStack reports whether inventory can group identical items.
 	AllowInventoryStack bool
 
+	// AllowTrade reports whether direct player trading is allowed.
+	AllowTrade bool
+
+	// AllowMarketplaceSale reports whether Marketplace listings are allowed.
+	AllowMarketplaceSale bool
+
+	// RedeemableCredits stores credits granted to the other party when traded.
+	RedeemableCredits int32
+
 	// InteractionType names the server-side behavior extension point.
 	InteractionType string
 

@@ -142,6 +142,40 @@ func TestCreateSSOTicketRoute(t *testing.T) {
 	}
 }
 
+// TestCreateSSOTicketRouteReplaysIdempotentResponse verifies transport retries reuse one ticket.
+func TestCreateSSOTicketRouteReplaysIdempotentResponse(t *testing.T) {
+	app := testApp(t, "development")
+	body := `{"playerId":2,"ip":"127.0.0.1","ttlSeconds":60}`
+	request := func() *stdhttp.Request {
+		created, err := stdhttp.NewRequest(stdhttp.MethodPost, "/api/sso/tickets", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("new request: %v", err)
+		}
+		created.Header.Set(apiKeyHeader, "secret")
+		created.Header.Set("Content-Type", "application/json")
+		created.Header.Set(ssoIdempotencyHeader, "hotel-launch-123456")
+		return created
+	}
+
+	first, err := app.Test(request())
+	if err != nil {
+		t.Fatalf("first ticket request: %v", err)
+	}
+	firstBody := readBody(t, first)
+	second, err := app.Test(request())
+	if err != nil {
+		t.Fatalf("second ticket request: %v", err)
+	}
+	secondBody := readBody(t, second)
+
+	if first.StatusCode != fiber.StatusCreated || second.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected created and replay statuses, got %d and %d", first.StatusCode, second.StatusCode)
+	}
+	if firstBody != secondBody || second.Header.Get(ssoReplayHeader) != "true" {
+		t.Fatal("expected the same ticket body and replay header")
+	}
+}
+
 // TestWebsocketRouteRequiresUpgrade verifies websocket entrypoint is public but requires upgrade.
 func TestWebsocketRouteRequiresUpgrade(t *testing.T) {
 	app := testApp(t, "development")

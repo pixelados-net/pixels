@@ -44,6 +44,9 @@ type Snapshot struct {
 
 	// Club contains the player's subscription entitlement.
 	Club playermodel.Club
+
+	// AllowTrade reports whether direct trading is enabled for the player.
+	AllowTrade bool
 }
 
 // SnapshotFromRecord maps a persistent player record to a runtime snapshot.
@@ -61,6 +64,7 @@ func SnapshotFromRecord(record playerservice.Record) Snapshot {
 		BlockRoomInvites:    record.Profile.BlockRoomInvites,
 		BlockFollowing:      record.Profile.BlockFollowing,
 		Club:                record.Player.Club,
+		AllowTrade:          record.Player.AllowTrade,
 	}
 }
 

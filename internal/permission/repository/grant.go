@@ -6,6 +6,7 @@ import (
 
 	"github.com/niflaot/pixels/internal/permission"
 	permissionmodel "github.com/niflaot/pixels/internal/permission/model"
+	"github.com/niflaot/pixels/pkg/postgres"
 )
 
 const (
@@ -41,7 +42,7 @@ func (repository *Repository) ListPlayerNodes(ctx context.Context, playerID int6
 
 // ListAffectedPlayerIDs lists players inheriting from a changed group.
 func (repository *Repository) ListAffectedPlayerIDs(ctx context.Context, groupID int64) ([]int64, error) {
-	rows, err := repository.executor.Query(ctx, affectedPlayersSQL, groupID)
+	rows, err := postgres.ExecutorFor(ctx, repository.executor).Query(ctx, affectedPlayersSQL, groupID)
 	if err != nil {
 		return nil, fmt.Errorf("list players affected by permission group %d: %w", groupID, err)
 	}
@@ -91,7 +92,7 @@ func (repository *Repository) DeletePlayerNode(ctx context.Context, playerID int
 
 // queryGrants scans a grant collection.
 func (repository *Repository) queryGrants(ctx context.Context, query string, identifier int64) ([]permissionmodel.Grant, error) {
-	rows, err := repository.executor.Query(ctx, query, identifier)
+	rows, err := postgres.ExecutorFor(ctx, repository.executor).Query(ctx, query, identifier)
 	if err != nil {
 		return nil, fmt.Errorf("query permission grants: %w", err)
 	}
@@ -102,7 +103,7 @@ func (repository *Repository) queryGrants(ctx context.Context, query string, ide
 
 // execute runs one permission mutation statement.
 func (repository *Repository) execute(ctx context.Context, query string, arguments ...any) error {
-	if _, err := repository.executor.Exec(ctx, query, arguments...); err != nil {
+	if _, err := postgres.ExecutorFor(ctx, repository.executor).Exec(ctx, query, arguments...); err != nil {
 		return fmt.Errorf("mutate permission persistence: %w", err)
 	}
 

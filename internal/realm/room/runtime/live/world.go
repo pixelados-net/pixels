@@ -104,6 +104,16 @@ func (room *Room) Unit(playerID int64) (UnitSnapshot, bool) {
 	return room.world.Unit(playerID)
 }
 
+// UnitByID returns one unit by its room-local identifier without allocation.
+func (room *Room) UnitByID(unitID int64) (UnitSnapshot, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.UnitByID(unitID)
+}
+
 // SetUnitStatus stores one status on a player unit when its world is loaded.
 func (room *Room) SetUnitStatus(playerID int64, key string, value string) bool {
 	room.mutex.Lock()
@@ -113,6 +123,16 @@ func (room *Room) SetUnitStatus(playerID int64, key string, value string) bool {
 	}
 
 	return room.world.SetUnitStatus(playerID, key, value)
+}
+
+// ClearUnitStatus removes one status from a player unit when its world is loaded.
+func (room *Room) ClearUnitStatus(playerID int64, key string) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return false
+	}
+	return room.world.ClearUnitStatus(playerID, key)
 }
 
 // FurnitureItems returns stable placed furniture item snapshots.

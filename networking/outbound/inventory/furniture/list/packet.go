@@ -80,6 +80,15 @@ type Item struct {
 	// GiftWrapped reports whether Nitro should expose gift wrapping variants.
 	GiftWrapped bool
 
+	// AllowTrade reports whether Nitro may offer the item in direct trades.
+	AllowTrade bool
+
+	// AllowMarketplace reports whether Nitro may list the item for sale.
+	AllowMarketplace bool
+
+	// LimitedEditionNumber stores the optional LTD serial number.
+	LimitedEditionNumber *int32
+
 	// GiftBoxID stores the selected gift box variant.
 	GiftBoxID int32
 
@@ -116,18 +125,29 @@ func appendItem(dst []byte, item Item) ([]byte, error) {
 	}
 	adjustedID := int32(item.ID)
 	kind := itemKind(item)
-	dst, err = codec.AppendPayload(dst, itemDefinition(),
+	dst, err = codec.AppendPayload(dst, itemPrefixDefinition(),
 		codec.Int32(adjustedID),
 		codec.String(typeCode),
 		codec.Int32(int32(item.ID)),
 		codec.Int32(int32(item.SpriteID)),
 		codec.Int32(kind),
-		codec.Int32(nonLimitedFlag),
-		codec.String(item.ExtraData),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if item.LimitedEditionNumber == nil {
+		dst, err = codec.AppendPayload(dst, regularDataDefinition(), codec.Int32(nonLimitedFlag), codec.String(item.ExtraData))
+	} else {
+		dst, err = codec.AppendPayload(dst, limitedDataDefinition(), codec.Int32(1), codec.Int32(*item.LimitedEditionNumber), codec.Int32(0))
+	}
+	if err != nil {
+		return nil, err
+	}
+	dst, err = codec.AppendPayload(dst, itemSuffixDefinition(),
 		codec.Bool(false),
-		codec.Bool(false),
+		codec.Bool(item.AllowTrade),
 		codec.Bool(item.AllowInventoryStack),
-		codec.Bool(false),
+		codec.Bool(item.AllowMarketplace),
 		codec.Int32(unknownTrailer),
 		codec.Bool(true),
 		codec.Int32(unknownTrailer),
@@ -179,15 +199,29 @@ func headerDefinition() codec.Definition {
 }
 
 // itemDefinition returns the inventory item field order.
-func itemDefinition() codec.Definition {
+func itemPrefixDefinition() codec.Definition {
 	return codec.Definition{
 		codec.Named("giftAdjustedId", codec.Int32Field),
 		codec.Named("typeCode", codec.StringField),
 		codec.Named("id", codec.Int32Field),
 		codec.Named("spriteId", codec.Int32Field),
 		codec.Named("kind", codec.Int32Field),
-		codec.Named("limitedFlag", codec.Int32Field),
-		codec.Named("extradata", codec.StringField),
+	}
+}
+
+// regularDataDefinition returns regular furniture data fields.
+func regularDataDefinition() codec.Definition {
+	return codec.Definition{codec.Named("limitedFlag", codec.Int32Field), codec.Named("extradata", codec.StringField)}
+}
+
+// limitedDataDefinition returns LTD furniture data fields.
+func limitedDataDefinition() codec.Definition {
+	return codec.Definition{codec.Named("limitedFlag", codec.Int32Field), codec.Named("limitedNumber", codec.Int32Field), codec.Named("limitedTotal", codec.Int32Field)}
+}
+
+// itemSuffixDefinition returns inventory permission and rental fields.
+func itemSuffixDefinition() codec.Definition {
+	return codec.Definition{
 		codec.Named("allowRecycle", codec.BooleanField),
 		codec.Named("allowTrade", codec.BooleanField),
 		codec.Named("allowInventoryStack", codec.BooleanField),
@@ -196,6 +230,13 @@ func itemDefinition() codec.Definition {
 		codec.Named("hasRentPeriodStarted", codec.BooleanField),
 		codec.Named("unknown2", codec.Int32Field),
 	}
+}
+
+// itemDefinition returns the complete regular item shape used by packet tests.
+func itemDefinition() codec.Definition {
+	definition := append(codec.Definition{}, itemPrefixDefinition()...)
+	definition = append(definition, regularDataDefinition()...)
+	return append(definition, itemSuffixDefinition()...)
 }
 
 // floorDefinition returns fields present only on floor inventory items.

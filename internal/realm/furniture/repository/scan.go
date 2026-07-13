@@ -30,6 +30,9 @@ func scanDefinition(row pgx.Row) (furnituremodel.Definition, error) {
 		&definition.AllowSit,
 		&definition.AllowLay,
 		&definition.AllowInventoryStack,
+		&definition.AllowTrade,
+		&definition.AllowMarketplaceSale,
+		&definition.RedeemableCredits,
 		&definition.InteractionType,
 		&definition.InteractionModesCount,
 		&definition.Multiheight,
@@ -73,6 +76,7 @@ func scanItem(row pgx.Row) (furnituremodel.Item, error) {
 	var z pgtype.Float8
 	var rotation int16
 	var wallPosition pgtype.Text
+	var limitedEditionNumber pgtype.Int4
 	var giftSprite pgtype.Int4
 	var giftBox pgtype.Int4
 	var giftRibbon pgtype.Int4
@@ -91,6 +95,8 @@ func scanItem(row pgx.Row) (furnituremodel.Item, error) {
 		&rotation,
 		&wallPosition,
 		&item.ExtraData,
+		&limitedEditionNumber,
+		&item.MarketplaceReserved,
 		&item.GiftWrapped,
 		&giftSprite,
 		&giftBox,
@@ -107,6 +113,9 @@ func scanItem(row pgx.Row) (furnituremodel.Item, error) {
 		return furnituremodel.Item{}, err
 	}
 	item.RoomID = int64Pointer(roomID)
+	if limitedEditionNumber.Valid {
+		item.LimitedEditionNumber = &limitedEditionNumber.Int32
+	}
 	if giftSprite.Valid {
 		item.GiftWrapSpriteID = &giftSprite.Int32
 	}

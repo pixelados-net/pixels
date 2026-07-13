@@ -52,7 +52,6 @@ type PickupParams struct {
 	AllowForeign bool
 }
 
-
 // FindItemByID finds a furniture item by id.
 func (service *Service) FindItemByID(ctx context.Context, id int64) (furnituremodel.Item, bool, error) {
 	if id <= 0 {
@@ -96,8 +95,11 @@ func (service *Service) Place(ctx context.Context, params PlaceParams) (furnitur
 	if err != nil {
 		return furnituremodel.Item{}, err
 	}
-	if item.InRoom() {
+	if item.InRoom() || item.MarketplaceReserved {
 		return furnituremodel.Item{}, ErrItemNotInInventory
+	}
+	if service.staged != nil && service.staged.Contains(params.ItemID) {
+		return furnituremodel.Item{}, ErrItemStaged
 	}
 
 	placed, updated, err := service.store.PlaceItem(ctx, repository.PlaceItemParams{

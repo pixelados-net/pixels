@@ -49,6 +49,7 @@ func routeTags() []openapi3.Tag {
 		tag("Admin Rooms", "Protected room metadata and runtime routes."),
 		tag("Admin Room Votes", "Protected permanent room upvote routes."),
 		tag("Admin Navigator", "Protected navigator metadata routes."),
+		tag("Admin Trading", "Protected Marketplace and direct-trade administration routes."),
 		tag("Fallback", "Authenticated fallback behavior."),
 	}
 }

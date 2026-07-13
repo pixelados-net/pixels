@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	fiberws "github.com/gofiber/contrib/websocket"
@@ -27,6 +28,7 @@ import (
 	playerroutes "github.com/niflaot/pixels/pkg/http/player/routes"
 	roomroutes "github.com/niflaot/pixels/pkg/http/room/routes"
 	subscriptionroutes "github.com/niflaot/pixels/pkg/http/subscription/routes"
+	tradingroutes "github.com/niflaot/pixels/pkg/http/trading/routes"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	wsroutes "github.com/niflaot/pixels/pkg/http/websocket/routes"
 	"github.com/niflaot/pixels/pkg/i18n"
@@ -44,8 +46,8 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Client, players playerservice.AdminManager, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies) {
-	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
+func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Client, players playerservice.AdminManager, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies, tradingAdmin tradingroutes.Dependencies) {
+	app.Post("/api/sso/tickets", createSSOTicketHandler(sso, redisClient))
 	playerroutes.Register(app, players, redisClient, currencyAdmin.Players, currencyAdmin.Connections)
 	wsroutes.Register(app, currencyAdmin.Connections)
 	roomroutes.Register(app, rooms, runtime, currencyAdmin.Connections, navigator, currencyAdmin.Players, roomEntry, roomAdmin)
@@ -56,6 +58,7 @@ func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Cli
 	chatroutes.Register(app, chatAdmin)
 	messengerroutes.Register(app, messengerAdmin)
 	subscriptionroutes.Register(app, subscriptionAdmin)
+	tradingroutes.Register(app, tradingAdmin)
 	app.Use(notFoundHandler)
 }
 
@@ -104,15 +107,37 @@ func docsHandler(config config.AppConfig) fiber.Handler {
 }
 
 // createSSOTicketHandler creates one-time SSO tickets.
-func createSSOTicketHandler(service *sso.Service) fiber.Handler {
+func createSSOTicketHandler(service *sso.Service, redisClient *redispkg.Client) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		var request CreateSSOTicketRequest
 		if err := ctx.BodyParser(&request); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "invalid sso ticket request body")
 		}
 
+		idempotencyKey := strings.TrimSpace(ctx.Get(ssoIdempotencyHeader))
+		store := ssoIdempotencyStore{client: redisClient}
+		if idempotencyKey != "" {
+			record, claimed, err := store.claim(ctx.Context(), idempotencyKey, request)
+			if err != nil {
+				if errors.Is(err, errSSOIdempotencyConflict) || errors.Is(err, errSSOIdempotencyPending) {
+					return fiber.NewError(fiber.StatusConflict, err.Error())
+				}
+				return err
+			}
+			if !claimed && record.State == "complete" && record.Response != nil {
+				ctx.Set(ssoReplayHeader, "true")
+				return ctx.Status(fiber.StatusOK).JSON(record.Response)
+			}
+			if !claimed {
+				return fiber.NewError(fiber.StatusConflict, errSSOIdempotencyPending.Error())
+			}
+		}
+
 		ticket, err := service.Create(ctx.Context(), ssoRequest(request))
 		if err != nil {
+			if idempotencyKey != "" {
+				_ = store.release(ctx.Context(), idempotencyKey)
+			}
 			if errors.Is(err, sso.ErrInvalidTicket) {
 				return fiber.NewError(fiber.StatusBadRequest, "invalid sso ticket request")
 			}
@@ -120,10 +145,16 @@ func createSSOTicketHandler(service *sso.Service) fiber.Handler {
 			return err
 		}
 
-		return ctx.Status(fiber.StatusCreated).JSON(CreateSSOTicketResponse{
+		response := CreateSSOTicketResponse{
 			Ticket:    ticket.Value,
 			ExpiresAt: ticket.ExpiresAt.UTC().Format(time.RFC3339),
-		})
+		}
+		if idempotencyKey != "" {
+			if err := store.complete(ctx.Context(), idempotencyKey, response, time.Until(ticket.ExpiresAt)); err != nil {
+				return err
+			}
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(response)
 	}
 }
 

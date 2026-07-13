@@ -14,6 +14,9 @@ const (
 
 	// StatusFlatControl stores room controller level status.
 	StatusFlatControl = "flatctrl"
+
+	// StatusTrade stores the direct-trade activity status.
+	StatusTrade = "trd"
 )
 
 // Status stores one unit status value.

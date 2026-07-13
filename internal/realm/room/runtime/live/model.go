@@ -67,6 +67,8 @@ type Snapshot struct {
 	CategoryID *int64
 	// MaxUsers stores the maximum active occupancy.
 	MaxUsers int
+	// TradeMode describes direct-trade behavior in the room.
+	TradeMode int16
 	// ChatDistance stores the normal chat hearing radius in tiles.
 	ChatDistance int16
 	// ChatProtection stores the room flood-control tier.
@@ -196,6 +198,14 @@ func (room *Room) UpdateSettings(categoryID *int64, maxUsers int, chatDistance i
 	room.snapshot.MaxUsers = maxUsers
 	room.snapshot.ChatDistance = chatDistance
 	room.snapshot.ChatProtection = chatProtection
+	room.mutex.Unlock()
+}
+
+// UpdateCategoryAndTrade refreshes focused category and trade policy metadata.
+func (room *Room) UpdateCategoryAndTrade(categoryID *int64, tradeMode int16) {
+	room.mutex.Lock()
+	room.snapshot.CategoryID = categoryID
+	room.snapshot.TradeMode = tradeMode
 	room.mutex.Unlock()
 }
 

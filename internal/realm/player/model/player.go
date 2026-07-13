@@ -27,6 +27,9 @@ type Player struct {
 
 	// Club contains the player's subscription entitlement.
 	Club Club
+
+	// AllowTrade reports whether the player may participate in direct trades.
+	AllowTrade bool
 }
 
 // HolderID identifies the player permission holder.

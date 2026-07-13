@@ -21,8 +21,14 @@ var Module = fx.Module(
 		NewClubWriter,
 		NewManager,
 		NewAdminManager,
+		NewTradeManager,
 	),
 )
+
+// NewTradeManager exposes durable trade eligibility changes.
+func NewTradeManager(playerService *service.Service) service.TradeManager {
+	return playerService
+}
 
 // NewService creates player behavior with default permission assignment.
 func NewService(store repository.Store, permissions permissionservice.DefaultAssigner) *service.Service {

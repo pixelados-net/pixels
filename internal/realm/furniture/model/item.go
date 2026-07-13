@@ -38,6 +38,12 @@ type Item struct {
 	// ExtraData stores simple protocol-facing visual state.
 	ExtraData string
 
+	// LimitedEditionNumber stores the durable LTD serial number.
+	LimitedEditionNumber *int32
+
+	// MarketplaceReserved reports whether the item is withdrawn into Marketplace limbo.
+	MarketplaceReserved bool
+
 	// GiftWrapped reports whether this inventory item is an unopened gift.
 	GiftWrapped bool
 

@@ -14,4 +14,5 @@
     <include file="development/0007_store_final.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0008_hc_catalog.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0009_giftable_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_marketplace_pages.sql" relativeToChangelogFile="true" contextFilter="development"/>
 </databaseChangeLog>

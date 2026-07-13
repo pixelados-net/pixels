@@ -125,13 +125,16 @@ func fragmentRecords(items []furnituremodel.Item, definitions map[int64]furnitur
 			spriteID = int(*item.GiftWrapSpriteID)
 		}
 		record := outlist.Item{
-			ID:                  item.ID,
-			SpriteID:            spriteID,
-			Kind:                inventoryKind(definition.Kind),
-			Category:            inventoryCategory(definition.Name),
-			ExtraData:           item.ExtraData,
-			AllowInventoryStack: definition.AllowInventoryStack,
-			GiftWrapped:         item.GiftWrapped,
+			ID:                   item.ID,
+			SpriteID:             spriteID,
+			Kind:                 inventoryKind(definition.Kind),
+			Category:             inventoryCategory(definition.Name),
+			ExtraData:            item.ExtraData,
+			AllowInventoryStack:  definition.AllowInventoryStack,
+			AllowTrade:           definition.AllowTrade,
+			AllowMarketplace:     definition.AllowMarketplaceSale,
+			LimitedEditionNumber: item.LimitedEditionNumber,
+			GiftWrapped:          item.GiftWrapped,
 		}
 		if item.GiftWrapped {
 			record.AllowInventoryStack = false

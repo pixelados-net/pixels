@@ -109,6 +109,7 @@ func playerResponse(record playerservice.Record) Response {
 		BubbleStyle: record.Profile.BubbleStyle, BlockFriendRequests: record.Profile.BlockFriendRequests,
 		BlockRoomInvites: record.Profile.BlockRoomInvites, BlockFollowing: record.Profile.BlockFollowing,
 		ClubLevel: int16(record.Player.Club.Level), ClubExpiresAt: record.Player.Club.ExpiresAt,
+		AllowTrade:  record.Player.AllowTrade,
 		LastLoginAt: record.Player.LastLoginAt, LastSeenAt: record.Player.LastSeenAt,
 		CreatedAt: record.Player.CreatedAt, UpdatedAt: newestTime(record.Player.UpdatedAt, record.Profile.UpdatedAt),
 		Version: fmt.Sprintf("%d.%d", record.Player.Version.Version, record.Profile.Version.Version),

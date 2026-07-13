@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	"github.com/niflaot/pixels/internal/permission"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	settingsupdated "github.com/niflaot/pixels/internal/realm/room/control/events/settingsupdated"
 	roomsettings "github.com/niflaot/pixels/internal/realm/room/control/settings"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
@@ -31,6 +32,8 @@ type managerForTest struct {
 	updateErr error
 	// updates counts committed mutations.
 	updates int
+	// lastParams stores the latest partial update boundary.
+	lastParams roomservice.UpdateParams
 }
 
 // FindByID returns the room fixture.
@@ -39,8 +42,9 @@ func (manager *managerForTest) FindByID(context.Context, int64) (roommodel.Room,
 }
 
 // Update records and returns one room mutation.
-func (manager *managerForTest) Update(context.Context, int64, int64, roomservice.UpdateParams) (roommodel.Room, error) {
+func (manager *managerForTest) Update(_ context.Context, _ int64, _ int64, params roomservice.UpdateParams) (roommodel.Room, error) {
 	manager.updates++
+	manager.lastParams = params
 	return manager.updated, manager.updateErr
 }
 
@@ -92,6 +96,32 @@ func TestHandleCommitsBroadcastsAndRejectsHC(t *testing.T) {
 	values, err := codec.DecodePacketExact((*sent)[len(*sent)-1], outerror.Definition)
 	if err != nil || values[1].Int32 != outerror.CodeRoomNotFound {
 		t.Fatalf("unexpected missing room result values=%#v err=%v", values, err)
+	}
+}
+
+// TestQuickHandleUpdatesOnlyCategoryAndTrade verifies the focused packet preserves all other settings.
+func TestQuickHandleUpdatesOnlyCategoryAndTrade(t *testing.T) {
+	save, input, manager, sent, _ := behaviorFixture(t)
+	categoryID := int64(4)
+	manager.updated.CategoryID = &categoryID
+	manager.updated.TradeMode = roommodel.TradeModeAllowed
+	events := &publisherForTest{}
+	handler := QuickHandler{Players: save.Players, Bindings: save.Bindings, Rooms: manager, Authorize: save.Authorize, Runtime: save.Runtime, Connections: save.Connections, Events: events}
+	err := handler.Handle(context.Background(), command.Envelope[QuickCommand]{Command: QuickCommand{Handler: input.Handler, RoomID: 9, CategoryID: 4, TradeMode: 2}})
+	params := manager.lastParams
+	if err != nil || manager.updates != 1 || params.CategoryID == nil || *params.CategoryID == nil || **params.CategoryID != 4 || params.TradeMode == nil || *params.TradeMode != roommodel.TradeModeAllowed {
+		t.Fatalf("params=%#v updates=%d err=%v", params, manager.updates, err)
+	}
+	if params.Name != nil || params.Tags != nil || params.MaxUsers != nil || params.DoorMode != nil || params.Password != nil || len(*sent) != 1 {
+		t.Fatalf("focused update touched unrelated settings params=%#v packets=%d", params, len(*sent))
+	}
+	active, _ := save.Runtime.Find(9)
+	snapshot := active.Snapshot()
+	if snapshot.CategoryID == nil || *snapshot.CategoryID != 4 || snapshot.TradeMode != 2 {
+		t.Fatalf("runtime snapshot=%#v", snapshot)
+	}
+	if len(events.events) != 1 || events.events[0].Name != settingsupdated.Name {
+		t.Fatalf("events=%#v", events.events)
 	}
 }
 

@@ -39,6 +39,12 @@ type ClubWriter interface {
 	UpdateClub(ctx context.Context, playerID int64, club playermodel.Club) error
 }
 
+// TradeWriter updates durable direct-trade eligibility.
+type TradeWriter interface {
+	// UpdateAllowTrade updates a player's trade eligibility.
+	UpdateAllowTrade(ctx context.Context, playerID int64, allow bool) (bool, error)
+}
+
 // ProfileReader reads player profile records.
 type ProfileReader interface {
 	// FindProfileByPlayerID finds a profile by player id.

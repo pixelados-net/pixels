@@ -197,7 +197,7 @@ func definitionValuesForTest() []any {
 	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
 	return []any{
 		int64(2), 39, "chair_plasto", "chair_plasto", "floor", 1, 1, 1.0,
-		false, false, true, false, true,
+		false, false, true, false, true, true, true, int32(0),
 		"default", 2, "", "",
 		[]byte(`{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":4}]}`),
 		now, now, pgtype.Timestamptz{}, int64(1),
@@ -209,7 +209,7 @@ func itemValuesForTest(roomID pgtype.Int8, x pgtype.Int2, y pgtype.Int2, z pgtyp
 	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
 	return []any{
 		int64(1), int64(2), int64(7), roomID, x, y, z, int16(0),
-		pgtype.Text{}, "0", false, pgtype.Int4{}, pgtype.Int4{}, pgtype.Int4{}, pgtype.Int8{}, pgtype.Text{}, []byte(`{}`),
+		pgtype.Text{}, "0", pgtype.Int4{}, false, false, pgtype.Int4{}, pgtype.Int4{}, pgtype.Int4{}, pgtype.Int8{}, pgtype.Text{}, []byte(`{}`),
 		now, now, pgtype.Timestamptz{}, int64(1),
 	}
 }

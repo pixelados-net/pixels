@@ -71,6 +71,8 @@ type Response struct {
 	BlockFollowing bool `json:"blockFollowing"`
 	// ClubLevel stores the derived subscription tier.
 	ClubLevel int16 `json:"clubLevel"`
+	// AllowTrade reports whether direct trading is enabled.
+	AllowTrade bool `json:"allowTrade"`
 	// ClubExpiresAt stores the optional current subscription expiration.
 	ClubExpiresAt *time.Time `json:"clubExpiresAt,omitempty"`
 	// LastLoginAt is the most recent successful hotel login.

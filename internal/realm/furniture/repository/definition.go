@@ -11,7 +11,7 @@ import (
 
 const (
 	// definitionColumns contains the shared furniture definition select list.
-	definitionColumns = `id, sprite_id, name, public_name, kind, width, length, stack_height::float8, allow_stack, allow_walk, allow_sit, allow_lay, allow_inventory_stack, interaction_type, interaction_modes_count, multiheight, custom_params, metadata, created_at, updated_at, deleted_at, version`
+	definitionColumns = `id, sprite_id, name, public_name, kind, width, length, stack_height::float8, allow_stack, allow_walk, allow_sit, allow_lay, allow_inventory_stack, allow_trade, allow_marketplace_sale, redeemable_credits, interaction_type, interaction_modes_count, multiheight, custom_params, metadata, created_at, updated_at, deleted_at, version`
 
 	// findDefinitionByIDSQL reads one active furniture definition by id.
 	findDefinitionByIDSQL = `select ` + definitionColumns + ` from furniture_definitions where id = $1 and deleted_at is null`

@@ -120,7 +120,7 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 	for _, product := range products {
 		var granted []furnituremodel.Item
 		var grantErr error
-		grant := furnitureservice.GrantParams{DefinitionID: product.DefinitionID, OwnerPlayerID: recipientID, Quantity: product.Quantity * params.Amount, ExtraData: item.ExtraData}
+		grant := furnitureservice.GrantParams{DefinitionID: product.DefinitionID, OwnerPlayerID: recipientID, Quantity: product.Quantity * params.Amount, ExtraData: item.ExtraData, LimitedEditionNumber: result.LimitedUnitNumber}
 		if params.Gift == nil {
 			granted, grantErr = service.furniture.Grant(ctx, grant)
 		} else if gifts, ok := service.furniture.(furnitureservice.GiftGranter); ok {

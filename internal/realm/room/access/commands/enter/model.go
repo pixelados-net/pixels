@@ -231,7 +231,7 @@ func SendEntryTile(ctx context.Context, connection netconn.Context, roomLayout l
 func roomSnapshot(room roommodel.Room) roomlive.Snapshot {
 	return roomlive.Snapshot{
 		ID: room.ID, OwnerPlayerID: room.OwnerPlayerID,
-		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers,
+		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers, TradeMode: int16(room.TradeMode),
 		ChatDistance: room.ChatDistance, ChatProtection: room.ChatProtection,
 	}
 }

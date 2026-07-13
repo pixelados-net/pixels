@@ -30,7 +30,7 @@ type ItemReader interface {
 // ItemWriter writes furniture item records.
 type ItemWriter interface {
 	// CreateItems creates inventory items for one owner and definition.
-	CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string) ([]furnituremodel.Item, error)
+	CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string, limitedEditionNumber *int32) ([]furnituremodel.Item, error)
 
 	// PlaceItem moves an owned inventory item into a room.
 	PlaceItem(ctx context.Context, params PlaceItemParams) (furnituremodel.Item, bool, error)
@@ -55,6 +55,20 @@ type GiftItemWriter interface {
 type GiftItemOpener interface {
 	// OpenGiftItem marks one placed gift as opened by its owner.
 	OpenGiftItem(ctx context.Context, params OpenGiftItemParams) (furnituremodel.Item, bool, error)
+}
+
+// TradingWriter reserves and transfers furniture under transaction guards.
+type TradingWriter interface {
+	// ReserveForMarketplace withdraws one owned inventory item into Marketplace limbo.
+	ReserveForMarketplace(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error)
+	// ReleaseFromMarketplace returns one reserved item to its seller inventory.
+	ReleaseFromMarketplace(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error)
+	// TransferFromMarketplace delivers one reserved item to its buyer.
+	TransferFromMarketplace(ctx context.Context, itemID int64, sellerPlayerID int64, buyerPlayerID int64) (bool, error)
+	// TransferInventoryItem transfers one unreserved inventory item between players.
+	TransferInventoryItem(ctx context.Context, itemID int64, fromPlayerID int64, toPlayerID int64) (bool, error)
+	// DeleteInventoryItem soft-deletes one unreserved owned inventory item.
+	DeleteInventoryItem(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error)
 }
 
 // Store reads and writes furniture persistence records.

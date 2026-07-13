@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	permissionmodel "github.com/niflaot/pixels/internal/permission/model"
+	"github.com/niflaot/pixels/pkg/postgres"
 )
 
 const (
@@ -50,7 +51,7 @@ func (repository *Repository) FindGroupByName(ctx context.Context, name string) 
 
 // CreateGroup creates one permission group.
 func (repository *Repository) CreateGroup(ctx context.Context, group permissionmodel.Group) (permissionmodel.Group, error) {
-	created, err := scanGroup(repository.executor.QueryRow(ctx, createGroupSQL, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.ParentGroupID))
+	created, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, createGroupSQL, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.ParentGroupID))
 	if err != nil {
 		return permissionmodel.Group{}, fmt.Errorf("create permission group %q: %w", group.Name, err)
 	}
@@ -60,7 +61,7 @@ func (repository *Repository) CreateGroup(ctx context.Context, group permissionm
 
 // UpdateGroup updates one permission group using optimistic locking.
 func (repository *Repository) UpdateGroup(ctx context.Context, group permissionmodel.Group) (permissionmodel.Group, bool, error) {
-	updated, err := scanGroup(repository.executor.QueryRow(ctx, updateGroupSQL,
+	updated, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updateGroupSQL,
 		group.ID, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.ParentGroupID, group.Version.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return permissionmodel.Group{}, false, nil
@@ -74,7 +75,7 @@ func (repository *Repository) UpdateGroup(ctx context.Context, group permissionm
 
 // queryGroup scans one optional permission group.
 func (repository *Repository) queryGroup(ctx context.Context, query string, arguments ...any) (permissionmodel.Group, bool, error) {
-	group, err := scanGroup(repository.executor.QueryRow(ctx, query, arguments...))
+	group, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, query, arguments...))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return permissionmodel.Group{}, false, nil
 	}
@@ -87,7 +88,7 @@ func (repository *Repository) queryGroup(ctx context.Context, query string, argu
 
 // queryGroups scans a permission group collection.
 func (repository *Repository) queryGroups(ctx context.Context, query string, arguments ...any) ([]permissionmodel.Group, error) {
-	rows, err := repository.executor.Query(ctx, query, arguments...)
+	rows, err := postgres.ExecutorFor(ctx, repository.executor).Query(ctx, query, arguments...)
 	if err != nil {
 		return nil, fmt.Errorf("query permission groups: %w", err)
 	}

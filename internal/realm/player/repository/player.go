@@ -12,21 +12,24 @@ import (
 )
 
 const (
+	// playerColumns contains the shared player select list.
+	playerColumns = `id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at, allow_trade`
+
 	// createPlayerSQL inserts a player identity record.
 	createPlayerSQL = `
 insert into players (username)
 values ($1)
-returning id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at`
+returning ` + playerColumns
 
 	// findPlayerByIDSQL reads one active player by id.
 	findPlayerByIDSQL = `
-select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at
+select ` + playerColumns + `
 from players
 where id = $1 and deleted_at is null`
 
 	// findPlayerByUsernameSQL reads one active player by username.
 	findPlayerByUsernameSQL = `
-select id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at
+select ` + playerColumns + `
 from players
 where lower(username) = lower($1) and deleted_at is null`
 
@@ -37,16 +40,28 @@ where lower(username) = lower($1) and deleted_at is null`
 	updatePlayerSQL = `
 update players set username=$2, updated_at=now(), version=version+1
 where id=$1 and version=$3 and deleted_at is null
-returning id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at`
+returning ` + playerColumns
 
 	// softDeletePlayerSQL marks one active player deleted using optimistic locking.
 	softDeletePlayerSQL = `update players set deleted_at=now(), updated_at=now(), version=version+1 where id=$1 and version=$2 and deleted_at is null`
+
+	// updateAllowTradeSQL updates a player's durable trade eligibility.
+	updateAllowTradeSQL = `update players set allow_trade=$2,updated_at=now(),version=version+1 where id=$1 and deleted_at is null`
 )
 
 // CreatePlayerParams contains player creation data.
 type CreatePlayerParams struct {
 	// Username is the unique visible player name.
 	Username string
+}
+
+// UpdateAllowTrade updates a player's durable trade eligibility.
+func (repository *Repository) UpdateAllowTrade(ctx context.Context, playerID int64, allow bool) (bool, error) {
+	result, err := postgres.ExecutorFor(ctx, repository.executor).Exec(ctx, updateAllowTradeSQL, playerID, allow)
+	if err != nil {
+		return false, fmt.Errorf("update player trade eligibility: %w", err)
+	}
+	return result.RowsAffected() == 1, nil
 }
 
 // UpdatePlayerParams contains one complete player identity replacement.

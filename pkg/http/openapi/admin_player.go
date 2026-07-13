@@ -100,6 +100,8 @@ type AdminPlayerResponse struct {
 	BlockFollowing bool `json:"blockFollowing" required:"true"`
 	// ClubLevel stores the derived subscription tier.
 	ClubLevel int16 `json:"clubLevel" required:"true" minimum:"0" maximum:"2"`
+	// AllowTrade reports whether direct trading is enabled.
+	AllowTrade bool `json:"allowTrade" required:"true"`
 	// ClubExpiresAt stores the optional membership expiration.
 	ClubExpiresAt *time.Time `json:"clubExpiresAt,omitempty"`
 	// LastLoginAt stores the latest successful login.

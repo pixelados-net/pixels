@@ -11,21 +11,21 @@ import (
 
 const (
 	// itemColumns contains the shared furniture item select list.
-	itemColumns = `id, definition_id, owner_player_id, room_id, x, y, z::float8, rotation, wall_position, extra_data, gift_wrapped, gift_wrap_sprite_id, gift_wrap_box_id, gift_wrap_ribbon_id, gift_sender_player_id, gift_message, metadata, created_at, updated_at, deleted_at, version`
+	itemColumns = `id, definition_id, owner_player_id, room_id, x, y, z::float8, rotation, wall_position, extra_data, limited_edition_number, marketplace_reserved, gift_wrapped, gift_wrap_sprite_id, gift_wrap_box_id, gift_wrap_ribbon_id, gift_sender_player_id, gift_message, metadata, created_at, updated_at, deleted_at, version`
 
 	// findItemByIDSQL reads one active furniture item by id.
 	findItemByIDSQL = `select ` + itemColumns + ` from furniture_items where id = $1 and deleted_at is null`
 
 	// listInventoryItemsSQL reads active unplaced items owned by a player.
-	listInventoryItemsSQL = `select ` + itemColumns + ` from furniture_items where owner_player_id = $1 and room_id is null and deleted_at is null order by id asc`
+	listInventoryItemsSQL = `select ` + itemColumns + ` from furniture_items where owner_player_id = $1 and room_id is null and not marketplace_reserved and deleted_at is null order by id asc`
 
 	// listRoomItemsSQL reads active items placed in a room.
 	listRoomItemsSQL = `select ` + itemColumns + ` from furniture_items where room_id = $1 and deleted_at is null order by id asc`
 
 	// createItemsSQL creates inventory items in one statement.
 	createItemsSQL = `
-insert into furniture_items (definition_id, owner_player_id, extra_data)
-select $1, $2, $4 from generate_series(1, $3)
+insert into furniture_items (definition_id, owner_player_id, extra_data, limited_edition_number)
+select $1, $2, $4, $5 from generate_series(1, $3)
 returning ` + itemColumns
 
 	// createGiftItemsSQL creates wrapped inventory items in one statement.
@@ -72,6 +72,21 @@ set gift_wrapped = false,
     version = version + 1
 where id = $1 and owner_player_id = $2 and room_id = $3 and gift_wrapped = true and deleted_at is null
 returning ` + itemColumns
+
+	// reserveForMarketplaceSQL withdraws an inventory item while retaining its valid owner FK.
+	reserveForMarketplaceSQL = `update furniture_items set marketplace_reserved=true,updated_at=now(),version=version+1 where id=$1 and owner_player_id=$2 and room_id is null and not marketplace_reserved and deleted_at is null`
+
+	// releaseFromMarketplaceSQL returns a reserved item to the seller inventory.
+	releaseFromMarketplaceSQL = `update furniture_items set marketplace_reserved=false,updated_at=now(),version=version+1 where id=$1 and owner_player_id=$2 and marketplace_reserved and deleted_at is null`
+
+	// transferFromMarketplaceSQL delivers a reserved item to its buyer.
+	transferFromMarketplaceSQL = `update furniture_items set owner_player_id=$3,marketplace_reserved=false,updated_at=now(),version=version+1 where id=$1 and owner_player_id=$2 and marketplace_reserved and deleted_at is null`
+
+	// transferInventoryItemSQL transfers one available inventory item.
+	transferInventoryItemSQL = `update furniture_items set owner_player_id=$3,updated_at=now(),version=version+1 where id=$1 and owner_player_id=$2 and room_id is null and not marketplace_reserved and deleted_at is null`
+
+	// deleteInventoryItemSQL consumes one available inventory item.
+	deleteInventoryItemSQL = `update furniture_items set deleted_at=now(),updated_at=now(),version=version+1 where id=$1 and owner_player_id=$2 and room_id is null and not marketplace_reserved and deleted_at is null`
 )
 
 // GiftItemParams contains wrapped item persistence input.
@@ -160,8 +175,8 @@ type OpenGiftItemParams struct {
 }
 
 // CreateItems creates inventory items for one owner and definition.
-func (repository *Repository) CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string) ([]furnituremodel.Item, error) {
-	rows, err := repository.executorFor(ctx).Query(ctx, createItemsSQL, definitionID, ownerPlayerID, quantity, extraData)
+func (repository *Repository) CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string, limitedEditionNumber *int32) ([]furnituremodel.Item, error) {
+	rows, err := repository.executorFor(ctx).Query(ctx, createItemsSQL, definitionID, ownerPlayerID, quantity, extraData, limitedEditionNumber)
 	if err != nil {
 		return nil, fmt.Errorf("create %d furniture items for player %d: %w", quantity, ownerPlayerID, err)
 	}
@@ -218,6 +233,40 @@ func (repository *Repository) UpdateItemState(ctx context.Context, params Update
 // OpenGiftItem marks one placed gift as opened by its owner.
 func (repository *Repository) OpenGiftItem(ctx context.Context, params OpenGiftItemParams) (furnituremodel.Item, bool, error) {
 	return repository.queryItem(ctx, openGiftItemSQL, params.ID, params.OwnerPlayerID, params.RoomID)
+}
+
+// ReserveForMarketplace withdraws one owned inventory item into Marketplace limbo.
+func (repository *Repository) ReserveForMarketplace(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error) {
+	return repository.execGuard(ctx, reserveForMarketplaceSQL, itemID, ownerPlayerID)
+}
+
+// ReleaseFromMarketplace returns one reserved item to its seller inventory.
+func (repository *Repository) ReleaseFromMarketplace(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error) {
+	return repository.execGuard(ctx, releaseFromMarketplaceSQL, itemID, ownerPlayerID)
+}
+
+// TransferFromMarketplace delivers one reserved item to its buyer.
+func (repository *Repository) TransferFromMarketplace(ctx context.Context, itemID int64, sellerPlayerID int64, buyerPlayerID int64) (bool, error) {
+	return repository.execGuard(ctx, transferFromMarketplaceSQL, itemID, sellerPlayerID, buyerPlayerID)
+}
+
+// TransferInventoryItem transfers one unreserved inventory item between players.
+func (repository *Repository) TransferInventoryItem(ctx context.Context, itemID int64, fromPlayerID int64, toPlayerID int64) (bool, error) {
+	return repository.execGuard(ctx, transferInventoryItemSQL, itemID, fromPlayerID, toPlayerID)
+}
+
+// DeleteInventoryItem soft-deletes one unreserved owned inventory item.
+func (repository *Repository) DeleteInventoryItem(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error) {
+	return repository.execGuard(ctx, deleteInventoryItemSQL, itemID, ownerPlayerID)
+}
+
+// execGuard executes a guarded item mutation and reports whether it changed a row.
+func (repository *Repository) execGuard(ctx context.Context, query string, arguments ...any) (bool, error) {
+	result, err := repository.executorFor(ctx).Exec(ctx, query, arguments...)
+	if err != nil {
+		return false, err
+	}
+	return result.RowsAffected() == 1, nil
 }
 
 // queryItem runs one row-returning query and reports whether a row was found.

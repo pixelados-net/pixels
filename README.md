@@ -158,7 +158,14 @@ docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liqu
 - `GET /docs` serves Scalar API docs only when `PIXELS_ENV=development`.
 - `GET /client/ui-config.json` serves Nitro's configured currency type extension.
 - `GET /client/texts/:locale/ExternalTexts.json` serves localized Nitro currency names.
-- `POST /api/sso/tickets` creates one-time SSO tickets and requires `X-API-Key`.
+- `POST /api/sso/tickets` creates one-time SSO tickets and accepts
+  `Idempotency-Key` for replay-safe retries.
+- `POST /api/admin/players` atomically creates a player, profile, and default
+  permission assignment; `Idempotency-Key` is required.
+- `GET /api/admin/players/by-username/{username}` finds a player by canonical
+  username.
+- `GET`, `PATCH`, and `DELETE /api/admin/players/{id}` read, update, or
+  soft-delete a player. Reads expose an `ETag` for conditional requests.
 - `GET /api/admin/currencies/wallet?playerId={id}` reads a player's configured wallet.
 - `POST /api/admin/currencies/grant` grants currency.
 - `POST /api/admin/currencies/deduct` deducts currency.
@@ -175,9 +182,9 @@ generic alert after committing the balance. The response distinguishes
 persistent mutation without reporting a false failure.
 
 The two `/client` resources are public and allow cross-origin reads. Add
-`http://127.0.0.1:3000/client/ui-config.json` to Nitro's `config.urls`, and add
+`http://127.0.0.1:8080/client/ui-config.json` to Nitro's `config.urls`, and add
 the desired locale URL, such as
-`http://127.0.0.1:3000/client/texts/es/ExternalTexts.json`, to its
+`http://127.0.0.1:8080/client/texts/es/ExternalTexts.json`, to its
 `external.texts.url` list. They are partial configuration documents and can be
 loaded after Nitro's normal files.
 

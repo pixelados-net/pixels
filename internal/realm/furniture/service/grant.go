@@ -17,6 +17,8 @@ type GrantParams struct {
 	Quantity int32
 	// ExtraData stores the initial protocol-facing state.
 	ExtraData string
+	// LimitedEditionNumber stores an optional durable LTD serial number.
+	LimitedEditionNumber *int32
 }
 
 // GiftGrantParams contains wrapped furniture grant input.
@@ -55,7 +57,7 @@ func (service *Service) Grant(ctx context.Context, params GrantParams) ([]furnit
 		return nil, ErrDefinitionNotFound
 	}
 
-	return service.store.CreateItems(ctx, params.DefinitionID, params.OwnerPlayerID, params.Quantity, params.ExtraData)
+	return service.store.CreateItems(ctx, params.DefinitionID, params.OwnerPlayerID, params.Quantity, params.ExtraData, params.LimitedEditionNumber)
 }
 
 // GrantGift creates wrapped inventory items for one recipient.

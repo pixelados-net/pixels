@@ -31,6 +31,7 @@ Upon already coded things.
   requirements are defined. Current offers are global and use only enabled,
   expiration, dismissal, and per-player purchase-limit gates; future policies
   may compose club tier, permission group, account age, or purchase history.
+- TODO: Add sell with multiple currencies.
 
 - UNIMPLEMENTED: Builders Club has no gameplay effect. It is a discontinued
   subscription tier without a real Arcturus implementation; Pixels only sends

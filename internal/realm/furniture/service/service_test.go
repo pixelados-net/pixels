@@ -200,7 +200,7 @@ func (store *fakeStore) ListRoomItems(context.Context, int64) ([]furnituremodel.
 }
 
 // CreateItems creates inventory items for tests.
-func (store *fakeStore) CreateItems(_ context.Context, definitionID int64, ownerPlayerID int64, quantity int32, _ string) ([]furnituremodel.Item, error) {
+func (store *fakeStore) CreateItems(_ context.Context, definitionID int64, ownerPlayerID int64, quantity int32, _ string, _ *int32) ([]furnituremodel.Item, error) {
 	items := make([]furnituremodel.Item, 0, quantity)
 	for index := int32(0); index < quantity; index++ {
 		items = append(items, furnituremodel.Item{DefinitionID: definitionID, OwnerPlayerID: ownerPlayerID})

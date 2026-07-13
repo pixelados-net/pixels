@@ -50,4 +50,7 @@ var (
 
 	// ErrItemNotGift reports an open request for a non-gift item.
 	ErrItemNotGift = errors.New("furniture item is not an unopened gift")
+
+	// ErrItemStaged reports an item locked by an active direct trade.
+	ErrItemStaged = errors.New("furniture item staged in trade")
 )

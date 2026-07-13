@@ -24,6 +24,7 @@ var Module = fx.Module(
 		NewStateUpdater,
 		NewGranter,
 		NewDefinitionGranter,
+		NewTradingManager,
 		interactions.NewRegistry,
 		essential.New,
 		teleport.LoadConfig,
@@ -40,6 +41,11 @@ var Module = fx.Module(
 // NewTeleportPairService creates validated teleport pairing behavior.
 func NewTeleportPairService(store *teleportdb.Repository, furniture service.Manager) *teleportpair.Service {
 	return teleportpair.NewService(store, furniture)
+}
+
+// NewTradingManager exposes guarded Marketplace and direct-trade ownership mutations.
+func NewTradingManager(furnitureService *service.Service) service.TradingManager {
+	return furnitureService
 }
 
 // teleportPairer adapts validated teleport relationships to purchase workflows.

@@ -50,6 +50,13 @@ func (player *Player) SetClub(club playermodel.Club) {
 	player.snapshot.Club = club
 }
 
+// SetAllowTrade replaces the live direct-trade eligibility projection.
+func (player *Player) SetAllowTrade(allow bool) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+	player.snapshot.AllowTrade = allow
+}
+
 // NewPlayer creates a live player.
 func NewPlayer(snapshot Snapshot, peer SessionPeer) (*Player, error) {
 	if !snapshot.Valid() {
