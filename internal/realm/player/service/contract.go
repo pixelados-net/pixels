@@ -35,6 +35,15 @@ type Manager interface {
 	UpdatePrivacy(ctx context.Context, playerID int64, params PrivacyParams) (Record, error)
 }
 
+// AdminManager exposes complete protected player administration behavior.
+type AdminManager interface {
+	Manager
+	// Update applies one partial player identity and profile mutation.
+	Update(ctx context.Context, playerID int64, params UpdateParams) (Record, error)
+	// SoftDelete marks one player deleted so active lookups and future logins reject it.
+	SoftDelete(ctx context.Context, playerID int64) error
+}
+
 // PrivacyParams stores a complete messenger privacy replacement.
 type PrivacyParams struct {
 	// BlockFriendRequests reports whether incoming friend requests are disabled.
@@ -56,3 +65,6 @@ type Record struct {
 
 // managerAssertion verifies Service implements Manager.
 var managerAssertion Manager = (*Service)(nil)
+
+// adminManagerAssertion verifies Service implements AdminManager.
+var adminManagerAssertion AdminManager = (*Service)(nil)

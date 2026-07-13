@@ -21,6 +21,18 @@ type PlayerWriter interface {
 	CreatePlayer(ctx context.Context, params CreatePlayerParams) (playermodel.Player, error)
 }
 
+// AdminWriter mutates complete player records for administrative workflows.
+type AdminWriter interface {
+	// UpdatePlayer updates one active player identity with optimistic locking.
+	UpdatePlayer(ctx context.Context, params UpdatePlayerParams) (playermodel.Player, bool, error)
+
+	// UpdateProfile updates one complete player profile with optimistic locking.
+	UpdateProfile(ctx context.Context, params UpdateProfileParams) (playermodel.Profile, bool, error)
+
+	// SoftDeletePlayer marks one active player deleted with optimistic locking.
+	SoftDeletePlayer(ctx context.Context, playerID int64, expectedVersion int64) (bool, error)
+}
+
 // ClubWriter writes derived player club entitlement state.
 type ClubWriter interface {
 	// UpdateClub updates the derived player club entitlement.

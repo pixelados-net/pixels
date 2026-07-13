@@ -213,10 +213,17 @@ minimum manual checks expected when touching it.
 - Owns `internal/realm/player`.
 - Provides persistent player/profile models, repositories, services, live player
   registry, session peer, embedded navigator viewer, and current room presence.
+- Provides protected, OpenAPI-documented player administration routes for
+  idempotent creation, exact case-insensitive username lookup, profile reads,
+  optimistic partial updates, and soft deletion. Creation assigns the default
+  permission group atomically; deletion closes an active player session.
 - Test after changes:
   - `go test ./internal/realm/player/...`
+  - `go test ./pkg/http/player/routes ./pkg/http/openapi`
   - Authenticate with a seeded SSO ticket and verify user info bootstrap.
   - Enter and leave a room and verify live player room presence updates.
+  - Create, find, update, and soft-delete a player through `/api/admin/players`;
+    verify a deleted player cannot be found or authenticate again.
 
 ### FEATURE: Club Entitlements
 

@@ -34,6 +34,14 @@ returning player_id, look, gender, motto, home_room_id, allow_name_change, bubbl
 update player_profiles set block_friend_requests=$2, block_room_invites=$3, block_following=$4, updated_at=now(), version=version+1
 where player_id=$1
 returning player_id, look, gender, motto, home_room_id, allow_name_change, bubble_style, block_friend_requests, block_room_invites, block_following, created_at, updated_at, version`
+
+	// updateProfileSQL replaces one complete profile using optimistic locking.
+	updateProfileSQL = `
+update player_profiles set look=$2, gender=$3, motto=$4, home_room_id=$5, allow_name_change=$6,
+    bubble_style=$7, block_friend_requests=$8, block_room_invites=$9, block_following=$10,
+    updated_at=now(), version=version+1
+where player_id=$1 and version=$11
+returning player_id, look, gender, motto, home_room_id, allow_name_change, bubble_style, block_friend_requests, block_room_invites, block_following, created_at, updated_at, version`
 )
 
 // PrivacyParams stores a complete messenger privacy replacement.
@@ -67,6 +75,21 @@ type CreateProfileParams struct {
 	AllowNameChange bool
 }
 
+// UpdateProfileParams contains one complete administrative profile replacement.
+type UpdateProfileParams struct {
+	CreateProfileParams
+	// BubbleStyle stores the selected Nitro chat bubble style.
+	BubbleStyle int32
+	// BlockFriendRequests reports whether incoming friend requests are disabled.
+	BlockFriendRequests bool
+	// BlockRoomInvites reports whether incoming room invitations are disabled.
+	BlockRoomInvites bool
+	// BlockFollowing reports whether friends may follow the player.
+	BlockFollowing bool
+	// ExpectedVersion prevents lost concurrent updates.
+	ExpectedVersion int64
+}
+
 // UpdateBubbleStyle persists one validated chat bubble selection.
 func (repository *Repository) UpdateBubbleStyle(ctx context.Context, playerID int64, bubbleStyle int32) (playermodel.Profile, error) {
 	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updateBubbleStyleSQL, playerID, bubbleStyle))
@@ -85,6 +108,25 @@ func (repository *Repository) UpdatePrivacy(ctx context.Context, playerID int64,
 	}
 
 	return profile, nil
+}
+
+// UpdateProfile updates one complete player profile with optimistic locking.
+func (repository *Repository) UpdateProfile(ctx context.Context, params UpdateProfileParams) (playermodel.Profile, bool, error) {
+	if !params.Gender.Valid() {
+		return playermodel.Profile{}, false, ErrInvalidGender
+	}
+	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updateProfileSQL,
+		params.PlayerID, params.Look, string(params.Gender), params.Motto, params.HomeRoomID,
+		params.AllowNameChange, params.BubbleStyle, params.BlockFriendRequests, params.BlockRoomInvites,
+		params.BlockFollowing, params.ExpectedVersion))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return playermodel.Profile{}, false, nil
+	}
+	if err != nil {
+		return playermodel.Profile{}, false, fmt.Errorf("update player %d profile: %w", params.PlayerID, err)
+	}
+
+	return profile, true, nil
 }
 
 // CreateProfile creates a player profile record.

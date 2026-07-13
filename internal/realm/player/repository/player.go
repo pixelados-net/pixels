@@ -32,12 +32,31 @@ where lower(username) = lower($1) and deleted_at is null`
 
 	// updateClubSQL updates the derived player club entitlement.
 	updateClubSQL = `update players set club_level=$2, club_expires_at=$3, updated_at=now(), version=version+1 where id=$1 and deleted_at is null`
+
+	// updatePlayerSQL replaces one active player username using optimistic locking.
+	updatePlayerSQL = `
+update players set username=$2, updated_at=now(), version=version+1
+where id=$1 and version=$3 and deleted_at is null
+returning id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at`
+
+	// softDeletePlayerSQL marks one active player deleted using optimistic locking.
+	softDeletePlayerSQL = `update players set deleted_at=now(), updated_at=now(), version=version+1 where id=$1 and version=$2 and deleted_at is null`
 )
 
 // CreatePlayerParams contains player creation data.
 type CreatePlayerParams struct {
 	// Username is the unique visible player name.
 	Username string
+}
+
+// UpdatePlayerParams contains one complete player identity replacement.
+type UpdatePlayerParams struct {
+	// PlayerID identifies the player.
+	PlayerID int64
+	// Username replaces the visible player name.
+	Username string
+	// ExpectedVersion prevents lost concurrent updates.
+	ExpectedVersion int64
 }
 
 // UpdateClub updates the derived player club entitlement.
@@ -58,6 +77,33 @@ func (repository *Repository) CreatePlayer(ctx context.Context, params CreatePla
 	}
 
 	return player, nil
+}
+
+// UpdatePlayer updates one active player identity with optimistic locking.
+func (repository *Repository) UpdatePlayer(ctx context.Context, params UpdatePlayerParams) (playermodel.Player, bool, error) {
+	player, err := scanPlayer(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updatePlayerSQL, params.PlayerID, params.Username, params.ExpectedVersion))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return playermodel.Player{}, false, nil
+	}
+	if err != nil {
+		var postgresError *pgconn.PgError
+		if errors.As(err, &postgresError) && postgresError.Code == "23505" {
+			return playermodel.Player{}, false, ErrUsernameTaken
+		}
+		return playermodel.Player{}, false, fmt.Errorf("update player: %w", err)
+	}
+
+	return player, true, nil
+}
+
+// SoftDeletePlayer marks one active player deleted with optimistic locking.
+func (repository *Repository) SoftDeletePlayer(ctx context.Context, playerID int64, expectedVersion int64) (bool, error) {
+	result, err := postgres.ExecutorFor(ctx, repository.executor).Exec(ctx, softDeletePlayerSQL, playerID, expectedVersion)
+	if err != nil {
+		return false, fmt.Errorf("soft delete player: %w", err)
+	}
+
+	return result.RowsAffected() == 1, nil
 }
 
 // FindPlayerByID finds an active player by id.

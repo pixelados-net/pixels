@@ -45,10 +45,11 @@ func TestHTTPLogsIncludeFailureReason(t *testing.T) {
 func testAppWithLogger(t *testing.T, environment string, log *zap.Logger) *fiber.App {
 	t.Helper()
 
-	service := testSSO(t)
+	redisClient := testRedis(t)
+	service := testSSO(redisClient)
 	registry := netconn.NewRegistry()
 	config := testConfig(environment)
 	adapter := ws.New(ws.Config{}, config.App, registry, connection.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil), zap.NewNop(), config.Logger)
 
-	return New(log, config, testInfo(), service, adapter, testRooms(), testLayouts(), testRoomRuntime(), nil, testNavigator(), testCurrencyDependencies(registry, log), testCatalogDependencies(registry, log))
+	return New(log, config, testInfo(), service, redisClient, testPlayerManager{}, adapter, testRooms(), testLayouts(), testRoomRuntime(), nil, testNavigator(), testCurrencyDependencies(registry, log), testCatalogDependencies(registry, log))
 }

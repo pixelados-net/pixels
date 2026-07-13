@@ -20,6 +20,7 @@ var Module = fx.Module(
 		NewFinder,
 		NewClubWriter,
 		NewManager,
+		NewAdminManager,
 	),
 )
 
@@ -50,5 +51,10 @@ func NewFinder(playerService *service.Service) service.Finder {
 
 // NewManager exposes the player management contract.
 func NewManager(playerService *service.Service) service.Manager {
+	return playerService
+}
+
+// NewAdminManager exposes protected player administration behavior.
+func NewAdminManager(playerService *service.Service) service.AdminManager {
 	return playerService
 }

@@ -11,6 +11,8 @@ type Service struct {
 	store repository.Store
 	// clubs writes derived club entitlement when the store supports it.
 	clubs repository.ClubWriter
+	// admin writes complete administrative player mutations.
+	admin repository.AdminWriter
 	// permissions assigns the default permission group.
 	permissions permissionservice.DefaultAssigner
 }
@@ -19,6 +21,7 @@ type Service struct {
 func New(store repository.Store, assigners ...permissionservice.DefaultAssigner) *Service {
 	service := &Service{store: store}
 	service.clubs, _ = store.(repository.ClubWriter)
+	service.admin, _ = store.(repository.AdminWriter)
 	if len(assigners) > 0 {
 		service.permissions = assigners[0]
 	}

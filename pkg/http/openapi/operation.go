@@ -38,6 +38,7 @@ type response struct {
 func operations() []operation {
 	items := publicOperations()
 	items = append(items, ssoOperations()...)
+	items = append(items, adminPlayerOperations()...)
 	items = append(items, adminOperations()...)
 	items = append(items, roomVoteOperations()...)
 	items = append(items, fallbackOperation())

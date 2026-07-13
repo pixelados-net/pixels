@@ -22,9 +22,21 @@ var (
 	// ErrInvalidGender reports an invalid profile gender.
 	ErrInvalidGender = errors.New("invalid player gender")
 
+	// ErrInvalidHomeRoomID reports a non-positive home room identifier.
+	ErrInvalidHomeRoomID = errors.New("invalid player home room id")
+
 	// ErrClubWriterUnavailable reports a player store without club persistence.
 	ErrClubWriterUnavailable = errors.New("player club writer unavailable")
 
 	// ErrUsernameTaken reports a player username uniqueness conflict.
 	ErrUsernameTaken = errors.New("player username already exists")
+
+	// ErrInvalidBubbleStyle reports a negative Nitro bubble style.
+	ErrInvalidBubbleStyle = errors.New("invalid player bubble style")
+
+	// ErrConflict reports a concurrent player mutation.
+	ErrConflict = errors.New("player update conflict")
+
+	// ErrAdminWriterUnavailable reports a store without administrative mutations.
+	ErrAdminWriterUnavailable = errors.New("player admin writer unavailable")
 )

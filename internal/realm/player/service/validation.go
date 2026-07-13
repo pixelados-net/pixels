@@ -55,6 +55,10 @@ func validateProfile(params CreateProfileParams) error {
 		return ErrInvalidGender
 	}
 
+	if params.HomeRoomID != nil && *params.HomeRoomID <= 0 {
+		return ErrInvalidHomeRoomID
+	}
+
 	return nil
 }
 

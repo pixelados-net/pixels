@@ -84,6 +84,38 @@ func (finder testFinder) FindByID(ctx context.Context, id int64) (playerservice.
 	return testRecord(id), true, nil
 }
 
+// testPlayerManager supplies administrative player route behavior.
+type testPlayerManager struct {
+	testFinder
+}
+
+// Create creates a deterministic test player.
+func (testPlayerManager) Create(_ context.Context, params playerservice.CreateParams) (playerservice.Record, error) {
+	record := testRecord(2)
+	record.Player.Username = params.Username
+	record.Profile.Look = params.Profile.Look
+	record.Profile.Gender = params.Profile.Gender
+	record.Profile.Motto = params.Profile.Motto
+	record.Profile.HomeRoomID = params.Profile.HomeRoomID
+
+	return record, nil
+}
+
+// Update returns the deterministic test player.
+func (testPlayerManager) Update(context.Context, int64, playerservice.UpdateParams) (playerservice.Record, error) {
+	return testRecord(2), nil
+}
+
+// SoftDelete accepts deterministic player deletion.
+func (testPlayerManager) SoftDelete(context.Context, int64) error {
+	return nil
+}
+
+// UpdatePrivacy returns the deterministic test player.
+func (testPlayerManager) UpdatePrivacy(context.Context, int64, playerservice.PrivacyParams) (playerservice.Record, error) {
+	return testRecord(2), nil
+}
+
 // FindByUsername finds a test player by username.
 func (finder testFinder) FindByUsername(context.Context, string) (playerservice.Record, bool, error) {
 	return testRecord(2), true, nil

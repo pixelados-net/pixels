@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/core"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
@@ -23,11 +24,13 @@ import (
 	notificationroutes "github.com/niflaot/pixels/pkg/http/notification/routes"
 	"github.com/niflaot/pixels/pkg/http/openapi"
 	permissionroutes "github.com/niflaot/pixels/pkg/http/permission/routes"
+	playerroutes "github.com/niflaot/pixels/pkg/http/player/routes"
 	roomroutes "github.com/niflaot/pixels/pkg/http/room/routes"
 	subscriptionroutes "github.com/niflaot/pixels/pkg/http/subscription/routes"
 	ws "github.com/niflaot/pixels/pkg/http/websocket"
 	wsroutes "github.com/niflaot/pixels/pkg/http/websocket/routes"
 	"github.com/niflaot/pixels/pkg/i18n"
+	redispkg "github.com/niflaot/pixels/pkg/redis"
 )
 
 const development = "development"
@@ -41,8 +44,9 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies) {
+func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Client, players playerservice.AdminManager, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies) {
 	app.Post("/api/sso/tickets", createSSOTicketHandler(sso))
+	playerroutes.Register(app, players, redisClient, currencyAdmin.Players, currencyAdmin.Connections)
 	wsroutes.Register(app, currencyAdmin.Connections)
 	roomroutes.Register(app, rooms, runtime, currencyAdmin.Connections, navigator, currencyAdmin.Players, roomEntry, roomAdmin)
 	notificationroutes.Register(app, currencyAdmin.Players, currencyAdmin.Connections, currencyAdmin.Translations)

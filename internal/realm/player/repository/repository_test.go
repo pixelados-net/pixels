@@ -135,6 +135,32 @@ func TestFindProfileByPlayerIDNotFound(t *testing.T) {
 	}
 }
 
+// TestUpdatePlayerNotFound verifies optimistic identity conflicts are reported.
+func TestUpdatePlayerNotFound(t *testing.T) {
+	executor := &fakeExecutor{row: fakeRow{err: pgx.ErrNoRows}}
+	_, matched, err := New(executor).UpdatePlayer(context.Background(), UpdatePlayerParams{PlayerID: 7, Username: "ian", ExpectedVersion: 1})
+	if err != nil || matched {
+		t.Fatalf("expected unmatched update, matched=%t err=%v", matched, err)
+	}
+}
+
+// TestUpdateProfileRejectsInvalidGender verifies administrative profile validation.
+func TestUpdateProfileRejectsInvalidGender(t *testing.T) {
+	_, _, err := New(&fakeExecutor{}).UpdateProfile(context.Background(), UpdateProfileParams{CreateProfileParams: CreateProfileParams{Gender: "X"}})
+	if !errors.Is(err, ErrInvalidGender) {
+		t.Fatalf("expected invalid gender, got %v", err)
+	}
+}
+
+// TestSoftDeletePlayerReportsAffectedRow verifies durable deletion success.
+func TestSoftDeletePlayerReportsAffectedRow(t *testing.T) {
+	executor := &fakeExecutor{commandTag: pgconn.NewCommandTag("UPDATE 1")}
+	deleted, err := New(executor).SoftDeletePlayer(context.Background(), 7, 1)
+	if err != nil || !deleted {
+		t.Fatalf("expected deletion, deleted=%t err=%v", deleted, err)
+	}
+}
+
 // fakeExecutor records repository query calls for tests.
 type fakeExecutor struct {
 	// row is the row returned by QueryRow.
@@ -142,11 +168,14 @@ type fakeExecutor struct {
 
 	// query is the last executed query.
 	query string
+
+	// commandTag is returned by Exec.
+	commandTag pgconn.CommandTag
 }
 
 // Exec executes SQL without returning rows.
 func (executor *fakeExecutor) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
-	return pgconn.CommandTag{}, nil
+	return executor.commandTag, nil
 }
 
 // Query executes SQL returning multiple rows.

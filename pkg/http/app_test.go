@@ -156,12 +156,13 @@ func TestWebsocketRouteRequiresUpgrade(t *testing.T) {
 func testApp(t *testing.T, environment string) *fiber.App {
 	t.Helper()
 
-	service := testSSO(t)
+	redisClient := testRedis(t)
+	service := testSSO(redisClient)
 	registry := netconn.NewRegistry()
 	config := testConfig(environment)
 	adapter := ws.New(ws.Config{}, config.App, registry, realmconn.NewHandlers(service, testFinder{}, live.NewRegistry(), binding.NewRegistry(), bus.New(), nil), zap.NewNop(), config.Logger)
 
-	return New(zap.NewNop(), config, testInfo(), service, adapter, testRooms(), testLayouts(), testRoomRuntime(), nil, testNavigator(), testCurrencyDependencies(registry, zap.NewNop()), testCatalogDependencies(registry, zap.NewNop()))
+	return New(zap.NewNop(), config, testInfo(), service, redisClient, testPlayerManager{}, adapter, testRooms(), testLayouts(), testRoomRuntime(), nil, testNavigator(), testCurrencyDependencies(registry, zap.NewNop()), testCatalogDependencies(registry, zap.NewNop()))
 }
 
 // testConfig creates composed configuration for route tests.
@@ -196,7 +197,7 @@ func testTranslations() i18n.Translator {
 }
 
 // testSSO creates an SSO service for route tests.
-func testSSO(t *testing.T) *sso.Service {
+func testRedis(t *testing.T) *redis.Client {
 	t.Helper()
 	server := miniredis.RunT(t)
 	client := redis.New(redis.Config{Address: server.Addr()})
@@ -206,6 +207,11 @@ func testSSO(t *testing.T) *sso.Service {
 		}
 	})
 
+	return client
+}
+
+// testSSO creates an SSO service with the test Redis client.
+func testSSO(client *redis.Client) *sso.Service {
 	return sso.New(sso.Config{DefaultTTL: time.Minute, Key: "test-sso-key", Prefix: "pixels:sso"}, client)
 }
 

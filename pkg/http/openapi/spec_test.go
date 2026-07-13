@@ -31,9 +31,12 @@ func TestSpecDocumentsRoutes(t *testing.T) {
 	for _, path := range []string{
 		"/status", "/ws", "/docs", "/*",
 		"/api/admin/notifications/send", "/api/admin/currencies/wallet",
+		"/api/admin/players", "/api/admin/players/{id}",
+		"/api/admin/players/by-username/{username}",
 		"/api/admin/currencies/grant", "/api/admin/currencies/deduct", "/api/admin/currencies/set",
 		"/api/admin/permissions/nodes", "/api/admin/permissions/groups",
 		"/api/admin/permissions/groups/{id}/nodes/{node}",
+		"/api/admin/permissions/players/{playerId}/groups/{groupId}",
 		"/api/admin/permissions/players/{playerId}/effective",
 		"/api/admin/permissions/players/{playerId}/check",
 	} {
@@ -80,6 +83,9 @@ func TestSpecGroupsRoutes(t *testing.T) {
 	}
 	if !hasTag(document.Tags, "Admin Permissions") {
 		t.Fatal("expected admin permission tag")
+	}
+	if !hasTag(document.Tags, "Admin Players") {
+		t.Fatal("expected admin player tag")
 	}
 
 	groups := document.Paths["/api/admin/connections"]["get"].Tags
