@@ -17,6 +17,13 @@ Upon already coded things.
   completion alone will not expose this action in the current UI. Do not modify
   Nitro as part of the server implementation; treat client support as a separate
   compatibility decision.
+- NITRO IMPROVEMENT: Hide or disable the inventory's "Place in room" action
+  when the current player cannot manage furniture in the active room. Nitro
+  currently shows the action whenever any room session exists and lets Pixels
+  reject packet `1258` with the localized no-rights bubble. Keep the server-side
+  `room.furniture.any.manage` and active room-rights check authoritative; any
+  client-side gate must remain consistent with owner, local rights, and global
+  furniture-management permissions rather than treating it as security.
 
 ## Store Boundaries
 

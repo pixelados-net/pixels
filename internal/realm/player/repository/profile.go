@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
+	"github.com/niflaot/pixels/pkg/postgres"
 )
 
 const (
@@ -68,7 +69,7 @@ type CreateProfileParams struct {
 
 // UpdateBubbleStyle persists one validated chat bubble selection.
 func (repository *Repository) UpdateBubbleStyle(ctx context.Context, playerID int64, bubbleStyle int32) (playermodel.Profile, error) {
-	profile, err := scanProfile(repository.executor.QueryRow(ctx, updateBubbleStyleSQL, playerID, bubbleStyle))
+	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updateBubbleStyleSQL, playerID, bubbleStyle))
 	if err != nil {
 		return playermodel.Profile{}, fmt.Errorf("update player %d bubble style: %w", playerID, err)
 	}
@@ -78,7 +79,7 @@ func (repository *Repository) UpdateBubbleStyle(ctx context.Context, playerID in
 
 // UpdatePrivacy persists messenger privacy fields.
 func (repository *Repository) UpdatePrivacy(ctx context.Context, playerID int64, params PrivacyParams) (playermodel.Profile, error) {
-	profile, err := scanProfile(repository.executor.QueryRow(ctx, updatePrivacySQL, playerID, params.BlockFriendRequests, params.BlockRoomInvites, params.BlockFollowing))
+	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updatePrivacySQL, playerID, params.BlockFriendRequests, params.BlockRoomInvites, params.BlockFollowing))
 	if err != nil {
 		return playermodel.Profile{}, fmt.Errorf("update player %d messenger privacy: %w", playerID, err)
 	}
@@ -92,7 +93,7 @@ func (repository *Repository) CreateProfile(ctx context.Context, params CreatePr
 		return playermodel.Profile{}, ErrInvalidGender
 	}
 
-	profile, err := scanProfile(repository.executor.QueryRow(ctx, createProfileSQL, params.PlayerID, params.Look, string(params.Gender), params.Motto, params.HomeRoomID, params.AllowNameChange))
+	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, createProfileSQL, params.PlayerID, params.Look, string(params.Gender), params.Motto, params.HomeRoomID, params.AllowNameChange))
 	if err != nil {
 		return playermodel.Profile{}, fmt.Errorf("create player profile: %w", err)
 	}
@@ -102,7 +103,7 @@ func (repository *Repository) CreateProfile(ctx context.Context, params CreatePr
 
 // FindProfileByPlayerID finds a profile by player id.
 func (repository *Repository) FindProfileByPlayerID(ctx context.Context, playerID int64) (playermodel.Profile, bool, error) {
-	profile, err := scanProfile(repository.executor.QueryRow(ctx, findProfileByPlayerIDSQL, playerID))
+	profile, err := scanProfile(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, findProfileByPlayerIDSQL, playerID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return playermodel.Profile{}, false, nil
 	}

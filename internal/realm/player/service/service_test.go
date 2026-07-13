@@ -195,6 +195,11 @@ type fakeStore struct {
 	lastUsername string
 }
 
+// WithinTransaction runs test work synchronously.
+func (store *fakeStore) WithinTransaction(ctx context.Context, work func(context.Context) error) error {
+	return work(ctx)
+}
+
 // CreatePlayer creates a player identity record for tests.
 func (store *fakeStore) CreatePlayer(_ context.Context, params repository.CreatePlayerParams) (playermodel.Player, error) {
 	store.player.Username = params.Username

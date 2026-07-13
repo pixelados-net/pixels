@@ -24,4 +24,7 @@ var (
 
 	// ErrClubWriterUnavailable reports a player store without club persistence.
 	ErrClubWriterUnavailable = errors.New("player club writer unavailable")
+
+	// ErrUsernameTaken reports a player username uniqueness conflict.
+	ErrUsernameTaken = errors.New("player username already exists")
 )

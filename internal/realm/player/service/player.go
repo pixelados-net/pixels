@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
@@ -47,22 +48,34 @@ func (service *Service) Create(ctx context.Context, params CreateParams) (Record
 		return Record{}, err
 	}
 
-	player, err := service.store.CreatePlayer(ctx, repository.CreatePlayerParams{Username: username})
-	if err != nil {
-		return Record{}, fmt.Errorf("create player identity: %w", err)
-	}
-
-	profile, err := service.store.CreateProfile(ctx, profileParams(player.ID, params.Profile))
-	if err != nil {
-		return Record{}, fmt.Errorf("create player profile: %w", err)
-	}
-	if service.permissions != nil {
-		if err := service.permissions.AssignDefaultGroup(ctx, player.ID); err != nil {
-			return Record{}, fmt.Errorf("assign player default permission group: %w", err)
+	var record Record
+	err := service.store.WithinTransaction(ctx, func(txCtx context.Context) error {
+		player, createErr := service.store.CreatePlayer(txCtx, repository.CreatePlayerParams{Username: username})
+		if createErr != nil {
+			return fmt.Errorf("create player identity: %w", createErr)
 		}
+
+		profile, createErr := service.store.CreateProfile(txCtx, profileParams(player.ID, params.Profile))
+		if createErr != nil {
+			return fmt.Errorf("create player profile: %w", createErr)
+		}
+		if service.permissions != nil {
+			if createErr := service.permissions.AssignDefaultGroup(txCtx, player.ID); createErr != nil {
+				return fmt.Errorf("assign player default permission group: %w", createErr)
+			}
+		}
+
+		record = Record{Player: player, Profile: profile}
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, repository.ErrUsernameTaken) {
+			return Record{}, ErrUsernameTaken
+		}
+		return Record{}, err
 	}
 
-	return Record{Player: player, Profile: profile}, nil
+	return record, nil
 }
 
 // FindByID finds a player by id.

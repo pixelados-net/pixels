@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	"github.com/niflaot/pixels/pkg/postgres"
 )
@@ -47,8 +48,12 @@ func (repository *Repository) UpdateClub(ctx context.Context, playerID int64, cl
 
 // CreatePlayer creates a player identity record.
 func (repository *Repository) CreatePlayer(ctx context.Context, params CreatePlayerParams) (playermodel.Player, error) {
-	player, err := scanPlayer(repository.executor.QueryRow(ctx, createPlayerSQL, params.Username))
+	player, err := scanPlayer(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, createPlayerSQL, params.Username))
 	if err != nil {
+		var postgresError *pgconn.PgError
+		if errors.As(err, &postgresError) && postgresError.Code == "23505" {
+			return playermodel.Player{}, ErrUsernameTaken
+		}
 		return playermodel.Player{}, fmt.Errorf("create player: %w", err)
 	}
 
@@ -77,7 +82,7 @@ func (repository *Repository) FindPlayerByUsername(ctx context.Context, username
 
 // findPlayer finds one player with a query.
 func (repository *Repository) findPlayer(ctx context.Context, query string, argument any) (playermodel.Player, bool, error) {
-	player, err := scanPlayer(repository.executor.QueryRow(ctx, query, argument))
+	player, err := scanPlayer(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, query, argument))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return playermodel.Player{}, false, nil
 	}

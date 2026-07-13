@@ -51,6 +51,9 @@ type Store interface {
 	PlayerWriter
 	ProfileReader
 	ProfileWriter
+
+	// WithinTransaction runs player creation work atomically.
+	WithinTransaction(ctx context.Context, work func(context.Context) error) error
 }
 
 // storeAssertion verifies Repository implements Store.
