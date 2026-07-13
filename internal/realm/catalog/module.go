@@ -12,6 +12,7 @@ import (
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/postgres"
 	"go.uber.org/fx"
@@ -27,7 +28,7 @@ var Module = fx.Module(
 		NewManager,
 		NewReader,
 		gift.NewOptions,
-		catalogadmin.New,
+		NewAdminService,
 		NewAdminManager,
 		NewVoucherManager,
 	),
@@ -35,13 +36,18 @@ var Module = fx.Module(
 )
 
 // NewService creates permission-aware catalog behavior.
-func NewService(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, teleportPairs furnitureservice.TeleportPairer, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker, players playerservice.Finder) *catalogservice.Service {
-	return catalogservice.New(store, currencies, furniture, events, log, permissions).WithTeleportPairer(teleportPairs).WithPlayers(players)
+func NewService(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, teleportPairs furnitureservice.TeleportPairer, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker, players playerservice.Finder, rooms roombundle.Manager) *catalogservice.Service {
+	return catalogservice.New(store, currencies, furniture, events, log, permissions).WithTeleportPairer(teleportPairs).WithPlayers(players).WithRoomBundles(rooms)
 }
 
 // NewVoucherManager exposes voucher administration behavior.
 func NewVoucherManager(service *catalogadmin.Service) catalogadmin.VoucherManager {
 	return service
+}
+
+// NewAdminService creates catalog administration with room template validation.
+func NewAdminService(store catalogrepo.Store, catalog catalogservice.Manager, definitions furnitureservice.DefinitionGranter, rooms roombundle.Manager) *catalogadmin.Service {
+	return catalogadmin.New(store, catalog, definitions).WithRoomBundles(rooms)
 }
 
 // NewStore creates catalog persistence behavior.

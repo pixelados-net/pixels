@@ -37,3 +37,8 @@ func New(executor postgres.Executor) *Repository {
 
 	return repository
 }
+
+// executorFor returns the active transaction or repository executor.
+func (repository *Repository) executorFor(ctx context.Context) postgres.Executor {
+	return postgres.ExecutorFor(ctx, repository.executor)
+}

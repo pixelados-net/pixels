@@ -18,6 +18,28 @@ type RoomManager interface {
 	WithinTransaction(ctx context.Context, work TransactionWork) error
 }
 
+// CustomManager reads and writes only room-owned custom layouts.
+type CustomManager interface {
+	// FindCustomByRoomID finds a room-owned layout without falling back to a model.
+	FindCustomByRoomID(ctx context.Context, roomID int64) (Layout, bool, error)
+	// SaveCustom creates or replaces a room-owned custom layout.
+	SaveCustom(ctx context.Context, params CustomSaveParams) (Layout, error)
+}
+
+// FindCustomByRoomID finds a room-owned layout without a fixed-model fallback.
+func (service *Service) FindCustomByRoomID(ctx context.Context, roomID int64) (Layout, bool, error) {
+	custom, ok := service.store.(CustomStore)
+	if !ok {
+		return Layout{}, false, ErrCustomLayoutsUnsupported
+	}
+	roomLayout, found, err := custom.FindCustomByRoomID(ctx, roomID)
+	if err != nil || !found {
+		return Layout{}, found, err
+	}
+	roomLayout, err = normalizeCustom(roomLayout)
+	return roomLayout, err == nil, err
+}
+
 // ResolveForRoom resolves room-owned geometry when supported and otherwise uses the fixed layout.
 func ResolveForRoom(ctx context.Context, manager Manager, roomID int64, modelName string) (Layout, error) {
 	if resolver, ok := manager.(interface {

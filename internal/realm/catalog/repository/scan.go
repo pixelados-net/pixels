@@ -61,10 +61,12 @@ func scanPages(rows pgx.Rows) ([]catalogmodel.Page, error) {
 // scanItem scans one catalog offer.
 func scanItem(row pgx.Row) (catalogmodel.Item, error) {
 	var item catalogmodel.Item
+	var definitionID pgtype.Int8
+	var templateRoomID pgtype.Int8
 	var scheduledAt pgtype.Timestamptz
 	var deletedAt pgtype.Timestamptz
 	err := row.Scan(
-		&item.ID, &item.PageID, &item.DefinitionID, &item.Name, &item.CostCredits,
+		&item.ID, &item.PageID, &definitionID, &templateRoomID, &item.Name, &item.CostCredits,
 		&item.CostPoints, &item.PointsType, &item.Amount, &item.LimitedStack,
 		&item.LimitedSells, &item.BundleDiscountEnabled, &item.Giftable, &item.ClubOnly, &item.OrderNum, &item.Enabled,
 		&item.ExtraData, &scheduledAt, &item.CreatedAt, &item.UpdatedAt, &deletedAt, &item.Version.Version,
@@ -72,6 +74,10 @@ func scanItem(row pgx.Row) (catalogmodel.Item, error) {
 	if err != nil {
 		return catalogmodel.Item{}, err
 	}
+	if definitionID.Valid {
+		item.DefinitionID = definitionID.Int64
+	}
+	item.RoomBundleTemplateRoomID = int64Pointer(templateRoomID)
 	item.ScheduledAt = timePointer(scheduledAt)
 	item.DeletedAt = timePointer(deletedAt)
 

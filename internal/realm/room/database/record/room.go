@@ -13,7 +13,7 @@ import (
 
 const (
 	// roomColumns contains the shared room select list.
-	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban, staff_picked, public_room, created_at, updated_at, deleted_at, version`
+	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban, staff_picked, public_room, is_bundle_template, created_at, updated_at, deleted_at, version`
 
 	// createRoomSQL inserts a room record.
 	createRoomSQL = `
@@ -25,16 +25,16 @@ returning ` + roomColumns
 	findRoomByIDSQL = `select ` + roomColumns + ` from rooms where id = $1 and deleted_at is null`
 
 	// listRoomsByOwnerSQL reads active rooms by owner.
-	listRoomsByOwnerSQL = `select ` + roomColumns + ` from rooms where owner_player_id = $1 and deleted_at is null order by id desc`
+	listRoomsByOwnerSQL = `select ` + roomColumns + ` from rooms where owner_player_id = $1 and deleted_at is null and not is_bundle_template order by id desc`
 
 	// listPopularRoomsSQL reads active rooms by score and recency.
-	listPopularRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and door_mode <> 3 order by score desc, updated_at desc limit $1`
+	listPopularRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and not is_bundle_template and door_mode <> 3 order by score desc, updated_at desc limit $1`
 
 	// listHighestScoreRoomsSQL reads active rooms by score.
-	listHighestScoreRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and door_mode <> 3 order by score desc, id asc limit $1`
+	listHighestScoreRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and not is_bundle_template and door_mode <> 3 order by score desc, id asc limit $1`
 
 	// searchRoomsSQL reads active rooms matching public navigator text.
-	searchRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and door_mode <> 3 and (name ilike $1 or owner_name ilike $1 or description ilike $1 or exists (select 1 from room_tags where room_tags.room_id = rooms.id and room_tags.tag ilike $1)) order by score desc, updated_at desc limit $2`
+	searchRoomsSQL = `select ` + roomColumns + ` from rooms where deleted_at is null and not is_bundle_template and door_mode <> 3 and (name ilike $1 or owner_name ilike $1 or description ilike $1 or exists (select 1 from room_tags where room_tags.room_id = rooms.id and room_tags.tag ilike $1)) order by score desc, updated_at desc limit $2`
 
 	// softDeleteRoomSQL soft deletes one active room.
 	softDeleteRoomSQL = `update rooms set deleted_at = now(), updated_at = now(), version = version + 1 where id = $1 and deleted_at is null`
@@ -51,7 +51,7 @@ where id=$1 and version=$2 and deleted_at is null returning ` + roomColumns
 
 // CreateRoom creates a room record.
 func (repository *Repository) CreateRoom(ctx context.Context, params roomservice.CreateRecordParams) (roommodel.Room, error) {
-	room, err := scanRoom(repository.executor.QueryRow(ctx, createRoomSQL, params.OwnerPlayerID, params.OwnerName, params.Name, params.Description, params.ModelName, params.DoorMode, params.MaxUsers, params.CategoryID, params.TradeMode))
+	room, err := scanRoom(repository.executorFor(ctx).QueryRow(ctx, createRoomSQL, params.OwnerPlayerID, params.OwnerName, params.Name, params.Description, params.ModelName, params.DoorMode, params.MaxUsers, params.CategoryID, params.TradeMode))
 	if err != nil {
 		return roommodel.Room{}, fmt.Errorf("create room: %w", err)
 	}
@@ -86,7 +86,7 @@ func (repository *Repository) SearchRooms(ctx context.Context, query string, lim
 
 // SoftDeleteRoom soft deletes a room record.
 func (repository *Repository) SoftDeleteRoom(ctx context.Context, id int64) (bool, error) {
-	tag, err := repository.executor.Exec(ctx, softDeleteRoomSQL, id)
+	tag, err := repository.executorFor(ctx).Exec(ctx, softDeleteRoomSQL, id)
 	if err != nil {
 		return false, fmt.Errorf("soft delete room: %w", err)
 	}
@@ -135,7 +135,7 @@ func (repository *Repository) UpdateRoom(ctx context.Context, params roomservice
 
 // findRoom finds one room with a query.
 func (repository *Repository) findRoom(ctx context.Context, query string, argument any) (roommodel.Room, bool, error) {
-	room, err := scanRoom(repository.executor.QueryRow(ctx, query, argument))
+	room, err := scanRoom(repository.executorFor(ctx).QueryRow(ctx, query, argument))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return roommodel.Room{}, false, nil
 	}
@@ -149,7 +149,7 @@ func (repository *Repository) findRoom(ctx context.Context, query string, argume
 
 // listRooms lists rooms with a query.
 func (repository *Repository) listRooms(ctx context.Context, query string, argument any) ([]roommodel.Room, error) {
-	rows, err := repository.executor.Query(ctx, query, argument)
+	rows, err := repository.executorFor(ctx).Query(ctx, query, argument)
 	if err != nil {
 		return nil, fmt.Errorf("list rooms: %w", err)
 	}
@@ -160,7 +160,7 @@ func (repository *Repository) listRooms(ctx context.Context, query string, argum
 
 // listRooms2 lists rooms with two query arguments.
 func (repository *Repository) listRooms2(ctx context.Context, query string, first any, second any) ([]roommodel.Room, error) {
-	rows, err := repository.executor.Query(ctx, query, first, second)
+	rows, err := repository.executorFor(ctx).Query(ctx, query, first, second)
 	if err != nil {
 		return nil, fmt.Errorf("list rooms: %w", err)
 	}

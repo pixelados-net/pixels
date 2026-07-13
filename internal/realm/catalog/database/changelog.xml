@@ -16,4 +16,6 @@
     <include file="migrations/0009_add_new_additions.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0010_add_freshness.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0011_link_purchase_items.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0012_room_bundles.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0013_room_bundle_audit_name.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

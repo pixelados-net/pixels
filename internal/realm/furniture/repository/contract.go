@@ -71,6 +71,22 @@ type TradingWriter interface {
 	DeleteInventoryItem(ctx context.Context, itemID int64, ownerPlayerID int64) (bool, error)
 }
 
+// RoomBundleProduct contains a grouped room furniture definition.
+type RoomBundleProduct struct {
+	// DefinitionID identifies the grouped furniture definition.
+	DefinitionID int64
+	// Quantity stores the number of matching room items.
+	Quantity int32
+}
+
+// RoomBundleStore clones and summarizes room furniture without materializing items.
+type RoomBundleStore interface {
+	// CloneRoomItems copies active room items to a new owner and room.
+	CloneRoomItems(ctx context.Context, sourceRoomID int64, targetRoomID int64, targetOwnerID int64) (int, error)
+	// ListRoomBundleProducts groups active room items by definition.
+	ListRoomBundleProducts(ctx context.Context, roomID int64) ([]RoomBundleProduct, error)
+}
+
 // Store reads and writes furniture persistence records.
 type Store interface {
 	DefinitionReader

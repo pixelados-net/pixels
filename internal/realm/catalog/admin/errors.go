@@ -17,4 +17,10 @@ var (
 	ErrConflict = errors.New("catalog record changed concurrently")
 	// ErrLimitedBelowSales reports an LTD stack smaller than committed sales.
 	ErrLimitedBelowSales = errors.New("catalog limited stack is below committed sales")
+	// ErrBundleTemplateNotFound reports a missing marked room template.
+	ErrBundleTemplateNotFound = errors.New("catalog room bundle template not found")
+	// ErrBundleHasProducts reports a room bundle mixed with furniture products.
+	ErrBundleHasProducts = errors.New("catalog room bundle has furniture products")
+	// ErrBundleTemplateEmpty reports a template without previewable furniture.
+	ErrBundleTemplateEmpty = errors.New("catalog room bundle template is empty")
 )

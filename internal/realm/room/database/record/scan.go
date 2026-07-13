@@ -20,7 +20,7 @@ func scanRoom(row pgx.Row) (roommodel.Room, error) {
 	var moderationMute int16
 	var moderationKick int16
 	var moderationBan int16
-	err := row.Scan(&room.ID, &room.OwnerPlayerID, &room.OwnerName, &room.Name, &room.Description, &room.ModelName, &doorMode, &passwordHash, &room.MaxUsers, &room.Score, &categoryID, &tradeMode, &room.AllowWalkthrough, &room.AllowPets, &room.AllowPetsEat, &room.HideWalls, &room.WallThickness, &room.FloorThickness, &room.ChatMode, &room.ChatWeight, &room.ChatSpeed, &room.ChatDistance, &room.ChatProtection, &moderationMute, &moderationKick, &moderationBan, &room.StaffPicked, &room.PublicRoom, &room.CreatedAt, &room.UpdatedAt, &deletedAt, &room.Version.Version)
+	err := row.Scan(&room.ID, &room.OwnerPlayerID, &room.OwnerName, &room.Name, &room.Description, &room.ModelName, &doorMode, &passwordHash, &room.MaxUsers, &room.Score, &categoryID, &tradeMode, &room.AllowWalkthrough, &room.AllowPets, &room.AllowPetsEat, &room.HideWalls, &room.WallThickness, &room.FloorThickness, &room.ChatMode, &room.ChatWeight, &room.ChatSpeed, &room.ChatDistance, &room.ChatProtection, &moderationMute, &moderationKick, &moderationBan, &room.StaffPicked, &room.PublicRoom, &room.IsBundleTemplate, &room.CreatedAt, &room.UpdatedAt, &deletedAt, &room.Version.Version)
 	if err != nil {
 		return roommodel.Room{}, err
 	}

@@ -57,6 +57,22 @@ type TeleportPairer interface {
 	PairTeleports(ctx context.Context, ownerPlayerID int64, firstItemID int64, secondItemID int64) error
 }
 
+// RoomBundleProduct contains one grouped template product.
+type RoomBundleProduct struct {
+	// DefinitionID identifies the furniture definition.
+	DefinitionID int64
+	// Quantity stores matching item count.
+	Quantity int32
+}
+
+// RoomBundleManager clones and previews room furniture.
+type RoomBundleManager interface {
+	// CloneRoom copies all active furniture to a new room and owner.
+	CloneRoom(ctx context.Context, sourceRoomID int64, targetRoomID int64, targetOwnerID int64) (int, error)
+	// PreviewRoom groups template furniture for catalog projection.
+	PreviewRoom(ctx context.Context, roomID int64) ([]RoomBundleProduct, error)
+}
+
 // Manager reads and mutates furniture persistence state.
 type Manager interface {
 	DefinitionFinder

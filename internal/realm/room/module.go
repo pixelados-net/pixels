@@ -20,6 +20,7 @@ import (
 	rightsrepo "github.com/niflaot/pixels/internal/realm/room/database/rights"
 	votesrepo "github.com/niflaot/pixels/internal/realm/room/database/votes"
 	wordrepo "github.com/niflaot/pixels/internal/realm/room/database/wordfilter"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/internal/realm/room/record/service"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -38,11 +39,14 @@ var Module = fx.Module(
 		roomfloorplan.LoadConfig,
 		layout.NewService,
 		service.New,
+		NewBundleStore,
+		roombundle.New,
 		NewLiveRegistry,
 		NewLayoutManager,
 		NewRoomLayoutManager,
 		NewManager,
 		NewConfigManager,
+		NewBundleManager,
 		NewRightsStore,
 		NewRightsService,
 		NewRightsManager,
@@ -202,6 +206,16 @@ func NewLayoutManager(service *layout.Service) layout.Manager {
 // NewRoomLayoutManager exposes room-owned layout management.
 func NewRoomLayoutManager(service *layout.Service) layout.RoomManager {
 	return service
+}
+
+// NewRoomService creates room persistence behavior with bundle dependencies.
+func NewBundleStore(pool *postgres.Pool) roombundle.Store {
+	return repository.New(pool)
+}
+
+// NewBundleManager exposes room bundle administration and purchase behavior.
+func NewBundleManager(roomBundles *roombundle.Service) roombundle.Manager {
+	return roomBundles
 }
 
 // NewManager exposes the room management contract.

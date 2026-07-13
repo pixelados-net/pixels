@@ -136,4 +136,7 @@ type Room struct {
 
 	// PublicRoom reports whether the room behaves as public content.
 	PublicRoom bool
+
+	// IsBundleTemplate reports whether the room is an administrative bundle source.
+	IsBundleTemplate bool
 }

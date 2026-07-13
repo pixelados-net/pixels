@@ -156,6 +156,18 @@ type PurchaseResult struct {
 	// GrantedItems stores created furniture instances.
 	GrantedItems []furnituremodel.Item
 
+	// Products stores the offer products resolved before the purchase commits.
+	Products []catalogmodel.Product
+
+	// CreatedRoomID identifies a room created by a room bundle offer.
+	CreatedRoomID *int64
+
+	// CreatedRoomName stores the visible name of a created room.
+	CreatedRoomName string
+
+	// ClonedFurnitureCount stores furniture copied into a created room.
+	ClonedFurnitureCount int
+
 	// LimitedUnitNumber stores the optional LTD edition number.
 	LimitedUnitNumber *int32
 

@@ -159,7 +159,7 @@ func pageValuesForTest() []any {
 // itemValuesForTest returns one scannable offer row.
 func itemValuesForTest() []any {
 	now := time.Date(2026, 7, 9, 12, 0, 0, 0, time.UTC)
-	return []any{int64(2), int64(1), int64(3), "chair_plasto", int64(10), int64(0), int32(-1), int32(1), int32(0), int32(0),
+	return []any{int64(2), int64(1), pgtype.Int8{Int64: 3, Valid: true}, pgtype.Int8{}, "chair_plasto", int64(10), int64(0), int32(-1), int32(1), int32(0), int32(0),
 		false, false, false, int32(0), true, "0", pgtype.Timestamptz{}, now, now, pgtype.Timestamptz{}, int64(1)}
 }
 

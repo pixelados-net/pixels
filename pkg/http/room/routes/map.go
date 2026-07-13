@@ -18,14 +18,15 @@ func roomResponses(rooms []roommodel.Room) []RoomResponse {
 // roomResponse maps one room record.
 func roomResponse(room roommodel.Room) RoomResponse {
 	return RoomResponse{
-		ID:            room.ID,
-		Name:          room.Name,
-		OwnerPlayerID: room.OwnerPlayerID,
-		OwnerName:     room.OwnerName,
-		ModelName:     room.ModelName,
-		MaxUsers:      room.MaxUsers,
-		CategoryID:    room.CategoryID,
-		Score:         room.Score,
+		ID:               room.ID,
+		Name:             room.Name,
+		OwnerPlayerID:    room.OwnerPlayerID,
+		OwnerName:        room.OwnerName,
+		ModelName:        room.ModelName,
+		MaxUsers:         room.MaxUsers,
+		CategoryID:       room.CategoryID,
+		Score:            room.Score,
+		IsBundleTemplate: room.IsBundleTemplate,
 	}
 }
 

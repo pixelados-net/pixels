@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/niflaot/pixels/internal/command"
 	catalogsession "github.com/niflaot/pixels/internal/realm/catalog/commands/session"
@@ -14,6 +15,7 @@ import (
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outsoldout "github.com/niflaot/pixels/networking/outbound/catalog/limited/soldout"
@@ -22,6 +24,8 @@ import (
 	outunavailable "github.com/niflaot/pixels/networking/outbound/catalog/purchase/unavailable"
 	outrefresh "github.com/niflaot/pixels/networking/outbound/inventory/furniture/refresh"
 	outunseen "github.com/niflaot/pixels/networking/outbound/inventory/unseen"
+	"github.com/niflaot/pixels/networking/outbound/session/bubblealert"
+	"github.com/niflaot/pixels/pkg/i18n"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -57,6 +61,8 @@ type Handler struct {
 	Club ClubPurchaser
 	// Log records unexpected purchase failures.
 	Log *zap.Logger
+	// Translations localizes room bundle purchase feedback.
+	Translations i18n.Translator
 }
 
 // CommandName returns the stable command name.
@@ -99,9 +105,12 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err != nil {
 		return handler.sendError(ctx, envelope.Command.Connection, envelope.Command.OfferID, err)
 	}
-	var products []catalogmodel.Product
-	if bundles, ok := handler.Catalog.(catalogservice.BundleReader); ok {
-		products = bundles.Products(ctx, result.Item.ID)
+	products := result.Products
+	if len(products) == 0 {
+		bundles, ok := handler.Catalog.(catalogservice.BundleReader)
+		if ok {
+			products = bundles.Products(ctx, result.Item.ID)
+		}
 	}
 	if len(products) == 0 {
 		products = []catalogmodel.Product{{DefinitionID: result.Item.DefinitionID, Quantity: result.Item.Amount}}
@@ -123,6 +132,24 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	mapped, err := catalogprojection.OfferProducts(result.Item, products, definitions)
 	if err != nil {
 		return handler.sendError(ctx, envelope.Command.Connection, envelope.Command.OfferID, err)
+	}
+	if result.CreatedRoomID != nil {
+		packet, encodeErr := outok.Encode(mapped)
+		if encodeErr != nil {
+			return encodeErr
+		}
+		if err := envelope.Command.Connection.Send(ctx, packet); err != nil {
+			return err
+		}
+		message := "Room bundle purchased."
+		if handler.Translations != nil {
+			message = handler.Translations.Default("catalog.room_bundle.purchased", i18n.Params{"room": result.CreatedRoomName})
+		}
+		packet, encodeErr = bubblealert.Encode("catalog.room_bundle.purchased", message, bubblealert.WithDisplayBubble(), bubblealert.WithParam("roomId", strconv.FormatInt(*result.CreatedRoomID, 10)))
+		if encodeErr != nil {
+			return encodeErr
+		}
+		return envelope.Command.Connection.Send(ctx, packet)
 	}
 	itemIDs := make([]int64, 0, len(result.GrantedItems))
 	for _, item := range result.GrantedItems {
@@ -165,6 +192,24 @@ func containsOffer(items []catalogmodel.Item, offerID int64) bool {
 func (handler Handler) sendError(ctx context.Context, connection netconn.Context, offerID int64, err error) error {
 	if errors.Is(err, catalogservice.ErrLimitedSoldOut) {
 		packet, encodeErr := outsoldout.Encode()
+		if encodeErr != nil {
+			return encodeErr
+		}
+		return connection.Send(ctx, packet)
+	}
+	if errors.Is(err, roombundle.ErrRoomLimitReached) {
+		packet, encodeErr := outfailed.Encode(outfailed.CodeRoomLimit)
+		if encodeErr != nil {
+			return encodeErr
+		}
+		if sendErr := connection.Send(ctx, packet); sendErr != nil {
+			return sendErr
+		}
+		message := "You have reached the room limit."
+		if handler.Translations != nil {
+			message = handler.Translations.Default("catalog.room_bundle.error.room_limit")
+		}
+		packet, encodeErr = bubblealert.Encode("catalog.room_bundle.error.room_limit", message, bubblealert.WithDisplayBubble())
 		if encodeErr != nil {
 			return encodeErr
 		}

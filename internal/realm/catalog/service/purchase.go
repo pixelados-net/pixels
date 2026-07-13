@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	catalogpurchased "github.com/niflaot/pixels/internal/realm/catalog/events/purchased"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
-	"github.com/niflaot/pixels/pkg/bus"
-	"go.uber.org/zap"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 )
 
 const (
@@ -36,11 +33,23 @@ func (service *Service) Purchase(ctx context.Context, params PurchaseParams) (Pu
 	}
 
 	products := service.cache.products(item.ID)
+	if item.IsRoomBundle() {
+		if service.roomBundles == nil {
+			return PurchaseResult{}, ErrCommerceUnavailable
+		}
+		products, err = service.roomBundleProducts(ctx, item)
+		if err != nil {
+			return PurchaseResult{}, fmt.Errorf("preview room bundle %d: %w", item.ID, err)
+		}
+		if len(products) == 0 {
+			return PurchaseResult{}, ErrOfferDisabled
+		}
+	}
 	overrideQuantity := params.OverrideCredits != nil || params.OverridePoints != nil
 	if err := validateAmount(item, products, params.Amount, overrideQuantity); err != nil {
 		return PurchaseResult{}, err
 	}
-	result := PurchaseResult{Item: item}
+	result := PurchaseResult{Item: item, Products: products}
 	err = service.store.WithinTransaction(ctx, func(txCtx context.Context) error {
 		return service.commitPurchase(txCtx, params, item, products, &result)
 	})
@@ -98,6 +107,26 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 		result.LimitedUnitNumber = &number
 	}
 
+	if item.IsRoomBundle() {
+		if service.roomBundles == nil || service.players == nil || params.Gift != nil || params.RecipientPlayerID != 0 {
+			return ErrOfferNotGiftable
+		}
+		buyer, found, err := service.players.FindByID(ctx, params.PlayerID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return ErrInvalidPlayerID
+		}
+		created, err := service.roomBundles.Clone(ctx, roombundle.CloneParams{TemplateRoomID: *item.RoomBundleTemplateRoomID, BuyerPlayerID: params.PlayerID, BuyerName: buyer.Player.Username, CatalogItemID: item.ID})
+		if err != nil {
+			return err
+		}
+		result.CreatedRoomID = &created.Room.ID
+		result.CreatedRoomName = created.Room.Name
+		result.ClonedFurnitureCount = created.FurnitureCount
+	}
+
 	balance, credits, points, err := service.charge(ctx, params.PlayerID, item, params)
 	if err != nil {
 		return err
@@ -110,6 +139,9 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 		result.NewPointsBalance = balance
 	}
 
+	if item.IsRoomBundle() {
+		return service.logPurchase(ctx, params, item, result, credits, points)
+	}
 	recipientID := params.RecipientPlayerID
 	if recipientID == 0 {
 		recipientID = params.PlayerID
@@ -148,6 +180,11 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 			return ErrLimitedCompletion
 		}
 	}
+	return service.logPurchase(ctx, params, item, result, credits, points)
+}
+
+// logPurchase writes extended commerce history when enabled.
+func (service *Service) logPurchase(ctx context.Context, params PurchaseParams, item catalogmodel.Item, result *PurchaseResult, credits int64, points int64) error {
 	if !params.Free && service.commerce != nil {
 		itemIDs := make([]int64, len(result.GrantedItems))
 		for index, granted := range result.GrantedItems {
@@ -157,7 +194,6 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 			return fmt.Errorf("log catalog purchase: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -186,6 +222,12 @@ func DiscountedUnits(amount int32) int32 {
 
 // validateAmount validates anti-cheat purchase quantity rules.
 func validateAmount(item catalogmodel.Item, products []catalogmodel.Product, amount int32, overrideQuantity bool) error {
+	if item.IsRoomBundle() && amount != 1 {
+		return ErrInvalidAmount
+	}
+	if item.IsRoomBundle() {
+		return nil
+	}
 	if amount <= 0 || item.IsLimited() && amount != 1 {
 		return ErrInvalidAmount
 	}
@@ -203,29 +245,4 @@ func validateAmount(item catalogmodel.Item, products []catalogmodel.Product, amo
 		return ErrInvalidAmount
 	}
 	return nil
-}
-
-// refreshAfterLimited refreshes stock cache after an LTD purchase.
-func (service *Service) refreshAfterLimited(ctx context.Context, item catalogmodel.Item) {
-	if !item.IsLimited() {
-		return
-	}
-	if err := service.Refresh(ctx); err != nil {
-		service.log.Warn("catalog cache refresh after limited purchase failed", zap.Int64("catalog_item_id", item.ID), zap.Error(err))
-	}
-}
-
-// publishPurchase emits a completed purchase fact.
-func (service *Service) publishPurchase(ctx context.Context, playerID int64, result PurchaseResult) {
-	if service.events == nil {
-		return
-	}
-	err := service.events.Publish(ctx, bus.Event{Name: catalogpurchased.Name, Payload: catalogpurchased.Payload{
-		PlayerID: playerID, CatalogItemID: result.Item.ID, DefinitionID: result.Item.DefinitionID,
-		Quantity: result.Item.Amount, CostCredits: result.Item.CostCredits, CostPoints: result.Item.CostPoints,
-		PointsType: result.Item.PointsType, LimitedUnitNumber: result.LimitedUnitNumber,
-	}})
-	if err != nil && !errors.Is(err, context.Canceled) {
-		service.log.Warn("catalog purchase event projection failed", zap.Int64("player_id", playerID), zap.Int64("catalog_item_id", result.Item.ID), zap.Error(err))
-	}
 }

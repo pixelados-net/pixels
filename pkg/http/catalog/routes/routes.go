@@ -60,7 +60,9 @@ func catalogError(err error) error {
 	case errors.Is(err, catalogadmin.ErrConflict):
 		return fiber.NewError(fiber.StatusConflict, err.Error())
 	case errors.Is(err, catalogadmin.ErrInvalidPage), errors.Is(err, catalogadmin.ErrInvalidItem),
-		errors.Is(err, catalogadmin.ErrDefinitionNotFound), errors.Is(err, catalogadmin.ErrLimitedBelowSales):
+		errors.Is(err, catalogadmin.ErrDefinitionNotFound), errors.Is(err, catalogadmin.ErrLimitedBelowSales),
+		errors.Is(err, catalogadmin.ErrBundleTemplateNotFound), errors.Is(err, catalogadmin.ErrBundleHasProducts),
+		errors.Is(err, catalogadmin.ErrBundleTemplateEmpty):
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	default:
 		return err

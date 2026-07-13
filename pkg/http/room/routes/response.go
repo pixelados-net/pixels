@@ -27,6 +27,8 @@ type RoomResponse struct {
 	CategoryID *int64 `json:"categoryId,omitempty"`
 	// Score stores the navigator score.
 	Score int `json:"score"`
+	// IsBundleTemplate reports whether the room is a bundle source.
+	IsBundleTemplate bool `json:"isBundleTemplate"`
 }
 
 // OccupancyResponse contains active room occupancy.

@@ -17,6 +17,9 @@ func adminOperations() []operation {
 		adminDisconnect("/api/admin/connections/{kind}/disconnect", "Disconnect connections by kind", &DisconnectKindRequest{}),
 		adminDisconnect("/api/admin/connections/{kind}/{id}/disconnect", "Disconnect one connection", &DisconnectOneRequest{}),
 		adminRoomRead("/api/admin/rooms", "List rooms", &RoomListRequest{}, &RoomListResponse{}),
+		adminRoomTemplate(http.MethodGet, "/api/admin/rooms/bundle-templates", "List room bundle templates", &APIKeyRequest{}, &RoomListResponse{}),
+		adminRoomTemplate(http.MethodPost, "/api/admin/rooms/{id}/bundle-template", "Mark room as bundle template", &RoomIDRequest{}, &RoomResponse{}),
+		adminRoomTemplate(http.MethodDelete, "/api/admin/rooms/{id}/bundle-template", "Unmark room bundle template", &RoomIDRequest{}, &RoomResponse{}),
 		adminRoomRead("/api/admin/rooms/{id}", "Read room metadata", &RoomIDRequest{}, &RoomResponse{}),
 		adminRoomRead("/api/admin/rooms/{id}/occupancy", "Read active room occupancy", &RoomIDRequest{}, &RoomOccupancyResponse{}),
 		adminRoomAction("/api/admin/rooms/{id}/close", "Close active room", &RoomIDRequest{}),
@@ -86,6 +89,14 @@ func adminOperations() []operation {
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/effective", "List effective player permissions", &permissionapi.PlayerRequest{}, &permissionapi.EffectiveResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/check", "Check player permission", &permissionapi.CheckRequest{}, &permissionapi.CheckResponse{}, http.StatusOK),
 	}
+}
+
+// adminRoomTemplate creates a protected room bundle template operation.
+func adminRoomTemplate(method string, path string, summary string, request any, body any) operation {
+	return operation{method: method, path: path, tag: "Admin Room Bundles", summary: summary,
+		description: summary + ".", request: request,
+		responses: append([]response{jsonResponse(http.StatusOK, body, summary+".")},
+			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError)...), secured: true}
 }
 
 // adminRoomAudit creates a protected room audit read operation.

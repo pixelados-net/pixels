@@ -46,4 +46,6 @@ var (
 	FloorplanOwnEdit = permission.RegisterNode("room.floorplan.own.edit", "")
 	// FloorplanAnyEdit allows staff to edit any room floor plan.
 	FloorplanAnyEdit = permission.RegisterNode("room.floorplan.any.edit", "")
+	// BundleTemplateManage allows administration of catalog room templates.
+	BundleTemplateManage = permission.RegisterNode("room.admin.bundle_template.manage", "")
 )

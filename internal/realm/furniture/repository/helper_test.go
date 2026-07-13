@@ -131,6 +131,8 @@ func assignValue(destination any, value any) {
 		*target = value.(int)
 	case *int16:
 		*target = value.(int16)
+	case *int32:
+		*target = value.(int32)
 	case *int64:
 		*target = value.(int64)
 	case *float64:

@@ -83,7 +83,9 @@ type CatalogItemRequest struct {
 	// PageID identifies the owning page.
 	PageID int64 `json:"pageId" required:"true" minimum:"1"`
 	// DefinitionID identifies the granted furniture definition.
-	DefinitionID int64 `json:"definitionId" required:"true" minimum:"1"`
+	DefinitionID int64 `json:"definitionId,omitempty" minimum:"1"`
+	// RoomBundleTemplateRoomID identifies a marked room template instead of furniture.
+	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty" minimum:"1"`
 	// Name stores the localization slug.
 	Name string `json:"name" required:"true" example:"chair_plasto"`
 	// CostCredits stores the credits price.
@@ -93,7 +95,7 @@ type CatalogItemRequest struct {
 	// PointsType identifies the activity-points currency or -1 for credits.
 	PointsType int32 `json:"pointsType" required:"true" example:"-1"`
 	// Amount stores the furniture quantity granted.
-	Amount int32 `json:"amount" required:"true" minimum:"1"`
+	Amount int32 `json:"amount" minimum:"0"`
 	// LimitedStack stores numbered stock or zero.
 	LimitedStack int32 `json:"limitedStack" minimum:"0"`
 	// BundleDiscountEnabled permits bulk purchases with protocol discounts.
@@ -115,6 +117,8 @@ type CatalogItemPatchRequest struct {
 	APIKeyRequest
 	// ID identifies the mutated offer.
 	ID int64 `path:"id" required:"true" minimum:"1"`
+	// PageID replaces the owning page.
+	PageID *int64 `json:"pageId,omitempty" minimum:"1"`
 	// CostCredits replaces the credits price.
 	CostCredits *int64 `json:"costCredits,omitempty" minimum:"0"`
 	// CostPoints replaces the points price.
@@ -125,6 +129,26 @@ type CatalogItemPatchRequest struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Name replaces the localization slug.
 	Name *string `json:"name,omitempty"`
+	// DefinitionID replaces the furniture definition.
+	DefinitionID *int64 `json:"definitionId,omitempty" minimum:"1"`
+	// RoomBundleTemplateRoomID replaces the marked room template.
+	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty" minimum:"1"`
+	// ClearRoomBundleTemplate removes the room template association.
+	ClearRoomBundleTemplate bool `json:"clearRoomBundleTemplate,omitempty"`
+	// PointsType replaces the points currency or -1 for credits.
+	PointsType *int32 `json:"pointsType,omitempty"`
+	// Amount replaces the granted furniture amount.
+	Amount *int32 `json:"amount,omitempty" minimum:"0"`
+	// BundleDiscountEnabled replaces bulk discount eligibility.
+	BundleDiscountEnabled *bool `json:"bundleDiscountEnabled,omitempty"`
+	// Giftable replaces gift eligibility.
+	Giftable *bool `json:"giftable,omitempty"`
+	// ClubOnly replaces club access policy.
+	ClubOnly *bool `json:"clubOnly,omitempty"`
+	// OrderNum replaces page display order.
+	OrderNum *int32 `json:"orderNum,omitempty"`
+	// ExtraData replaces initial furniture state.
+	ExtraData *string `json:"extraData,omitempty"`
 }
 
 // CatalogItemResponse contains one catalog offer record.
@@ -135,6 +159,8 @@ type CatalogItemResponse struct {
 	PageID int64 `json:"pageId" required:"true"`
 	// DefinitionID identifies the furniture definition.
 	DefinitionID int64 `json:"definitionId" required:"true"`
+	// RoomBundleTemplateRoomID identifies the cloned room template.
+	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty"`
 	// Name stores the localization slug.
 	Name string `json:"name" required:"true"`
 	// CostCredits stores the credits price.
@@ -143,12 +169,26 @@ type CatalogItemResponse struct {
 	CostPoints int64 `json:"costPoints" required:"true"`
 	// PointsType identifies the points currency.
 	PointsType int32 `json:"pointsType" required:"true"`
+	// Amount stores the granted furniture amount, or zero for room bundles.
+	Amount int32 `json:"amount" required:"true"`
 	// LimitedStack stores numbered stock.
 	LimitedStack int32 `json:"limitedStack" required:"true"`
 	// LimitedSells stores committed numbered sales.
 	LimitedSells int32 `json:"limitedSells" required:"true"`
+	// BundleDiscountEnabled reports bulk purchase eligibility.
+	BundleDiscountEnabled bool `json:"bundleDiscountEnabled" required:"true"`
+	// Giftable reports gift eligibility.
+	Giftable bool `json:"giftable" required:"true"`
+	// ClubOnly reports club access policy.
+	ClubOnly bool `json:"clubOnly" required:"true"`
+	// OrderNum stores page display order.
+	OrderNum int32 `json:"orderNum" required:"true"`
 	// Enabled reports offer availability.
 	Enabled bool `json:"enabled" required:"true"`
+	// ExtraData stores initial furniture state.
+	ExtraData string `json:"extraData" required:"true"`
+	// Version stores optimistic locking state.
+	Version int64 `json:"version" required:"true"`
 }
 
 // CatalogItemsRequest contains optional catalog offer filters.

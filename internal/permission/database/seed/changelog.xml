@@ -12,5 +12,6 @@
     <include file="development/0005_room_moderation_policy_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0006_room_floorplan_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0007_trade_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0008_room_bundle_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_permission_groups.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

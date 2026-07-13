@@ -8,6 +8,7 @@ import (
 	roomaudit "github.com/niflaot/pixels/internal/realm/room/control/audit"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -26,6 +27,8 @@ type Dependencies struct {
 	Moderation roommoderation.Reader
 	// Votes manages room upvotes.
 	Votes roomvotes.Manager
+	// Bundles manages room bundle templates.
+	Bundles roombundle.Manager
 }
 
 const (
@@ -39,6 +42,9 @@ const (
 // Register mounts protected room and navigator administration routes.
 func Register(app *fiber.App, rooms roomservice.Manager, runtime *roomlive.Registry, connections *netconn.Registry, navigator navservice.Manager, players *playerlive.Registry, entry *roomentry.Service, dependencies Dependencies) {
 	app.Get(roomPath, listHandler(rooms))
+	app.Get(roomPath+"/bundle-templates", bundleTemplatesHandler(dependencies.Bundles))
+	app.Post(roomPath+"/:id/bundle-template", markBundleTemplateHandler(dependencies.Bundles))
+	app.Delete(roomPath+"/:id/bundle-template", unmarkBundleTemplateHandler(dependencies.Bundles))
 	app.Get(roomPath+"/:id", detailHandler(rooms))
 	app.Get(roomPath+"/:id/occupancy", occupancyHandler(rooms, runtime))
 	app.Post(roomPath+"/:id/close", closeHandler(runtime))

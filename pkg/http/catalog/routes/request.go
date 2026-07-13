@@ -87,6 +87,8 @@ type ItemRequest struct {
 	PageID int64 `json:"pageId"`
 	// DefinitionID identifies the granted furniture definition.
 	DefinitionID int64 `json:"definitionId"`
+	// RoomBundleTemplateRoomID identifies an optional room template.
+	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty"`
 	// Name stores the stable localization slug.
 	Name string `json:"name"`
 	// CostCredits stores the credits price.
@@ -119,6 +121,10 @@ type ItemPatchRequest struct {
 	PageID *int64 `json:"pageId"`
 	// DefinitionID replaces the furniture definition.
 	DefinitionID *int64 `json:"definitionId"`
+	// RoomBundleTemplateRoomID replaces the room template when present.
+	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId"`
+	// ClearRoomBundleTemplate clears a room template association.
+	ClearRoomBundleTemplate bool `json:"clearRoomBundleTemplate"`
 	// Name replaces the localization slug.
 	Name *string `json:"name"`
 	// CostCredits replaces the credits price.
@@ -164,7 +170,7 @@ func pageInput(request PageRequest) catalogadmin.PageInput {
 
 // itemInput maps an HTTP offer request to administration input.
 func itemInput(request ItemRequest) catalogadmin.ItemInput {
-	return catalogadmin.ItemInput{PageID: request.PageID, DefinitionID: request.DefinitionID, Name: request.Name,
+	return catalogadmin.ItemInput{PageID: request.PageID, DefinitionID: request.DefinitionID, RoomBundleTemplateRoomID: request.RoomBundleTemplateRoomID, Name: request.Name,
 		CostCredits: request.CostCredits, CostPoints: request.CostPoints, PointsType: request.PointsType,
 		Amount: request.Amount, LimitedStack: request.LimitedStack, BundleDiscountEnabled: request.BundleDiscountEnabled, Giftable: request.Giftable, ClubOnly: request.ClubOnly,
 		OrderNum: request.OrderNum, Enabled: request.Enabled, ExtraData: request.ExtraData}

@@ -10,6 +10,8 @@ const (
 	CodeServer int32 = 0
 	// CodeAlreadyOwned identifies a unique product already owned by the buyer.
 	CodeAlreadyOwned int32 = 1
+	// CodeRoomLimit identifies a room bundle blocked by the ownership limit.
+	CodeRoomLimit int32 = 2
 )
 
 // Definition describes the PURCHASE_ERROR payload fields.

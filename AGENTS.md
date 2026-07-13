@@ -261,6 +261,28 @@ minimum manual checks expected when touching it.
   - `go test ./internal/realm/furniture/... ./internal/realm/inventory/...`
   - Run Liquibase `validate` after changing catalog migrations.
 
+### FEATURE: Room Bundles
+
+- Owns `internal/realm/room/record/bundle`, bundle persistence below room and
+  furniture databases, room-bundle catalog offers, and protected administration
+  routes below `/api/admin/rooms` and `/api/admin/catalog`.
+- Bundle templates remain hidden from Navigator searches and owner room counts.
+  A purchase atomically clones room settings, optional custom geometry, and
+  grouped furniture, charges the buyer, writes purchase provenance, and emits
+  `room.bundle.purchased` only after commit.
+- Furniture cloning uses one `INSERT ... SELECT`, preserves placement and
+  interaction state, and clears LTD, marketplace, trade, and gift ownership
+  state. Bots remain outside bundle cloning until a bot realm exists.
+- Test after changes:
+  - `go test -race ./internal/realm/room/record/bundle ./internal/realm/catalog/service ./internal/realm/furniture/repository`
+  - `go test ./pkg/http/room/routes ./pkg/http/catalog/routes ./pkg/http/openapi`
+  - Run `BenchmarkPreview` with `-benchmem` and verify preview queries remain
+    grouped instead of materializing every template item in Go.
+  - Apply and validate schema plus development seeds from a clean database.
+  - Open Nitro's complete-room catalog page, buy every seeded bundle, enter the
+    resulting rooms, and verify geometry, furniture state, room limits, wallet
+    rollback, Navigator visibility, and localized success/failure feedback.
+
 ### FEATURE: Inventory Currencies
 
 - Owns `internal/realm/inventory/currency`, currency packets under

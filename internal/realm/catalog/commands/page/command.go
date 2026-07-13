@@ -94,6 +94,13 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		if err != nil {
 			return fmt.Errorf("map catalog item %d: %w", item.ID, err)
 		}
+		// Room bundles are server-defined offers and their names are not part of
+		// Nitro's static product-data/localization files. Send the translated
+		// label as the fallback localization id so the client never exposes the
+		// internal catalog.item.* key in the room selector.
+		if item.IsRoomBundle() && handler.Translations != nil {
+			mapped.LocalizationID = handler.Translations.Default(i18n.Key("catalog.item." + item.Name))
+		}
 		offers = append(offers, mapped)
 	}
 	viewer.SetPage(page.ID)
@@ -101,8 +108,13 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if handler.Translations != nil {
 		pageText = handler.Translations.Default(i18n.Key(pageText))
 	}
+	texts := []string{pageText, "", ""}
+	if page.Layout == "room_bundle" && handler.Translations != nil {
+		texts[1] = handler.Translations.Default(i18n.Key("catalog.page." + page.Name + ".teaser"))
+		texts[2] = handler.Translations.Default(i18n.Key("catalog.page." + page.Name + ".details"))
+	}
 	packet, err := outpage.Encode(int32(page.ID), viewer.Mode(), page.Layout,
-		outpage.Localization{Images: []string{"", "", ""}, Texts: []string{pageText, "", ""}}, offers, envelope.Command.OfferID)
+		outpage.Localization{Images: []string{"", "", ""}, Texts: texts}, offers, envelope.Command.OfferID)
 	if err != nil {
 		return err
 	}

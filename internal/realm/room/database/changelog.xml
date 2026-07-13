@@ -12,4 +12,5 @@
     <include file="migrations/0005_create_room_votes.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0006_reconcile_room_vote_scores.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0007_create_room_custom_layouts.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_room_bundle_templates.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

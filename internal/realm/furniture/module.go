@@ -24,6 +24,7 @@ var Module = fx.Module(
 		NewStateUpdater,
 		NewGranter,
 		NewDefinitionGranter,
+		NewRoomBundleManager,
 		NewTradingManager,
 		interactions.NewRegistry,
 		essential.New,
@@ -88,5 +89,10 @@ func NewGranter(furnitureService *service.Service) service.Granter {
 
 // NewDefinitionGranter exposes furniture definition and creation behavior.
 func NewDefinitionGranter(furnitureService *service.Service) service.DefinitionGranter {
+	return furnitureService
+}
+
+// NewRoomBundleManager exposes efficient room furniture cloning.
+func NewRoomBundleManager(furnitureService *service.Service) service.RoomBundleManager {
 	return furnitureService
 }

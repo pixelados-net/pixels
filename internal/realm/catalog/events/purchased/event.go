@@ -33,4 +33,7 @@ type Payload struct {
 
 	// LimitedUnitNumber stores the optional LTD edition number.
 	LimitedUnitNumber *int32
+
+	// CreatedRoomID identifies a room created by a room bundle offer.
+	CreatedRoomID *int64
 }

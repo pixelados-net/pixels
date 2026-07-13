@@ -25,7 +25,7 @@ func TestItemPersistenceScansAndWrites(t *testing.T) {
 
 	executor.row = fakeRow{values: itemValuesForTest()}
 	created, err := newRepository(executor).CreateItem(context.Background(), catalogmodel.Item{PageID: 1, DefinitionID: 3, Name: "chair_plasto", Amount: 1, Enabled: true})
-	if err != nil || created.ID != 2 || len(executor.arguments) != 16 {
+	if err != nil || created.ID != 2 || len(executor.arguments) != 17 {
 		t.Fatalf("unexpected created=%#v args=%#v err=%v", created, executor.arguments, err)
 	}
 }
@@ -44,7 +44,7 @@ func TestItemUpdatesAndSoftDeleteUseVersions(t *testing.T) {
 	executor := &fakeExecutor{row: fakeRow{err: pgx.ErrNoRows}}
 	item := catalogmodel.Item{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 2}, Version: sharedmodel.Version{Version: 3}}}
 	_, updated, err := newRepository(executor).UpdateItem(context.Background(), item)
-	if err != nil || updated || len(executor.arguments) != 18 {
+	if err != nil || updated || len(executor.arguments) != 19 {
 		t.Fatalf("unexpected update=%v args=%#v err=%v", updated, executor.arguments, err)
 	}
 
@@ -80,7 +80,7 @@ func definitionValuesForTest() []any {
 		int64(3), 39, "orphan_chair", "Orphan Chair", "floor", 1, 1, 1.0,
 		false, false, true, false, true, "default", 2, "", "", []byte(`{}`),
 	}
-	values = append(values, itemValuesForTest()[17], itemValuesForTest()[18], pgtype.Timestamptz{}, int64(1))
+	values = append(values, itemValuesForTest()[18], itemValuesForTest()[19], pgtype.Timestamptz{}, int64(1))
 
 	return values
 }

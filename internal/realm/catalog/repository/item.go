@@ -12,7 +12,7 @@ import (
 
 const (
 	// itemColumns stores the shared catalog offer projection.
-	itemColumns = `id, page_id, definition_id, name, cost_credits, cost_points, points_type, amount, limited_stack, limited_sells, bundle_discount_enabled, giftable, club_only, order_num, enabled, extra_data, scheduled_at, created_at, updated_at, deleted_at, version`
+	itemColumns = `id, page_id, definition_id, room_bundle_template_room_id, name, cost_credits, cost_points, points_type, amount, limited_stack, limited_sells, bundle_discount_enabled, giftable, club_only, order_num, enabled, extra_data, scheduled_at, created_at, updated_at, deleted_at, version`
 
 	// listItemsSQL lists active catalog offers with an optional page filter.
 	listItemsSQL = `select ` + itemColumns + ` from catalog_items where deleted_at is null and ($1::bigint is null or page_id=$1) order by page_id, order_num, id`
@@ -21,14 +21,14 @@ const (
 	findItemSQL = `select ` + itemColumns + ` from catalog_items where id=$1 and deleted_at is null`
 
 	// createItemSQL creates one catalog offer.
-	createItemSQL = `insert into catalog_items (page_id, definition_id, name, cost_credits, cost_points, points_type, amount, limited_stack, limited_sells, bundle_discount_enabled, giftable, club_only, order_num, enabled, extra_data, scheduled_at)
-values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) returning ` + itemColumns
+	createItemSQL = `insert into catalog_items (page_id, definition_id, room_bundle_template_room_id, name, cost_credits, cost_points, points_type, amount, limited_stack, limited_sells, bundle_discount_enabled, giftable, club_only, order_num, enabled, extra_data, scheduled_at)
+values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) returning ` + itemColumns
 
 	// updateItemSQL updates one active catalog offer using its version.
-	updateItemSQL = `update catalog_items set page_id=$2, definition_id=$3, name=$4, cost_credits=$5, cost_points=$6,
-points_type=$7, amount=$8, limited_stack=$9, limited_sells=$10, bundle_discount_enabled=$11, giftable=$12,
-club_only=$13, order_num=$14, enabled=$15, extra_data=$16, scheduled_at=$17, updated_at=now(), version=version+1
-where id=$1 and version=$18 and deleted_at is null returning ` + itemColumns
+	updateItemSQL = `update catalog_items set page_id=$2, definition_id=$3, room_bundle_template_room_id=$4, name=$5, cost_credits=$6, cost_points=$7,
+points_type=$8, amount=$9, limited_stack=$10, limited_sells=$11, bundle_discount_enabled=$12, giftable=$13,
+club_only=$14, order_num=$15, enabled=$16, extra_data=$17, scheduled_at=$18, updated_at=now(), version=version+1
+where id=$1 and version=$19 and deleted_at is null returning ` + itemColumns
 
 	// softDeleteItemSQL soft deletes one active catalog offer using its version.
 	softDeleteItemSQL = `update catalog_items set deleted_at=now(), updated_at=now(), version=version+1 where id=$1 and version=$2 and deleted_at is null`
@@ -120,5 +120,9 @@ func (repository *Repository) queryItem(ctx context.Context, query string, argum
 
 // itemValues maps offer persistence values in statement order.
 func itemValues(item catalogmodel.Item) []any {
-	return []any{item.PageID, item.DefinitionID, item.Name, item.CostCredits, item.CostPoints, item.PointsType, item.Amount, item.LimitedStack, item.LimitedSells, item.BundleDiscountEnabled, item.Giftable, item.ClubOnly, item.OrderNum, item.Enabled, item.ExtraData, item.ScheduledAt}
+	var definitionID any = item.DefinitionID
+	if item.IsRoomBundle() {
+		definitionID = nil
+	}
+	return []any{item.PageID, definitionID, item.RoomBundleTemplateRoomID, item.Name, item.CostCredits, item.CostPoints, item.PointsType, item.Amount, item.LimitedStack, item.LimitedSells, item.BundleDiscountEnabled, item.Giftable, item.ClubOnly, item.OrderNum, item.Enabled, item.ExtraData, item.ScheduledAt}
 }

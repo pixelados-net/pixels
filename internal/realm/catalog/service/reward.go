@@ -77,7 +77,7 @@ func (service *Service) PurchaseGift(ctx context.Context, params GiftPurchasePar
 		return PurchaseResult{}, ErrGiftReceiverNotFound
 	}
 	item, found := service.cache.item(params.CatalogItemID)
-	if !found || !item.Giftable {
+	if !found || !item.Giftable || item.IsRoomBundle() {
 		return PurchaseResult{}, ErrOfferNotGiftable
 	}
 	var senderID *int64

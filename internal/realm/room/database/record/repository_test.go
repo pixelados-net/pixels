@@ -41,12 +41,16 @@ func TestFindRoomByIDReportsMissing(t *testing.T) {
 
 // TestListRoomsByOwnerScansRows verifies room list scanning.
 func TestListRoomsByOwnerScansRows(t *testing.T) {
-	rooms, err := New(&fakeExecutor{rows: &fakeRows{values: [][]any{roomValuesForTest()}}}).ListRoomsByOwner(context.Background(), 7)
+	executor := &fakeExecutor{rows: &fakeRows{values: [][]any{roomValuesForTest()}}}
+	rooms, err := New(executor).ListRoomsByOwner(context.Background(), 7)
 	if err != nil {
 		t.Fatalf("list rooms: %v", err)
 	}
 	if len(rooms) != 1 || rooms[0].Name != "Test Room" {
 		t.Fatalf("unexpected rooms %#v", rooms)
+	}
+	if !strings.Contains(executor.query, "not is_bundle_template") {
+		t.Fatalf("template rooms must not count as owned rooms: %q", executor.query)
 	}
 }
 
@@ -57,7 +61,7 @@ func TestListPopularRoomsUsesQuery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list popular rooms: %v", err)
 	}
-	if !strings.Contains(executor.query, "door_mode <> 3") || !strings.Contains(executor.query, "order by score desc") {
+	if !strings.Contains(executor.query, "door_mode <> 3") || !strings.Contains(executor.query, "not is_bundle_template") || !strings.Contains(executor.query, "order by score desc") {
 		t.Fatalf("unexpected query %q", executor.query)
 	}
 }
@@ -69,7 +73,7 @@ func TestListHighestScoreRoomsUsesQuery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list highest score rooms: %v", err)
 	}
-	if !strings.Contains(executor.query, "door_mode <> 3") || !strings.Contains(executor.query, "id asc") {
+	if !strings.Contains(executor.query, "door_mode <> 3") || !strings.Contains(executor.query, "not is_bundle_template") || !strings.Contains(executor.query, "id asc") {
 		t.Fatalf("unexpected query %q", executor.query)
 	}
 }
@@ -80,7 +84,7 @@ func TestSearchRoomsExcludesInvisibleRooms(t *testing.T) {
 	if _, err := New(executor).SearchRooms(context.Background(), "pixels", 10); err != nil {
 		t.Fatalf("search rooms: %v", err)
 	}
-	if !strings.Contains(executor.query, "door_mode <> 3") {
+	if !strings.Contains(executor.query, "door_mode <> 3") || !strings.Contains(executor.query, "not is_bundle_template") {
 		t.Fatalf("unexpected query %q", executor.query)
 	}
 }
@@ -164,7 +168,7 @@ func TestListCategoriesWrapsRowsError(t *testing.T) {
 // roomValuesForTest returns scannable room values.
 func roomValuesForTest() []any {
 	now := time.Date(2026, 7, 5, 12, 0, 0, 0, time.UTC)
-	return []any{int64(9), int64(7), "demo", "Test Room", "hello", "model_a", int16(roommodel.DoorModeOpen), pgtype.Text{String: "bcrypt-hash", Valid: true}, 25, 3, pgtype.Int8{}, int16(roommodel.TradeModeDisabled), false, true, false, false, 0, 0, int16(0), int16(1), int16(1), int16(50), int16(2), int16(0), int16(1), int16(2), false, false, now, now, pgtype.Timestamptz{}, int64(1)}
+	return []any{int64(9), int64(7), "demo", "Test Room", "hello", "model_a", int16(roommodel.DoorModeOpen), pgtype.Text{String: "bcrypt-hash", Valid: true}, 25, 3, pgtype.Int8{}, int16(roommodel.TradeModeDisabled), false, true, false, false, 0, 0, int16(0), int16(1), int16(1), int16(50), int16(2), int16(0), int16(1), int16(2), false, false, false, now, now, pgtype.Timestamptz{}, int64(1)}
 }
 
 // categoryValuesForTest returns scannable category values.

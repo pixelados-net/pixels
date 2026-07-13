@@ -12,6 +12,7 @@ import (
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/pkg/bus"
 	"go.uber.org/zap"
 )
@@ -45,6 +46,15 @@ type Service struct {
 
 	// players resolves gift recipients.
 	players playerservice.Finder
+
+	// roomBundles clones and previews room template offers.
+	roomBundles roombundle.Manager
+}
+
+// WithRoomBundles configures room bundle catalog behavior.
+func (service *Service) WithRoomBundles(roomBundles roombundle.Manager) *Service {
+	service.roomBundles = roomBundles
+	return service
 }
 
 // WithPlayers configures player lookup for catalog gifts.
@@ -102,9 +112,32 @@ func (service *Service) Refresh(ctx context.Context) error {
 	return nil
 }
 
-// Products returns cached bundle products for one offer.
-func (service *Service) Products(_ context.Context, catalogItemID int64) []catalogmodel.Product {
+// Products returns preview products for one offer.
+func (service *Service) Products(ctx context.Context, catalogItemID int64) []catalogmodel.Product {
+	item, found := service.cache.item(catalogItemID)
+	if found && item.IsRoomBundle() && service.roomBundles != nil {
+		products, err := service.roomBundleProducts(ctx, item)
+		if err != nil {
+			service.log.Warn("room bundle preview failed", zap.Int64("catalog_item_id", catalogItemID), zap.Error(err))
+			return nil
+		}
+		return products
+	}
 	return service.cache.products(catalogItemID)
+}
+
+// roomBundleProducts resolves a room bundle preview into catalog products.
+func (service *Service) roomBundleProducts(ctx context.Context, item catalogmodel.Item) ([]catalogmodel.Product, error) {
+	products, err := service.roomBundles.Preview(ctx, *item.RoomBundleTemplateRoomID)
+	if err != nil {
+		return nil, err
+	}
+	mapped := make([]catalogmodel.Product, len(products))
+	for index := range products {
+		mapped[index] = catalogmodel.Product{CatalogItemID: item.ID, DefinitionID: products[index].DefinitionID, Quantity: products[index].Quantity, OrderNum: int32(index)}
+	}
+
+	return mapped, nil
 }
 
 // Definition returns cached furniture metadata for one catalog offer.

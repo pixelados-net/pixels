@@ -57,7 +57,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, dependencies Handl
 	}, dependencies.Log))
 	buyhandler.Register(handlers.Inbound, buyhandler.New(buycmd.Handler{
 		Players: dependencies.Players, Bindings: dependencies.Bindings, Catalog: dependencies.Catalog,
-		Club: dependencies.Club, Log: dependencies.Log,
+		Club: dependencies.Club, Log: dependencies.Log, Translations: dependencies.Translations,
 	}, dependencies.Log))
 	commercehandler.Register(handlers.Inbound, commercehandler.New(commercecmd.Handler{
 		Players: dependencies.Players, Bindings: dependencies.Bindings, Catalog: dependencies.CatalogService,

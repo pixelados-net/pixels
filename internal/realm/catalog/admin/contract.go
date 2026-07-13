@@ -95,6 +95,8 @@ type ItemInput struct {
 	PageID int64
 	// DefinitionID identifies the granted furniture definition.
 	DefinitionID int64
+	// RoomBundleTemplateRoomID identifies an optional room template offer.
+	RoomBundleTemplateRoomID *int64
 	// Name stores the stable localization slug.
 	Name string
 	// CostCredits stores the credits price.
@@ -127,6 +129,8 @@ type ItemPatch struct {
 	PageID *int64
 	// DefinitionID replaces the furniture definition when present.
 	DefinitionID *int64
+	// RoomBundleTemplateRoomID replaces or clears the room template when present.
+	RoomBundleTemplateRoomID **int64
 	// Name replaces the localization slug when present.
 	Name *string
 	// CostCredits replaces the credits price when present.

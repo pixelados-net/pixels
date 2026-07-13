@@ -9,6 +9,7 @@ import (
 	catalogservice "github.com/niflaot/pixels/internal/realm/catalog/service"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 )
 
 // Service implements catalog administration behavior.
@@ -21,6 +22,14 @@ type Service struct {
 	catalog catalogservice.Manager
 	// definitions validates furniture references.
 	definitions furnitureservice.DefinitionGranter
+	// roomBundles validates room template references.
+	roomBundles roombundle.Manager
+}
+
+// WithRoomBundles configures room template validation.
+func (service *Service) WithRoomBundles(roomBundles roombundle.Manager) *Service {
+	service.roomBundles = roomBundles
+	return service
 }
 
 // New creates a catalog administration service.

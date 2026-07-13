@@ -12,6 +12,7 @@ import (
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
+	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -21,6 +22,7 @@ import (
 	outunavailable "github.com/niflaot/pixels/networking/outbound/catalog/purchase/unavailable"
 	outrefresh "github.com/niflaot/pixels/networking/outbound/inventory/furniture/refresh"
 	outunseen "github.com/niflaot/pixels/networking/outbound/inventory/unseen"
+	"github.com/niflaot/pixels/networking/outbound/session/bubblealert"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -33,6 +35,31 @@ func TestHandleCompletesPurchaseAndRefreshesInventory(t *testing.T) {
 	if err != nil || manager.purchases != 1 || len(*sent) != 3 ||
 		(*sent)[0].Header != outunseen.Header || (*sent)[1].Header != outok.Header || (*sent)[2].Header != outrefresh.Header {
 		t.Fatalf("unexpected packets %#v purchases=%d error %v", *sent, manager.purchases, err)
+	}
+}
+
+// TestHandleCompletesRoomBundleWithoutInventoryRefresh verifies room-specific feedback.
+func TestHandleCompletesRoomBundleWithoutInventoryRefresh(t *testing.T) {
+	handler, connection, sent, manager := buyFixture(t)
+	templateID := int64(100)
+	manager.item.RoomBundleTemplateRoomID = &templateID
+	manager.createdRoomID = 44
+	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, PageID: 2, OfferID: 5, Amount: 1}})
+	if err != nil || len(*sent) != 2 || (*sent)[0].Header != outok.Header || (*sent)[1].Header != bubblealert.Header {
+		t.Fatalf("packets=%#v error=%v", *sent, err)
+	}
+	if manager.productReads != 0 {
+		t.Fatalf("post-commit product reads=%d", manager.productReads)
+	}
+}
+
+// TestHandleMapsRoomLimitToDedicatedFailure verifies explicit bundle limit feedback.
+func TestHandleMapsRoomLimitToDedicatedFailure(t *testing.T) {
+	handler, connection, sent, manager := buyFixture(t)
+	manager.err = roombundle.ErrRoomLimitReached
+	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, PageID: 2, OfferID: 5, Amount: 1}})
+	if err != nil || len(*sent) != 2 || (*sent)[0].Header != outfailed.Header || (*sent)[1].Header != bubblealert.Header {
+		t.Fatalf("packets=%#v error=%v", *sent, err)
 	}
 }
 
@@ -113,6 +140,10 @@ type buyManager struct {
 	pageItems []catalogmodel.Item
 	// definitionFound overrides furniture metadata availability.
 	definitionFound bool
+	// createdRoomID stores an optional room bundle result.
+	createdRoomID int64
+	// productReads counts fallback product lookups after purchase.
+	productReads int
 }
 
 // Pages supplies unused catalog tree behavior.
@@ -143,12 +174,25 @@ func (manager *buyManager) Purchase(_ context.Context, params catalogservice.Pur
 	if manager.err != nil {
 		return catalogservice.PurchaseResult{}, manager.err
 	}
-	return catalogservice.PurchaseResult{
-		Item: manager.item,
+	result := catalogservice.PurchaseResult{
+		Item:     manager.item,
+		Products: []catalogmodel.Product{{DefinitionID: manager.item.DefinitionID, Quantity: manager.item.Amount}},
 		GrantedItems: []furnituremodel.Item{{Base: sharedmodel.Base{
 			Identity: sharedmodel.Identity{ID: 41},
 		}}},
-	}, nil
+	}
+	if manager.createdRoomID > 0 {
+		result.CreatedRoomID = &manager.createdRoomID
+		result.CreatedRoomName = "Starter Loft"
+		result.GrantedItems = nil
+	}
+	return result, nil
+}
+
+// Products returns the item preview product.
+func (manager *buyManager) Products(context.Context, int64) []catalogmodel.Product {
+	manager.productReads++
+	return []catalogmodel.Product{{DefinitionID: manager.item.DefinitionID, Quantity: manager.item.Amount}}
 }
 
 // Refresh supplies unused cache behavior.

@@ -22,6 +22,9 @@ type Item struct {
 	// DefinitionID identifies the granted furniture definition.
 	DefinitionID int64
 
+	// RoomBundleTemplateRoomID identifies the room cloned by this offer.
+	RoomBundleTemplateRoomID *int64
+
 	// Name stores the stable localization slug.
 	Name string
 
@@ -70,6 +73,9 @@ func (item Item) IsLimited() bool { return item.LimitedStack > 0 }
 
 // IsCredits reports whether the offer uses credits.
 func (item Item) IsCredits() bool { return item.PointsType == CreditsType }
+
+// IsRoomBundle reports whether the offer creates a room from a template.
+func (item Item) IsRoomBundle() bool { return item.RoomBundleTemplateRoomID != nil }
 
 // BulkDiscountEligible reports whether amount greater than one is allowed.
 func (item Item) BulkDiscountEligible(hasProducts bool) bool {
