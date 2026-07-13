@@ -134,6 +134,17 @@ func TestReplaceRoomTagsExecutesDeleteAndInsert(t *testing.T) {
 	}
 }
 
+// TestLockRoomOwnerTypesPlayerIDAsBigint verifies pgx can encode the lock argument.
+func TestLockRoomOwnerTypesPlayerIDAsBigint(t *testing.T) {
+	executor := &fakeExecutor{}
+	if err := New(executor).LockRoomOwner(context.Background(), 7); err != nil {
+		t.Fatalf("lock room owner: %v", err)
+	}
+	if !strings.Contains(executor.execQuery, "$1::bigint") {
+		t.Fatalf("owner lock must type its int64 parameter: %q", executor.execQuery)
+	}
+}
+
 // TestListRoomTagsScansRows verifies room tag scanning.
 func TestListRoomTagsScansRows(t *testing.T) {
 	tags, err := New(&fakeExecutor{rows: &fakeRows{values: [][]any{{int64(9), "fun"}}}}).ListRoomTags(context.Background(), 9)

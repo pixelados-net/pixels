@@ -22,13 +22,16 @@ type fakeExecutor struct {
 
 	// query is the last query.
 	query string
+	// execQuery is the last command query.
+	execQuery string
 
 	// execs stores Exec call count.
 	execs int
 }
 
 // Exec executes SQL without returning rows.
-func (executor *fakeExecutor) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+func (executor *fakeExecutor) Exec(_ context.Context, query string, _ ...any) (pgconn.CommandTag, error) {
+	executor.execQuery = query
 	executor.execs++
 	return executor.tag, nil
 }

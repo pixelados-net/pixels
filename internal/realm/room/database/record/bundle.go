@@ -15,7 +15,7 @@ const (
 	// countRoomsByOwnerSQL counts ordinary active rooms.
 	countRoomsByOwnerSQL = `select count(*) from rooms where owner_player_id=$1 and deleted_at is null and not is_bundle_template`
 	// lockRoomOwnerSQL serializes ownership-limit checks.
-	lockRoomOwnerSQL = `select pg_advisory_xact_lock(hashtextextended('room-owner:' || $1::text, 0))`
+	lockRoomOwnerSQL = `select pg_advisory_xact_lock(hashtextextended('room-owner:' || ($1::bigint)::text, 0))`
 	// cloneBundleRoomSQL clones durable room settings and resets public ranking state.
 	cloneBundleRoomSQL = `
 insert into rooms
