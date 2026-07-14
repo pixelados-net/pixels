@@ -72,6 +72,14 @@ func TestNilRoomProjection(t *testing.T) {
 	}
 }
 
+// TestStatusActionsKeepDanceOnItsDedicatedPacket verifies protocol separation.
+func TestStatusActionsKeepDanceOnItsDedicatedPacket(t *testing.T) {
+	actions := statusActions([]worldunit.Status{{Key: worldunit.StatusDance, Value: "3"}, {Key: worldunit.StatusSign, Value: "7"}})
+	if len(actions) != 1 || actions[0].Key != worldunit.StatusSign {
+		t.Fatalf("unexpected actions %#v", actions)
+	}
+}
+
 // TestMovementStatuses verifies movement projection records.
 func TestMovementStatuses(t *testing.T) {
 	movements := []roomlive.Movement{{

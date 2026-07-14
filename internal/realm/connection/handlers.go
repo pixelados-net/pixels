@@ -11,6 +11,7 @@ import (
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/latency"
 	"github.com/niflaot/pixels/internal/realm/connection/handlers/security"
 	currencyrequest "github.com/niflaot/pixels/internal/realm/inventory/currency/commands/request"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerdisconnected "github.com/niflaot/pixels/internal/realm/player/events/disconnected"
 	"github.com/niflaot/pixels/internal/realm/player/live"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
@@ -19,7 +20,16 @@ import (
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
+	"go.uber.org/zap"
 )
+
+// RegisterEffectHandlers installs Nitro effect selection and activation adapters.
+func RegisterEffectHandlers(handlers *Handlers, effects *playereffect.Service, bindings *binding.Registry, log *zap.Logger) {
+	if handlers == nil {
+		return
+	}
+	playereffect.RegisterHandlers(handlers.Inbound, playereffect.Handler{Effects: effects, Bindings: bindings, Log: log})
+}
 
 // Handlers contains connection-realm handler registries.
 type Handlers struct {

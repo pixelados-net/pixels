@@ -25,6 +25,12 @@ type Item struct {
 	// RoomBundleTemplateRoomID identifies the room cloned by this offer.
 	RoomBundleTemplateRoomID *int64
 
+	// GrantsEffectID identifies an additional or effect-only reward.
+	GrantsEffectID *int32
+
+	// GrantsEffectDurationSeconds stores one granted charge duration.
+	GrantsEffectDurationSeconds int32
+
 	// Name stores the stable localization slug.
 	Name string
 

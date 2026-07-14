@@ -106,13 +106,13 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return handler.sendError(ctx, envelope.Command.Connection, envelope.Command.OfferID, err)
 	}
 	products := result.Products
-	if len(products) == 0 {
+	if len(products) == 0 && result.Item.DefinitionID > 0 {
 		bundles, ok := handler.Catalog.(catalogservice.BundleReader)
 		if ok {
 			products = bundles.Products(ctx, result.Item.ID)
 		}
 	}
-	if len(products) == 0 {
+	if len(products) == 0 && result.Item.DefinitionID > 0 {
 		products = []catalogmodel.Product{{DefinitionID: result.Item.DefinitionID, Quantity: result.Item.Amount}}
 	}
 	definitions := make(map[int64]furnituremodel.Definition, len(products))

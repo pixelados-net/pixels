@@ -11,8 +11,55 @@ import (
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	"github.com/niflaot/pixels/pkg/bus"
 )
+
+// finishRewards completes dependent furniture and avatar effect grants.
+func (service *Service) finishRewards(ctx context.Context, playerID int64, item catalogmodel.Item, result *PurchaseResult) error {
+	if err := service.pairGrantedTeleports(ctx, playerID, item, result.GrantedItems); err != nil {
+		return err
+	}
+	if item.GrantsEffectID == nil {
+		return nil
+	}
+	if service.effects == nil {
+		return ErrCommerceUnavailable
+	}
+	if _, err := service.effects.Grant(ctx, playerID, *item.GrantsEffectID, item.GrantsEffectDurationSeconds, playereffect.SourceCatalog); err != nil {
+		return fmt.Errorf("grant catalog effect %d: %w", *item.GrantsEffectID, err)
+	}
+	result.GrantedEffectID = item.GrantsEffectID
+
+	return nil
+}
+
+// validateAmount validates anti-cheat purchase quantity rules.
+func validateAmount(item catalogmodel.Item, products []catalogmodel.Product, amount int32, overrideQuantity bool) error {
+	if item.IsRoomBundle() && amount != 1 {
+		return ErrInvalidAmount
+	}
+	if item.IsRoomBundle() {
+		return nil
+	}
+	if amount <= 0 || item.IsLimited() && amount != 1 {
+		return ErrInvalidAmount
+	}
+	if amount > 1 && !overrideQuantity && !item.BulkDiscountEligible(len(products) > 0) {
+		return ErrInvalidAmount
+	}
+	units := item.Amount
+	if len(products) > 0 {
+		units = 0
+		for _, product := range products {
+			units += product.Quantity
+		}
+	}
+	if int64(units)*int64(amount) > int64(MaxPurchaseUnits) {
+		return ErrInvalidAmount
+	}
+	return nil
+}
 
 // pairGrantedTeleports pairs every adjacent teleport instance from one offer.
 func (service *Service) pairGrantedTeleports(ctx context.Context, playerID int64, item catalogmodel.Item, granted []furnituremodel.Item) error {

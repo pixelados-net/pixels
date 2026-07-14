@@ -63,10 +63,11 @@ func scanItem(row pgx.Row) (catalogmodel.Item, error) {
 	var item catalogmodel.Item
 	var definitionID pgtype.Int8
 	var templateRoomID pgtype.Int8
+	var grantsEffectID pgtype.Int4
 	var scheduledAt pgtype.Timestamptz
 	var deletedAt pgtype.Timestamptz
 	err := row.Scan(
-		&item.ID, &item.PageID, &definitionID, &templateRoomID, &item.Name, &item.CostCredits,
+		&item.ID, &item.PageID, &definitionID, &templateRoomID, &grantsEffectID, &item.GrantsEffectDurationSeconds, &item.Name, &item.CostCredits,
 		&item.CostPoints, &item.PointsType, &item.Amount, &item.LimitedStack,
 		&item.LimitedSells, &item.BundleDiscountEnabled, &item.Giftable, &item.ClubOnly, &item.OrderNum, &item.Enabled,
 		&item.ExtraData, &scheduledAt, &item.CreatedAt, &item.UpdatedAt, &deletedAt, &item.Version.Version,
@@ -78,6 +79,9 @@ func scanItem(row pgx.Row) (catalogmodel.Item, error) {
 		item.DefinitionID = definitionID.Int64
 	}
 	item.RoomBundleTemplateRoomID = int64Pointer(templateRoomID)
+	if grantsEffectID.Valid {
+		item.GrantsEffectID = &grantsEffectID.Int32
+	}
 	item.ScheduledAt = timePointer(scheduledAt)
 	item.DeletedAt = timePointer(deletedAt)
 

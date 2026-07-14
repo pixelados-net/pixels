@@ -7,6 +7,8 @@ import (
 
 	furniturewalkedoff "github.com/niflaot/pixels/internal/realm/furniture/events/walkedoff"
 	furniturewalkedon "github.com/niflaot/pixels/internal/realm/furniture/events/walkedon"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -29,9 +31,33 @@ func (service *Service) walkedOn(ctx context.Context, event bus.Event) error {
 		return service.changeColorPlate(ctx, active, item, 1)
 	case "handitem_tile":
 		return service.giveHandItem(ctx, active, payload.PlayerID, item, false)
+	case "effect_tile":
+		return service.giveTileEffect(ctx, payload.PlayerID, item)
 	}
 
 	return nil
+}
+
+// giveTileEffect grants and enables the configured gender-specific effect.
+func (service *Service) giveTileEffect(ctx context.Context, playerID int64, item worldfurniture.Item) error {
+	if service.effects == nil || service.players == nil {
+		return nil
+	}
+	player, found := service.players.Find(playerID)
+	if !found {
+		return nil
+	}
+	effectID := item.Definition.EffectMale
+	if player.Snapshot().Gender == playermodel.GenderFemale {
+		effectID = item.Definition.EffectFemale
+	}
+	if effectID == nil {
+		return nil
+	}
+	if _, err := service.effects.Grant(ctx, playerID, *effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectTile); err != nil {
+		return err
+	}
+	return service.effects.Enable(ctx, playerID, *effectID)
 }
 
 // walkedOff handles occupancy-driven interaction exit.

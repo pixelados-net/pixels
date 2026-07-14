@@ -44,6 +44,28 @@ func TestOfferMapsWallProduct(t *testing.T) {
 	}
 }
 
+// TestOfferMapsEffectOnlyProduct verifies Nitro's effect discriminator.
+func TestOfferMapsEffectOnlyProduct(t *testing.T) {
+	effectID := int32(101)
+	item := catalogmodel.Item{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 9}}, Name: "confetti", GrantsEffectID: &effectID}
+	result, err := OfferProducts(item, nil, nil)
+	if err != nil || len(result.Products) != 1 || result.Products[0].Type != "e" || result.Products[0].ClassID != 101 {
+		t.Fatalf("unexpected effect offer %#v error %v", result, err)
+	}
+}
+
+// TestOfferMapsFurnitureAndEffectProducts verifies combined rewards stay visible.
+func TestOfferMapsFurnitureAndEffectProducts(t *testing.T) {
+	effectID := int32(103)
+	item := catalogmodel.Item{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 10}}, DefinitionID: 2, Amount: 1, GrantsEffectID: &effectID}
+	products := []catalogmodel.Product{{DefinitionID: 2, Quantity: 1}}
+	definitions := map[int64]furnituremodel.Definition{2: {SpriteID: 7, Kind: furnituremodel.KindFloor}}
+	result, err := OfferProducts(item, products, definitions)
+	if err != nil || len(result.Products) != 2 || result.Products[1].Type != "e" {
+		t.Fatalf("unexpected combined offer %#v error %v", result, err)
+	}
+}
+
 // TestOfferRejectsProtocolOverflow verifies packet range validation.
 func TestOfferRejectsProtocolOverflow(t *testing.T) {
 	item := catalogmodel.Item{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: math.MaxInt64}}}

@@ -10,7 +10,7 @@ import (
 
 // validateGroup validates fields, parent existence, and inheritance acyclicity.
 func (service *Service) validateGroup(ctx context.Context, group permissionmodel.Group, groupID int64) error {
-	if len(group.Name) < 1 || len(group.Name) > 40 || len(group.Prefix) > 80 || len(group.PrefixColor) > 32 {
+	if len(group.Name) < 1 || len(group.Name) > 40 || len(group.Prefix) > 80 || len(group.PrefixColor) > 32 || group.RoomEffectID != nil && *group.RoomEffectID <= 0 {
 		return ErrInvalidGroup
 	}
 	existing, found, err := service.store.FindGroupByName(ctx, group.Name)
@@ -130,6 +130,9 @@ func applyGroupUpdate(group *permissionmodel.Group, params UpdateGroupParams) {
 	}
 	if params.PrefixColor != nil {
 		group.PrefixColor = strings.TrimSpace(*params.PrefixColor)
+	}
+	if params.RoomEffectID != nil {
+		group.RoomEffectID = *params.RoomEffectID
 	}
 	if params.ParentGroupID != nil {
 		group.ParentGroupID = *params.ParentGroupID

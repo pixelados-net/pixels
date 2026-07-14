@@ -12,6 +12,38 @@ type AdminPlayerPathRequest struct {
 	ID int64 `path:"id" required:"true" minimum:"1"`
 }
 
+// AdminPlayerEffectRequest grants one player effect charge.
+type AdminPlayerEffectRequest struct {
+	APIKeyRequest
+	// PlayerID identifies the target player.
+	PlayerID int64 `path:"playerId" required:"true" minimum:"1"`
+	// EffectID identifies the Nitro effect.
+	EffectID int32 `json:"effectId" required:"true" minimum:"1"`
+	// DurationSeconds stores one charge duration; zero means permanent.
+	DurationSeconds int32 `json:"durationSeconds" minimum:"0"`
+}
+
+// AdminPlayerEffectDeleteRequest revokes one player effect stack.
+type AdminPlayerEffectDeleteRequest struct {
+	APIKeyRequest
+	// PlayerID identifies the target player.
+	PlayerID int64 `path:"playerId" required:"true" minimum:"1"`
+	// EffectID identifies the Nitro effect.
+	EffectID int32 `path:"effectId" required:"true" minimum:"1"`
+}
+
+// AdminPlayerEffectResponse contains one effect stack.
+type AdminPlayerEffectResponse struct {
+	// PlayerID identifies the effect owner.
+	PlayerID int64 `json:"playerId" required:"true"`
+	// EffectID identifies the Nitro effect.
+	EffectID int32 `json:"effectId" required:"true"`
+	// DurationSeconds stores one charge duration.
+	DurationSeconds int32 `json:"durationSeconds" required:"true"`
+	// RemainingCharges stores the stack count.
+	RemainingCharges int32 `json:"remainingCharges" required:"true"`
+}
+
 // AdminPlayerIDRequest documents one player id lookup.
 type AdminPlayerIDRequest struct {
 	AdminPlayerPathRequest
@@ -124,6 +156,8 @@ func adminPlayerOperations() []operation {
 		adminPlayer(http.MethodGet, "/api/admin/players/{id}", "Read player profile", &AdminPlayerIDRequest{}, &AdminPlayerResponse{}, http.StatusOK),
 		adminPlayer(http.MethodPatch, "/api/admin/players/{id}", "Update player profile", &AdminPlayerUpdateRequest{}, &AdminPlayerResponse{}, http.StatusOK),
 		adminPlayer(http.MethodDelete, "/api/admin/players/{id}", "Soft delete player", &AdminPlayerPathRequest{}, nil, http.StatusNoContent),
+		adminPlayer(http.MethodPost, "/api/admin/players/{playerId}/effects", "Grant player effect", &AdminPlayerEffectRequest{}, &AdminPlayerEffectResponse{}, http.StatusOK),
+		adminPlayer(http.MethodDelete, "/api/admin/players/{playerId}/effects/{effectId}", "Revoke player effect", &AdminPlayerEffectDeleteRequest{}, nil, http.StatusNoContent),
 	}
 }
 

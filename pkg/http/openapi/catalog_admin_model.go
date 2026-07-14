@@ -86,6 +86,10 @@ type CatalogItemRequest struct {
 	DefinitionID int64 `json:"definitionId,omitempty" minimum:"1"`
 	// RoomBundleTemplateRoomID identifies a marked room template instead of furniture.
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty" minimum:"1"`
+	// GrantsEffectID identifies an additional or effect-only reward.
+	GrantsEffectID *int32 `json:"grantsEffectId,omitempty" minimum:"1"`
+	// GrantsEffectDurationSeconds stores one charge duration.
+	GrantsEffectDurationSeconds int32 `json:"grantsEffectDurationSeconds" minimum:"0"`
 	// Name stores the localization slug.
 	Name string `json:"name" required:"true" example:"chair_plasto"`
 	// CostCredits stores the credits price.
@@ -135,6 +139,12 @@ type CatalogItemPatchRequest struct {
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty" minimum:"1"`
 	// ClearRoomBundleTemplate removes the room template association.
 	ClearRoomBundleTemplate bool `json:"clearRoomBundleTemplate,omitempty"`
+	// GrantsEffectID replaces the effect reward.
+	GrantsEffectID *int32 `json:"grantsEffectId,omitempty" minimum:"1"`
+	// ClearGrantsEffect removes the effect reward.
+	ClearGrantsEffect bool `json:"clearGrantsEffect,omitempty"`
+	// GrantsEffectDurationSeconds replaces one charge duration.
+	GrantsEffectDurationSeconds *int32 `json:"grantsEffectDurationSeconds,omitempty" minimum:"0"`
 	// PointsType replaces the points currency or -1 for credits.
 	PointsType *int32 `json:"pointsType,omitempty"`
 	// Amount replaces the granted furniture amount.
@@ -161,6 +171,10 @@ type CatalogItemResponse struct {
 	DefinitionID int64 `json:"definitionId" required:"true"`
 	// RoomBundleTemplateRoomID identifies the cloned room template.
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty"`
+	// GrantsEffectID identifies the effect reward.
+	GrantsEffectID *int32 `json:"grantsEffectId,omitempty"`
+	// GrantsEffectDurationSeconds stores one charge duration.
+	GrantsEffectDurationSeconds int32 `json:"grantsEffectDurationSeconds" required:"true"`
 	// Name stores the localization slug.
 	Name string `json:"name" required:"true"`
 	// CostCredits stores the credits price.

@@ -6,12 +6,14 @@ import (
 	"errors"
 	"math/rand/v2"
 	"strconv"
+	"time"
 
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	furnitureused "github.com/niflaot/pixels/internal/realm/furniture/events/used"
 	furniturewalkedoff "github.com/niflaot/pixels/internal/realm/furniture/events/walkedoff"
 	furniturewalkedon "github.com/niflaot/pixels/internal/realm/furniture/events/walkedon"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/broadcast"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
@@ -30,6 +32,8 @@ var (
 	// ErrNoRights reports a specialized interaction requiring room furniture rights.
 	ErrNoRights = errors.New("specialized furniture interaction requires room rights")
 )
+
+const effectFurnitureDurationSeconds int32 = 86400
 
 // Source produces bounded random values.
 type Source interface {
@@ -61,6 +65,8 @@ type Service struct {
 	players *playerlive.Registry
 	// events publishes interaction results.
 	events bus.Publisher
+	// effects grants and enables furniture effects.
+	effects playereffect.Manager
 	// translations resolves hotel-facing text.
 	translations i18n.Translator
 	// random provides deterministic bounded values.
@@ -79,10 +85,21 @@ func (defaultSource) IntN(limit int) int {
 
 // New creates the essential interaction service.
 func New(states furnitureservice.StateUpdater, permissions permissionservice.Checker, runtime *roomlive.Registry, connections *netconn.Registry, players *playerlive.Registry, events *bus.Bus, translations i18n.Translator, log *zap.Logger) *Service {
-	return &Service{
+	service := &Service{
 		states: states, permissions: permissions, runtime: runtime, connections: connections,
-		players: players, events: events, translations: translations, random: defaultSource{}, log: log,
+		players: players, translations: translations, random: defaultSource{}, log: log,
 	}
+	if events != nil {
+		service.events = events
+	}
+	return service
+}
+
+// NewWithEffects creates the production essential service with effect grants enabled.
+func NewWithEffects(states furnitureservice.StateUpdater, permissions permissionservice.Checker, runtime *roomlive.Registry, connections *netconn.Registry, players *playerlive.Registry, events *bus.Bus, effects playereffect.Manager, translations i18n.Translator, log *zap.Logger) *Service {
+	service := New(states, permissions, runtime, connections, players, events, translations, log)
+	service.effects = effects
+	return service
 }
 
 // Use routes one click to its specialized behavior.
@@ -101,9 +118,44 @@ func (service *Service) Use(ctx context.Context, request Request) (bool, error) 
 		return true, service.useHandItem(ctx, request)
 	case "cannon":
 		return true, service.useCannon(ctx, request)
+	case "effect_giver":
+		return true, service.useEffectGiver(ctx, request)
 	default:
 		return false, nil
 	}
+}
+
+// useEffectGiver grants and immediately enables one random configured effect.
+func (service *Service) useEffectGiver(ctx context.Context, request Request) error {
+	pool := request.Item.Definition.EffectPool
+	if service.effects == nil || len(pool) == 0 {
+		return nil
+	}
+	unit, found := request.Room.Unit(request.PlayerID)
+	if !found || !onItem(unit.Position.Point, request.Item) && !adjacentToItem(unit.Position.Point, request.Item) {
+		return nil
+	}
+	effectID := pool[service.random.IntN(len(pool))]
+	if _, err := service.effects.Grant(ctx, request.PlayerID, effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectGiver); err != nil {
+		return err
+	}
+	if err := service.effects.Enable(ctx, request.PlayerID, effectID); err != nil {
+		return err
+	}
+	if err := service.publishUsed(ctx, request); err != nil {
+		return err
+	}
+	if request.Item.Definition.InteractionModesCount <= 1 {
+		return nil
+	}
+	if err := service.visual(ctx, request.Room, request.Item.ID, "1"); err != nil {
+		return err
+	}
+	async := context.WithoutCancel(ctx)
+	request.Room.ScheduleReplacing(scheduledKey(request.Item.ID, 6), 500*time.Millisecond, func(time.Time) {
+		_ = service.visual(async, request.Room, request.Item.ID, "0")
+	})
+	return nil
 }
 
 // SetSource replaces randomness for deterministic tests.

@@ -33,6 +33,7 @@ func TestSpecDocumentsRoutes(t *testing.T) {
 		"/api/admin/notifications/send", "/api/admin/currencies/wallet",
 		"/api/admin/players", "/api/admin/players/{id}",
 		"/api/admin/players/by-username/{username}",
+		"/api/admin/players/{playerId}/effects", "/api/admin/players/{playerId}/effects/{effectId}",
 		"/api/admin/currencies/grant", "/api/admin/currencies/deduct", "/api/admin/currencies/set",
 		"/api/admin/permissions/nodes", "/api/admin/permissions/groups",
 		"/api/admin/permissions/groups/{id}/nodes/{node}",

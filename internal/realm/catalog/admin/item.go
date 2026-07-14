@@ -10,7 +10,7 @@ import (
 
 // CreateItem creates one catalog offer and its optional LTD stock.
 func (service *Service) CreateItem(ctx context.Context, input ItemInput) (catalogmodel.Item, error) {
-	item := catalogmodel.Item{PageID: input.PageID, DefinitionID: input.DefinitionID, RoomBundleTemplateRoomID: input.RoomBundleTemplateRoomID, Name: strings.TrimSpace(input.Name),
+	item := catalogmodel.Item{PageID: input.PageID, DefinitionID: input.DefinitionID, RoomBundleTemplateRoomID: input.RoomBundleTemplateRoomID, GrantsEffectID: input.GrantsEffectID, GrantsEffectDurationSeconds: input.GrantsEffectDurationSeconds, Name: strings.TrimSpace(input.Name),
 		CostCredits: input.CostCredits, CostPoints: input.CostPoints, PointsType: input.PointsType,
 		Amount: input.Amount, LimitedStack: input.LimitedStack, BundleDiscountEnabled: input.BundleDiscountEnabled, Giftable: input.Giftable, ClubOnly: input.ClubOnly,
 		OrderNum: input.OrderNum, Enabled: input.Enabled, ExtraData: input.ExtraData}
@@ -106,7 +106,7 @@ func (service *Service) DeleteItem(ctx context.Context, id int64) error {
 
 // validateItem validates offer fields and foreign references.
 func (service *Service) validateItem(ctx context.Context, item catalogmodel.Item) error {
-	if item.PageID <= 0 || item.Name == "" || item.LimitedStack < 0 ||
+	if item.PageID <= 0 || item.Name == "" || item.LimitedStack < 0 || item.GrantsEffectDurationSeconds < 0 || item.GrantsEffectID != nil && *item.GrantsEffectID <= 0 ||
 		item.CostCredits < 0 || item.CostPoints < 0 || item.CostCredits > math.MaxInt32 || item.CostPoints > math.MaxInt32 {
 		return ErrInvalidItem
 	}
@@ -123,7 +123,7 @@ func (service *Service) validateItem(ctx context.Context, item catalogmodel.Item
 		return ErrPageNotFound
 	}
 	if item.IsRoomBundle() {
-		if item.DefinitionID != 0 || item.Amount != 0 || item.LimitedStack != 0 || item.LimitedSells != 0 || item.Giftable || item.BundleDiscountEnabled || service.roomBundles == nil {
+		if item.DefinitionID != 0 || item.GrantsEffectID != nil || item.Amount != 0 || item.LimitedStack != 0 || item.LimitedSells != 0 || item.Giftable || item.BundleDiscountEnabled || service.roomBundles == nil {
 			return ErrInvalidItem
 		}
 		if _, found, err := service.roomBundles.FindTemplate(ctx, *item.RoomBundleTemplateRoomID); err != nil || !found {
@@ -152,14 +152,16 @@ func (service *Service) validateItem(ctx context.Context, item catalogmodel.Item
 		}
 		return nil
 	}
-	if item.DefinitionID <= 0 || item.Amount <= 0 {
+	if item.Amount < 0 || item.DefinitionID <= 0 && item.GrantsEffectID == nil || item.DefinitionID > 0 && item.Amount <= 0 || item.GrantsEffectID != nil && item.Giftable {
 		return ErrInvalidItem
 	}
-	if _, found, err := service.definitions.FindDefinitionByID(ctx, item.DefinitionID); err != nil || !found {
-		if err != nil {
-			return err
+	if item.DefinitionID > 0 {
+		if _, found, err := service.definitions.FindDefinitionByID(ctx, item.DefinitionID); err != nil || !found {
+			if err != nil {
+				return err
+			}
+			return ErrDefinitionNotFound
 		}
-		return ErrDefinitionNotFound
 	}
 
 	return nil
@@ -177,12 +179,20 @@ func applyItemPatch(item *catalogmodel.Item, patch ItemPatch) {
 		item.RoomBundleTemplateRoomID = *patch.RoomBundleTemplateRoomID
 		if item.RoomBundleTemplateRoomID != nil {
 			item.DefinitionID = 0
+			item.GrantsEffectID = nil
+			item.GrantsEffectDurationSeconds = 0
 			item.Amount = 0
 			item.LimitedStack = 0
 			item.LimitedSells = 0
 			item.BundleDiscountEnabled = false
 			item.Giftable = false
 		}
+	}
+	if patch.GrantsEffectID != nil {
+		item.GrantsEffectID = *patch.GrantsEffectID
+	}
+	if patch.GrantsEffectDurationSeconds != nil {
+		item.GrantsEffectDurationSeconds = *patch.GrantsEffectDurationSeconds
 	}
 	if patch.Name != nil {
 		item.Name = strings.TrimSpace(*patch.Name)

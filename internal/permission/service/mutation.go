@@ -17,7 +17,7 @@ const (
 // CreateGroup creates one permission group.
 func (service *Service) CreateGroup(ctx context.Context, params CreateGroupParams) (permissionmodel.Group, error) {
 	group := permissionmodel.Group{Name: strings.TrimSpace(params.Name), Weight: params.Weight,
-		Prefix: strings.TrimSpace(params.Prefix), PrefixColor: strings.TrimSpace(params.PrefixColor), ParentGroupID: params.ParentGroupID}
+		Prefix: strings.TrimSpace(params.Prefix), PrefixColor: strings.TrimSpace(params.PrefixColor), RoomEffectID: params.RoomEffectID, ParentGroupID: params.ParentGroupID}
 	if err := service.validateGroup(ctx, group, 0); err != nil {
 		return permissionmodel.Group{}, err
 	}

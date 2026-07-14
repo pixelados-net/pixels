@@ -26,8 +26,12 @@ func TestSessionPolicyAndHeartbeatMethods(t *testing.T) {
 		t.Fatalf("expected pong time %s, got %s", now, session.LastPongAt())
 	}
 
+	activity := session.LastActivityAt()
 	if err := session.Receive(context.Background(), codecPacket(1)); err != nil {
 		t.Fatalf("receive packet: %v", err)
+	}
+	if !session.LastActivityAt().After(activity) {
+		t.Fatalf("expected inbound activity after %s, got %s", activity, session.LastActivityAt())
 	}
 
 	if err := session.SetSecurityPolicy(SecurityPolicy{Mode: SecurityOptional}); err != ErrInvalidState {

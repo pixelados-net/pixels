@@ -27,7 +27,7 @@ var Module = fx.Module(
 		NewRoomBundleManager,
 		NewTradingManager,
 		interactions.NewRegistry,
-		essential.New,
+		essential.NewWithEffects,
 		teleport.LoadConfig,
 		teleportdb.New,
 		NewTeleportPairService,

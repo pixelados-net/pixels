@@ -11,6 +11,7 @@ import (
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/pkg/bus"
@@ -49,6 +50,15 @@ type Service struct {
 
 	// roomBundles clones and previews room template offers.
 	roomBundles roombundle.Manager
+
+	// effects grants catalog effect charges.
+	effects playereffect.Manager
+}
+
+// WithEffects configures transactional catalog effect grants.
+func (service *Service) WithEffects(effects playereffect.Manager) *Service {
+	service.effects = effects
+	return service
 }
 
 // WithRoomBundles configures room bundle catalog behavior.

@@ -76,7 +76,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	offers := make([]offer.Offer, 0, len(items))
 	for _, item := range items {
 		products := products(handler.Catalog, ctx, item)
-		if len(products) == 0 {
+		if len(products) == 0 && item.DefinitionID > 0 {
 			products = []catalogmodel.Product{{DefinitionID: item.DefinitionID, Quantity: item.Amount}}
 		}
 		definitions := make(map[int64]furnituremodel.Definition, len(products))
@@ -130,6 +130,9 @@ func products(reader catalogservice.Reader, ctx context.Context, item catalogmod
 		if len(products) != 0 {
 			return products
 		}
+	}
+	if item.DefinitionID <= 0 {
+		return nil
 	}
 
 	return []catalogmodel.Product{{DefinitionID: item.DefinitionID, Quantity: item.Amount}}

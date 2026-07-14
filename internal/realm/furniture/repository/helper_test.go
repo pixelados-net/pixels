@@ -143,6 +143,8 @@ func assignValue(destination any, value any) {
 		*target = value.(bool)
 	case *[]byte:
 		*target = value.([]byte)
+	case *[]int32:
+		*target = value.([]int32)
 	case *time.Time:
 		*target = value.(time.Time)
 	case *pgtype.Int2:

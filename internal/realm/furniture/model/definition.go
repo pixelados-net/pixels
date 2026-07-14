@@ -68,6 +68,15 @@ type Definition struct {
 	// RedeemableCredits stores credits granted to the other party when traded.
 	RedeemableCredits int32
 
+	// EffectPool stores effect-giver candidates.
+	EffectPool []int32
+
+	// EffectMale stores the male effect-tile result.
+	EffectMale *int32
+
+	// EffectFemale stores the female effect-tile result.
+	EffectFemale *int32
+
 	// InteractionType names the server-side behavior extension point.
 	InteractionType string
 

@@ -2,6 +2,8 @@ package player
 
 import (
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
+	effectdb "github.com/niflaot/pixels/internal/realm/player/database/effect"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	"github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/player/repository"
 	"github.com/niflaot/pixels/internal/realm/player/service"
@@ -22,8 +24,23 @@ var Module = fx.Module(
 		NewManager,
 		NewAdminManager,
 		NewTradeManager,
+		effectdb.New,
+		NewEffectStore,
+		playereffect.New,
+		NewEffectManager,
 	),
+	fx.Invoke(playereffect.RegisterBootstrap, playereffect.RegisterScheduler),
 )
+
+// NewEffectStore exposes PostgreSQL effect persistence through its domain boundary.
+func NewEffectStore(repository *effectdb.Repository) playereffect.Store {
+	return repository
+}
+
+// NewEffectManager exposes player effect behavior through its domain boundary.
+func NewEffectManager(service *playereffect.Service) playereffect.Manager {
+	return service
+}
 
 // NewTradeManager exposes durable trade eligibility changes.
 func NewTradeManager(playerService *service.Service) service.TradeManager {

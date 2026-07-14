@@ -89,6 +89,10 @@ type ItemRequest struct {
 	DefinitionID int64 `json:"definitionId"`
 	// RoomBundleTemplateRoomID identifies an optional room template.
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty"`
+	// GrantsEffectID identifies an additional or effect-only reward.
+	GrantsEffectID *int32 `json:"grantsEffectId,omitempty"`
+	// GrantsEffectDurationSeconds stores one effect charge duration.
+	GrantsEffectDurationSeconds int32 `json:"grantsEffectDurationSeconds"`
 	// Name stores the stable localization slug.
 	Name string `json:"name"`
 	// CostCredits stores the credits price.
@@ -125,6 +129,12 @@ type ItemPatchRequest struct {
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId"`
 	// ClearRoomBundleTemplate clears a room template association.
 	ClearRoomBundleTemplate bool `json:"clearRoomBundleTemplate"`
+	// GrantsEffectID replaces the effect reward.
+	GrantsEffectID *int32 `json:"grantsEffectId"`
+	// ClearGrantsEffect removes the effect reward.
+	ClearGrantsEffect bool `json:"clearGrantsEffect"`
+	// GrantsEffectDurationSeconds replaces one charge duration.
+	GrantsEffectDurationSeconds *int32 `json:"grantsEffectDurationSeconds"`
 	// Name replaces the localization slug.
 	Name *string `json:"name"`
 	// CostCredits replaces the credits price.
@@ -170,7 +180,7 @@ func pageInput(request PageRequest) catalogadmin.PageInput {
 
 // itemInput maps an HTTP offer request to administration input.
 func itemInput(request ItemRequest) catalogadmin.ItemInput {
-	return catalogadmin.ItemInput{PageID: request.PageID, DefinitionID: request.DefinitionID, RoomBundleTemplateRoomID: request.RoomBundleTemplateRoomID, Name: request.Name,
+	return catalogadmin.ItemInput{PageID: request.PageID, DefinitionID: request.DefinitionID, RoomBundleTemplateRoomID: request.RoomBundleTemplateRoomID, GrantsEffectID: request.GrantsEffectID, GrantsEffectDurationSeconds: request.GrantsEffectDurationSeconds, Name: request.Name,
 		CostCredits: request.CostCredits, CostPoints: request.CostPoints, PointsType: request.PointsType,
 		Amount: request.Amount, LimitedStack: request.LimitedStack, BundleDiscountEnabled: request.BundleDiscountEnabled, Giftable: request.Giftable, ClubOnly: request.ClubOnly,
 		OrderNum: request.OrderNum, Enabled: request.Enabled, ExtraData: request.ExtraData}

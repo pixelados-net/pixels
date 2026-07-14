@@ -1,6 +1,9 @@
 package runtime
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -24,6 +27,60 @@ func (world *World) ApplyControlledInteractionStep(playerID int64, point grid.Po
 	roomUnit.SetControl(control)
 
 	return nil
+}
+
+// SetUnitIdle replaces one unit's AFK projection.
+func (world *World) SetUnitIdle(playerID int64, idle bool) (UnitSnapshot, bool) {
+	return world.SetUnitIdleAt(playerID, idle, time.Now())
+}
+
+// SetUnitIdleAt replaces one unit's AFK projection at one deterministic instant.
+func (world *World) SetUnitIdleAt(playerID int64, idle bool, at time.Time) (UnitSnapshot, bool) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+	roomUnit.SetIdleAt(idle, at)
+	if idle {
+		roomUnit.ClearStatus(worldunit.StatusDance)
+	}
+	return unitSnapshot(playerID, roomUnit), true
+}
+
+// SetUnitPosture changes one unit's free-standing posture.
+func (world *World) SetUnitPosture(playerID int64, sitting bool) (UnitSnapshot, bool) {
+	roomUnit, found := world.units[playerID]
+	if !found || roomUnit.Moving() {
+		return UnitSnapshot{}, false
+	}
+	world.releaseSlot(playerID)
+	roomUnit.SetFloorPosture(sitting)
+	return unitSnapshot(playerID, roomUnit), true
+}
+
+// SetUnitDance changes one unit's persistent dance state.
+func (world *World) SetUnitDance(playerID int64, danceID int32) (UnitSnapshot, bool) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+	world.releaseSlot(playerID)
+	roomUnit.StandUp()
+	roomUnit.ClearStatus(worldunit.StatusDance)
+	if danceID > 0 {
+		roomUnit.SetStatus(worldunit.StatusDance, strconv.FormatInt(int64(danceID), 10))
+	}
+	return unitSnapshot(playerID, roomUnit), true
+}
+
+// SetUnitEffect replaces one unit's selected avatar effect.
+func (world *World) SetUnitEffect(playerID int64, effectID int32) (UnitSnapshot, bool) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+	roomUnit.SetActiveEffect(effectID)
+	return unitSnapshot(playerID, roomUnit), true
 }
 
 // adjacent reports whether two points share an edge or corner without being equal.

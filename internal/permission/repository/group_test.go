@@ -30,7 +30,7 @@ func TestGroupPersistenceReadsAndCreates(t *testing.T) {
 
 	executor.row = fakeRow{values: groupValues()}
 	created, err := repository.CreateGroup(context.Background(), permissionmodel.Group{Name: "admin", Weight: 100})
-	if err != nil || created.ID != 2 || len(executor.arguments) != 5 {
+	if err != nil || created.ID != 2 || len(executor.arguments) != 6 {
 		t.Fatalf("unexpected created=%#v args=%#v err=%v", created, executor.arguments, err)
 	}
 	executor.row = fakeRow{values: groupValues()}

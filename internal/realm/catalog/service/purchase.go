@@ -45,6 +45,9 @@ func (service *Service) Purchase(ctx context.Context, params PurchaseParams) (Pu
 			return PurchaseResult{}, ErrOfferDisabled
 		}
 	}
+	if item.GrantsEffectID != nil && (params.Gift != nil || params.RecipientPlayerID != 0) {
+		return PurchaseResult{}, ErrOfferNotGiftable
+	}
 	overrideQuantity := params.OverrideCredits != nil || params.OverridePoints != nil
 	if err := validateAmount(item, products, params.Amount, overrideQuantity); err != nil {
 		return PurchaseResult{}, err
@@ -146,7 +149,7 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 	if recipientID == 0 {
 		recipientID = params.PlayerID
 	}
-	if len(products) == 0 {
+	if len(products) == 0 && item.DefinitionID > 0 {
 		products = []catalogmodel.Product{{DefinitionID: item.DefinitionID, Quantity: item.Amount}}
 	}
 	for _, product := range products {
@@ -165,7 +168,7 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 		}
 		result.GrantedItems = append(result.GrantedItems, granted...)
 	}
-	if err := service.pairGrantedTeleports(ctx, params.PlayerID, item, result.GrantedItems); err != nil {
+	if err := service.finishRewards(ctx, params.PlayerID, item, result); err != nil {
 		return err
 	}
 	if result.LimitedUnitNumber != nil {
@@ -218,31 +221,4 @@ func DiscountedUnits(amount int32) int32 {
 		return amount
 	}
 	return discounted
-}
-
-// validateAmount validates anti-cheat purchase quantity rules.
-func validateAmount(item catalogmodel.Item, products []catalogmodel.Product, amount int32, overrideQuantity bool) error {
-	if item.IsRoomBundle() && amount != 1 {
-		return ErrInvalidAmount
-	}
-	if item.IsRoomBundle() {
-		return nil
-	}
-	if amount <= 0 || item.IsLimited() && amount != 1 {
-		return ErrInvalidAmount
-	}
-	if amount > 1 && !overrideQuantity && !item.BulkDiscountEligible(len(products) > 0) {
-		return ErrInvalidAmount
-	}
-	units := item.Amount
-	if len(products) > 0 {
-		units = 0
-		for _, product := range products {
-			units += product.Quantity
-		}
-	}
-	if int64(units)*int64(amount) > int64(MaxPurchaseUnits) {
-		return ErrInvalidAmount
-	}
-	return nil
 }

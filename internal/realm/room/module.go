@@ -22,6 +22,7 @@ import (
 	wordrepo "github.com/niflaot/pixels/internal/realm/room/database/wordfilter"
 	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/internal/realm/room/record/service"
+	roomaction "github.com/niflaot/pixels/internal/realm/room/world/action"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/i18n"
@@ -69,12 +70,16 @@ var Module = fx.Module(
 		NewVoteRoomFinder,
 		roomvotes.New,
 		NewVoteManager,
+		roomaction.LoadConfig,
+		roomaction.New,
+		roomaction.NewScheduler,
 	),
 	fx.Invoke(roomaudit.RegisterSubscriber),
 	fx.Invoke(rightsbroadcast.Register),
 	fx.Invoke(moderationbroadcast.Register),
 	fx.Invoke(RegisterRuntimeCleanup),
 	fx.Invoke(RegisterConnectionHandlers),
+	fx.Invoke(roomaction.RegisterScheduler),
 )
 
 // NewVoteStore creates room vote persistence.

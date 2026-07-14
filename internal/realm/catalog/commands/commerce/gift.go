@@ -40,7 +40,7 @@ func (handler Handler) sendGiftSuccess(ctx context.Context, input Command, resul
 // mapGiftOffer projects the purchased offer for Nitro's success event.
 func (handler Handler) mapGiftOffer(ctx context.Context, item catalogmodel.Item) (mapped catalogoffer.Offer, err error) {
 	products := handler.Catalog.Products(ctx, item.ID)
-	if len(products) == 0 {
+	if len(products) == 0 && item.DefinitionID > 0 {
 		products = []catalogmodel.Product{{DefinitionID: item.DefinitionID, Quantity: item.Amount}}
 	}
 	definitions := make(map[int64]furnituremodel.Definition, len(products))

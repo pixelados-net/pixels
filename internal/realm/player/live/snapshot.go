@@ -47,6 +47,30 @@ type Snapshot struct {
 
 	// AllowTrade reports whether direct trading is enabled for the player.
 	AllowTrade bool
+
+	// ActiveEffectID stores the selected avatar effect.
+	ActiveEffectID *int32
+}
+
+// SetClub replaces the live club entitlement projection.
+func (player *Player) SetClub(club playermodel.Club) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+	player.snapshot.Club = club
+}
+
+// SetAllowTrade replaces the live direct-trade eligibility projection.
+func (player *Player) SetAllowTrade(allow bool) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+	player.snapshot.AllowTrade = allow
+}
+
+// SetActiveEffect replaces the live selected avatar effect.
+func (player *Player) SetActiveEffect(effectID *int32) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+	player.snapshot.ActiveEffectID = effectID
 }
 
 // SnapshotFromRecord maps a persistent player record to a runtime snapshot.
@@ -65,6 +89,7 @@ func SnapshotFromRecord(record playerservice.Record) Snapshot {
 		BlockFollowing:      record.Profile.BlockFollowing,
 		Club:                record.Player.Club,
 		AllowTrade:          record.Player.AllowTrade,
+		ActiveEffectID:      record.Player.ActiveEffectID,
 	}
 }
 

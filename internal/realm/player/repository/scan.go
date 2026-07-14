@@ -17,8 +17,9 @@ func scanPlayer(row pgx.Row) (playermodel.Player, error) {
 	var lastSeenAt pgtype.Timestamptz
 	var clubLevel int16
 	var clubExpiresAt pgtype.Timestamptz
+	var activeEffectID pgtype.Int4
 
-	err := row.Scan(&player.ID, &player.Username, &player.CreatedAt, &player.UpdatedAt, &deletedAt, &player.Version.Version, &lastLoginAt, &lastLogoutAt, &lastSeenAt, &clubLevel, &clubExpiresAt, &player.AllowTrade)
+	err := row.Scan(&player.ID, &player.Username, &player.CreatedAt, &player.UpdatedAt, &deletedAt, &player.Version.Version, &lastLoginAt, &lastLogoutAt, &lastSeenAt, &clubLevel, &clubExpiresAt, &player.AllowTrade, &activeEffectID)
 	if err != nil {
 		return playermodel.Player{}, err
 	}
@@ -29,6 +30,9 @@ func scanPlayer(row pgx.Row) (playermodel.Player, error) {
 	player.LastSeenAt = timePointer(lastSeenAt)
 	player.Club.Level = playermodel.ClubLevel(clubLevel)
 	player.Club.ExpiresAt = timePointer(clubExpiresAt)
+	if activeEffectID.Valid {
+		player.ActiveEffectID = &activeEffectID.Int32
+	}
 
 	return player, nil
 }

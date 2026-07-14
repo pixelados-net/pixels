@@ -171,6 +171,17 @@ func adjacentToItem(point grid.Point, item worldfurniture.Item) bool {
 	return false
 }
 
+// onItem reports whether a point belongs to an item's footprint.
+func onItem(point grid.Point, item worldfurniture.Item) bool {
+	for _, footprintPoint := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		if point == footprintPoint {
+			return true
+		}
+	}
+
+	return false
+}
+
 // activatorPoints returns valid perimeter points around an item.
 func activatorPoints(item worldfurniture.Item) []grid.Point {
 	width, length := worldfurniture.Dimensions(item.Definition.Width, item.Definition.Length, item.Rotation)

@@ -24,8 +24,11 @@ import (
 	tagscmd "github.com/niflaot/pixels/internal/realm/room/record/commands/tags"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	actionservice "github.com/niflaot/pixels/internal/realm/room/world/action"
+	actioncmd "github.com/niflaot/pixels/internal/realm/room/world/commands/action"
 	lookcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/look"
 	walkcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/walk"
+	actionhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/action"
 	movementhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/movement"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
@@ -87,6 +90,8 @@ type HandlerDeps struct {
 	Votes roomvotes.Manager
 	// Translations resolves end-user room control messages.
 	Translations i18n.Translator
+	// Actions changes live avatar expressions and posture.
+	Actions *actionservice.Service
 }
 
 // RegisterConnectionHandlers registers room packet handlers.
@@ -121,6 +126,9 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	}, deps.Log))
 	movementhandler.RegisterWalk(handlers.Inbound, movementhandler.NewWalk(walkcmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
+	}, deps.Log))
+	actionhandler.Register(handlers.Inbound, actionhandler.New(actioncmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Actions: deps.Actions,
 	}, deps.Log))
 	entryhandler.RegisterDesktop(handlers.Inbound, entryhandler.NewDesktop(leavecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,

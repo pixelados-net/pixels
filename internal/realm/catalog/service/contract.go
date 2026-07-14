@@ -156,6 +156,9 @@ type PurchaseResult struct {
 	// GrantedItems stores created furniture instances.
 	GrantedItems []furnituremodel.Item
 
+	// GrantedEffectID identifies the effect reward when present.
+	GrantedEffectID *int32
+
 	// Products stores the offer products resolved before the purchase commits.
 	Products []catalogmodel.Product
 

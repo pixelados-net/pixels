@@ -10,9 +10,38 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 )
+
+// routeEffectManager records administrative effect grants.
+type routeEffectManager struct {
+	// Manager supplies unused effect operations.
+	playereffect.Manager
+	// effect stores the last granted stack.
+	effect playereffect.Effect
+}
+
+// Grant records one administrative effect charge.
+func (manager *routeEffectManager) Grant(_ context.Context, playerID int64, effectID int32, duration int32, _ playereffect.Source) (playereffect.Effect, error) {
+	manager.effect = playereffect.Effect{PlayerID: playerID, ID: effectID, DurationSeconds: duration, RemainingCharges: 1}
+	return manager.effect, nil
+}
+
+// TestGrantEffectReturnsDocumentedStack verifies the protected support route.
+func TestGrantEffectReturnsDocumentedStack(t *testing.T) {
+	effects := &routeEffectManager{}
+	app, _ := testApplication(t, effects)
+	response, err := app.Test(requestForTest(t, http.MethodPost, "/api/admin/players/7/effects", `{"effectId":101,"durationSeconds":60}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(response.Body)
+	if response.StatusCode != fiber.StatusOK || effects.effect.ID != 101 || !strings.Contains(string(body), `"remainingCharges":1`) {
+		t.Fatalf("status=%d effect=%#v body=%s", response.StatusCode, effects.effect, body)
+	}
+}
 
 // TestReadByUsernameFindsCaseInsensitivePlayer verifies the exact username route.
 func TestReadByUsernameFindsCaseInsensitivePlayer(t *testing.T) {

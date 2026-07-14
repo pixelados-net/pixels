@@ -307,6 +307,43 @@ minimum manual checks expected when touching it.
     `false`, and `true`; verify only the explicit `true` case sends a localized
     generic alert.
 
+### FEATURE: Avatar Expressions and Effects
+
+- Owns `internal/realm/room/world/action`, focused room action commands and
+  handlers, `internal/realm/player/effect`, effect persistence, effect packets,
+  effect-granting furniture, catalog effect rewards, and player effect routes.
+- Provides persistent dances and signs, transient gestures, free-floor posture,
+  manual and inactivity-driven idle projection, durable effect stacks capped at
+  99 charges, one visible effect slot, active expiration, and synthetic primary
+  permission-group effects.
+- Effect activation starts one charge once; selecting the same active effect
+  must never restart its duration. The single global expiry query consumes at
+  most one charge per selected row and clears a selected expired effect.
+- Effect-giver furniture chooses from its configured pool and effect tiles use
+  the live player's gender. Both grant and select immediately; catalog rewards
+  grant inside the purchase transaction but never select automatically.
+- Pure-effect catalog offers use Nitro product type `e` and must not resolve
+  furniture definition zero. Mixed offers grant their furniture and effect in
+  the same transaction.
+- Test after changes:
+  - `go test -race ./internal/realm/player/effect ./internal/realm/room/world/action ./internal/realm/furniture/interactions/essential/... ./internal/realm/catalog/...`
+  - `go test ./networking/inbound/room/entities/... ./networking/outbound/room/entities/... ./networking/inbound/user/effect/... ./networking/outbound/user/effect/... ./pkg/http/player/routes ./pkg/http/openapi`
+  - `go test -run '^$' -bench . -benchmem ./internal/realm/player/effect ./internal/realm/room/world/action`
+  - Apply Liquibase and development seeds; verify `player_effects`,
+    `players.active_effect_id`, permission group `room_effect_id`, furniture
+    effect fields, and catalog effect reward fields.
+  - With two clients in one room, test dance `0` through `5`, wave, kiss, laugh,
+    sleep, sit, signs `0` through `18`, floor sit/stand, manual AFK, automatic
+    AFK, movement cancellation, and late-entry dance/sign/idle projection.
+  - Click the seeded effect giver while adjacent and from far away, walk male
+    and female avatars over the seeded effect tile, and verify immediate room
+    projection plus inventory charge changes.
+  - Buy permanent, one-day, HC-only, and mixed effect offers; verify club gates,
+    balances, no furniture for pure effects, no automatic selection, activation,
+    switching, disabling with effect zero, expiry, reconnect, and charge cap.
+  - Open `/docs`, grant and revoke an effect through `Admin Players`, and verify
+    online incremental packets and offline persistence.
+
 ### FEATURE: Navigator Realm
 
 - Owns `internal/realm/navigator`.
@@ -721,9 +758,9 @@ minimum manual checks expected when touching it.
 - Furniture workflows reserve unit control and must release it after success,
   failure, pickup, room leave, or target disappearance. Never create a timer or
   goroutine per furniture use.
-- Hand items live on the room unit, not `Player`, and are projected to every room
-  occupant. Avatar effects remain deferred until the complete effect holder and
-  protocol behavior are implemented.
+- Hand items and visible avatar effects live on the room unit, not `Player`, and
+  are projected to every room occupant. Durable effect ownership remains in the
+  player effect service.
 - Test after changes:
   - `go test -race ./internal/realm/furniture/interactions/essential ./internal/realm/room/runtime/live/...`
   - `go test -run '^$' -bench . -benchmem ./internal/realm/room/runtime/live/task ./internal/realm/furniture/interactions/essential`

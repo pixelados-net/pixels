@@ -16,6 +16,7 @@
     <include file="development/0009_color_wheel_random_state.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0010_redeemable_credit_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0011_room_bundle_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0012_effect_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_furniture_items.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

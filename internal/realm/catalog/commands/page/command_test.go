@@ -43,6 +43,23 @@ func TestHandleSendsCatalogPage(t *testing.T) {
 	}
 }
 
+// TestHandleSendsPureEffectOffer verifies pages do not resolve furniture id zero.
+func TestHandleSendsPureEffectOffer(t *testing.T) {
+	connection, sent := pageConnection(t)
+	players, bindings := pagePlayer(t, connection)
+	effectID := int32(101)
+	reader := pageReader{
+		page: catalogmodel.Page{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 2}}, Name: "avatar_effects", Layout: "default_3x3"},
+		items: []catalogmodel.Item{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 5}}, PageID: 2,
+			Name: "effect_confetti", CostCredits: 2, PointsType: -1, GrantsEffectID: &effectID, Enabled: true}},
+	}
+	handler := Handler{Players: players, Bindings: bindings, Catalog: reader, Translations: i18n.NewCatalog(i18n.Config{}, nil)}
+	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, PageID: 2, OfferID: -1, Mode: "NORMAL"}})
+	if err != nil || len(*sent) != 1 || (*sent)[0].Header != outpage.Header {
+		t.Fatalf("unexpected packets %#v error %v", *sent, err)
+	}
+}
+
 // TestCommandMetadataAndMissingDefinition verifies metadata and mapping failures.
 func TestCommandMetadataAndMissingDefinition(t *testing.T) {
 	connection, _ := pageConnection(t)

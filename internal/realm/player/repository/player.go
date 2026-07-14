@@ -13,7 +13,7 @@ import (
 
 const (
 	// playerColumns contains the shared player select list.
-	playerColumns = `id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at, allow_trade`
+	playerColumns = `id, username, created_at, updated_at, deleted_at, version, last_login_at, last_logout_at, last_seen_at, club_level, club_expires_at, allow_trade, active_effect_id`
 
 	// createPlayerSQL inserts a player identity record.
 	createPlayerSQL = `

@@ -2,10 +2,35 @@ package unit
 
 import (
 	"testing"
+	"time"
 
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	"github.com/niflaot/pixels/internal/realm/room/world/path"
 )
+
+// TestPostureMovementAndIdleClearTransientState verifies avatar action invariants.
+func TestPostureMovementAndIdleClearTransientState(t *testing.T) {
+	roomUnit := unitForTest(t)
+	roomUnit.SetStatus(StatusDance, "3")
+	roomUnit.SetFloorPosture(true)
+	if roomUnit.HasStatus(StatusDance) || !roomUnit.HasStatus(StatusSit) {
+		t.Fatalf("unexpected posture statuses %#v", roomUnit.Statuses())
+	}
+	roomUnit.SetStatus(StatusDance, "2")
+	roomUnit.SetPath(path.NewPath([]path.Step{{Position: path.Position{Point: grid.MustPoint(2, 1)}}}))
+	if roomUnit.HasStatus(StatusDance) || roomUnit.HasStatus(StatusSit) {
+		t.Fatalf("unexpected movement statuses %#v", roomUnit.Statuses())
+	}
+	now := time.Unix(100, 0)
+	roomUnit.SetIdleAt(true, now)
+	if !roomUnit.Idle() || !roomUnit.IdleSince().Equal(now) {
+		t.Fatalf("unexpected idle projection idle=%t since=%s", roomUnit.Idle(), roomUnit.IdleSince())
+	}
+	roomUnit.SetIdleAt(false, now.Add(time.Second))
+	if roomUnit.Idle() || !roomUnit.IdleSince().IsZero() {
+		t.Fatalf("unexpected cleared idle projection idle=%t since=%s", roomUnit.Idle(), roomUnit.IdleSince())
+	}
+}
 
 // TestUnitAdvanceWithoutPathReportsMissingStep verifies empty movement.
 func TestUnitAdvanceWithoutPathReportsMissingStep(t *testing.T) {

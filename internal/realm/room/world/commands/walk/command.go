@@ -12,8 +12,10 @@ import (
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outdance "github.com/niflaot/pixels/networking/outbound/room/entities/dance"
 )
 
 const (
@@ -80,11 +82,30 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return ErrInvalidTarget
 	}
 
+	unit, _ := active.Unit(player.ID())
+	dancing := unitHasStatus(unit, worldunit.StatusDance)
 	if _, err := active.MoveTo(player.ID(), point); err != nil {
 		return handler.handleMoveError(ctx, active, player.ID(), point, err)
 	}
+	if dancing {
+		packet, encodeErr := outdance.Encode(unit.UnitID, 0)
+		if encodeErr != nil {
+			return encodeErr
+		}
+		return broadcast.RoomPacket(ctx, handler.Connections, active, packet, 0)
+	}
 
 	return nil
+}
+
+// unitHasStatus reports whether one stable unit snapshot contains a status key.
+func unitHasStatus(unit roomlive.UnitSnapshot, key string) bool {
+	for _, status := range unit.Statuses {
+		if status.Key == key {
+			return true
+		}
+	}
+	return false
 }
 
 // handleMoveError handles gameplay movement misses without closing the session.

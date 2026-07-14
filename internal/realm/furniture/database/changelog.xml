@@ -12,4 +12,5 @@
     <include file="migrations/0005_add_gift_wrap.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0006_add_gift_wrap_sprite.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0007_add_trading_fields.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_add_effect_fields.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

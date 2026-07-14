@@ -19,6 +19,8 @@ var (
 	ErrUnsupportedFurniture = errors.New("unsupported catalog furniture kind")
 )
 
+const productTypeEffect = "e"
+
 // PageTree maps ordered pages into recursive Nitro catalog nodes.
 func PageTree(pages []catalogmodel.Page, translations i18n.Translator) ([]outpages.Node, error) {
 	children := make(map[int64][]catalogmodel.Page)
@@ -49,7 +51,7 @@ func OfferProducts(item catalogmodel.Item, products []catalogmodel.Product, defi
 		remaining = 0
 	}
 
-	mapped := make([]offer.Product, 0, len(products))
+	mapped := make([]offer.Product, 0, len(products)+1)
 	for _, product := range products {
 		definition, found := definitions[product.DefinitionID]
 		if !found || definition.SpriteID < 0 || definition.SpriteID > math.MaxInt32 {
@@ -66,6 +68,9 @@ func OfferProducts(item catalogmodel.Item, products []catalogmodel.Product, defi
 			return offer.Offer{}, ErrUnsupportedFurniture
 		}
 		mapped = append(mapped, offer.Product{Type: productType, ClassID: int32(definition.SpriteID), ExtraData: item.ExtraData, Amount: product.Quantity, Limited: item.IsLimited(), LimitedStack: item.LimitedStack, LimitedRemaining: remaining})
+	}
+	if item.GrantsEffectID != nil {
+		mapped = append(mapped, offer.Product{Type: productTypeEffect, ClassID: *item.GrantsEffectID, Amount: 1, Limited: item.IsLimited(), LimitedStack: item.LimitedStack, LimitedRemaining: remaining})
 	}
 	return offer.Offer{
 		ID: int32(item.ID), LocalizationID: "catalog.item." + item.Name,

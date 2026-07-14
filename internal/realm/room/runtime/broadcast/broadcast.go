@@ -3,12 +3,17 @@ package broadcast
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/projection"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	outdance "github.com/niflaot/pixels/networking/outbound/room/entities/dance"
+	outeffect "github.com/niflaot/pixels/networking/outbound/room/entities/effect"
+	outidle "github.com/niflaot/pixels/networking/outbound/room/entities/idle"
 	outremoved "github.com/niflaot/pixels/networking/outbound/room/entities/removed"
 	outstatus "github.com/niflaot/pixels/networking/outbound/room/entities/status"
 	outunits "github.com/niflaot/pixels/networking/outbound/room/entities/units"
@@ -69,13 +74,62 @@ func RoomSpawn(ctx context.Context, connections *netconn.Registry, active *live.
 
 	statusRecords := projection.Statuses(active, playerID)
 	if len(statusRecords) == 0 {
-		return nil
+		return roomActions(ctx, connections, active, playerID, excludedPlayerID)
 	}
 	packet, err := outstatus.Encode(statusRecords)
 	if err != nil {
 		return err
 	}
 
+	if err := RoomPacket(ctx, connections, active, packet, excludedPlayerID); err != nil {
+		return err
+	}
+	return roomActions(ctx, connections, active, playerID, excludedPlayerID)
+}
+
+// roomActions projects persistent dance, effect, and idle state to late room entrants.
+func roomActions(ctx context.Context, connections *netconn.Registry, active *live.Room, playerID int64, excludedPlayerID int64) error {
+	unit, found := active.Unit(playerID)
+	if !found {
+		return nil
+	}
+	for _, status := range unit.Statuses {
+		if status.Key != worldunit.StatusDance {
+			continue
+		}
+		danceID, err := strconv.ParseInt(status.Value, 10, 32)
+		if err == nil {
+			packet, encodeErr := outdance.Encode(unit.UnitID, int32(danceID))
+			if encodeErr != nil {
+				return encodeErr
+			}
+			if err = RoomPacket(ctx, connections, active, packet, excludedPlayerID); err != nil {
+				return err
+			}
+		}
+	}
+	if unit.ActiveEffectID > 0 {
+		packet, err := outeffect.Encode(unit.UnitID, unit.ActiveEffectID, 0)
+		if err != nil {
+			return err
+		}
+		if err = RoomPacket(ctx, connections, active, packet, excludedPlayerID); err != nil {
+			return err
+		}
+	}
+	return roomIdle(ctx, connections, active, playerID, excludedPlayerID)
+}
+
+// roomIdle projects an already-idle spawned unit to late room entrants.
+func roomIdle(ctx context.Context, connections *netconn.Registry, active *live.Room, playerID int64, excludedPlayerID int64) error {
+	unit, found := active.Unit(playerID)
+	if !found || !unit.Idle {
+		return nil
+	}
+	packet, err := outidle.Encode(unit.UnitID, true)
+	if err != nil {
+		return err
+	}
 	return RoomPacket(ctx, connections, active, packet, excludedPlayerID)
 }
 

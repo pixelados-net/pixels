@@ -1,6 +1,10 @@
 package unit
 
-import "github.com/niflaot/pixels/internal/realm/room/world/path"
+import (
+	"time"
+
+	"github.com/niflaot/pixels/internal/realm/room/world/path"
+)
 
 // Kind stores the room unit kind.
 type Kind uint8
@@ -78,6 +82,15 @@ type Unit struct {
 
 	// handItem stores the currently carried protocol hand item id.
 	handItem int32
+
+	// idle reports whether the unit is currently projected as AFK.
+	idle bool
+
+	// idleSince stores when the current AFK projection began.
+	idleSince time.Time
+
+	// activeEffectID stores the selected avatar effect.
+	activeEffectID int32
 }
 
 // New creates a room unit.

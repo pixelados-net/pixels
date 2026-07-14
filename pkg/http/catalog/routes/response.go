@@ -48,6 +48,10 @@ type ItemResponse struct {
 	DefinitionID int64 `json:"definitionId"`
 	// RoomBundleTemplateRoomID identifies the cloned room template.
 	RoomBundleTemplateRoomID *int64 `json:"roomBundleTemplateRoomId,omitempty"`
+	// GrantsEffectID identifies the effect reward.
+	GrantsEffectID *int32 `json:"grantsEffectId,omitempty"`
+	// GrantsEffectDurationSeconds stores one charge duration.
+	GrantsEffectDurationSeconds int32 `json:"grantsEffectDurationSeconds"`
 	// Name stores the localization slug.
 	Name string `json:"name"`
 	// CostCredits stores the credits price.
@@ -107,7 +111,7 @@ func pageResponse(page catalogmodel.Page) PageResponse {
 
 // itemResponse maps one catalog offer record.
 func itemResponse(item catalogmodel.Item) ItemResponse {
-	return ItemResponse{ID: item.ID, PageID: item.PageID, DefinitionID: item.DefinitionID, RoomBundleTemplateRoomID: item.RoomBundleTemplateRoomID, Name: item.Name,
+	return ItemResponse{ID: item.ID, PageID: item.PageID, DefinitionID: item.DefinitionID, RoomBundleTemplateRoomID: item.RoomBundleTemplateRoomID, GrantsEffectID: item.GrantsEffectID, GrantsEffectDurationSeconds: item.GrantsEffectDurationSeconds, Name: item.Name,
 		CostCredits: item.CostCredits, CostPoints: item.CostPoints, PointsType: item.PointsType, Amount: item.Amount,
 		LimitedStack: item.LimitedStack, LimitedSells: item.LimitedSells, BundleDiscountEnabled: item.BundleDiscountEnabled, Giftable: item.Giftable, ClubOnly: item.ClubOnly,
 		OrderNum: item.OrderNum, Enabled: item.Enabled, ExtraData: item.ExtraData, Version: item.Version.Version}

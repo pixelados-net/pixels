@@ -30,6 +30,9 @@ type Player struct {
 
 	// AllowTrade reports whether the player may participate in direct trades.
 	AllowTrade bool
+
+	// ActiveEffectID stores the selected avatar effect.
+	ActiveEffectID *int32
 }
 
 // HolderID identifies the player permission holder.

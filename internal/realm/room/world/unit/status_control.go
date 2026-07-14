@@ -1,6 +1,10 @@
 package unit
 
-import "github.com/niflaot/pixels/internal/realm/room/world/grid"
+import (
+	"time"
+
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+)
 
 // SetStatus stores a unit status value.
 func (unit *Unit) SetStatus(key string, value string) {
@@ -26,6 +30,51 @@ func (unit *Unit) Settled() bool {
 func (unit *Unit) StandUp() {
 	unit.statuses.clear(StatusSit)
 	unit.statuses.clear(StatusLay)
+}
+
+// SetFloorPosture changes the free-standing sit posture and stops dancing.
+func (unit *Unit) SetFloorPosture(sitting bool) {
+	unit.statuses.clear(StatusLay)
+	unit.statuses.clear(StatusDance)
+	if sitting {
+		unit.statuses.set(StatusSit, "0.0")
+		return
+	}
+	unit.statuses.clear(StatusSit)
+}
+
+// SetIdle replaces the unit AFK projection.
+func (unit *Unit) SetIdle(idle bool) {
+	unit.SetIdleAt(idle, time.Now())
+}
+
+// SetIdleAt replaces the unit AFK projection at one deterministic instant.
+func (unit *Unit) SetIdleAt(idle bool, at time.Time) {
+	unit.idle = idle
+	unit.idleSince = time.Time{}
+	if idle {
+		unit.idleSince = at
+	}
+}
+
+// Idle reports whether the unit is projected as AFK.
+func (unit *Unit) Idle() bool {
+	return unit.idle
+}
+
+// IdleSince returns when the current AFK projection began.
+func (unit *Unit) IdleSince() time.Time {
+	return unit.idleSince
+}
+
+// SetActiveEffect replaces the selected avatar effect.
+func (unit *Unit) SetActiveEffect(effectID int32) {
+	unit.activeEffectID = effectID
+}
+
+// ActiveEffect returns the selected avatar effect.
+func (unit *Unit) ActiveEffect() int32 {
+	return unit.activeEffectID
 }
 
 // SetHeight corrects the unit's vertical position without moving it off its current tile, used when

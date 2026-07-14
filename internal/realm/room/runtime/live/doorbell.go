@@ -92,3 +92,60 @@ func (room *Room) ownerPresentLocked() bool {
 
 	return found
 }
+
+// SetUnitIdle replaces one unit's AFK projection.
+func (room *Room) SetUnitIdle(playerID int64, idle bool) (UnitSnapshot, bool) {
+	return room.SetUnitIdleAt(playerID, idle, time.Now())
+}
+
+// SetUnitIdleAt replaces one unit's AFK projection at one deterministic instant.
+func (room *Room) SetUnitIdleAt(playerID int64, idle bool, at time.Time) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.SetUnitIdleAt(playerID, idle, at)
+}
+
+// SetUnitPosture changes one unit's free-standing posture.
+func (room *Room) SetUnitPosture(playerID int64, sitting bool) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.SetUnitPosture(playerID, sitting)
+}
+
+// SetUnitDance changes one unit's persistent dance state.
+func (room *Room) SetUnitDance(playerID int64, danceID int32) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.SetUnitDance(playerID, danceID)
+}
+
+// SetUnitEffect replaces one unit's selected avatar effect.
+func (room *Room) SetUnitEffect(playerID int64, effectID int32) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.SetUnitEffect(playerID, effectID)
+}
+
+// RemainingMute returns one active mute duration without persistence I/O.
+func (room *Room) RemainingMute(playerID int64, now time.Time) (time.Duration, bool) {
+	room.mutex.RLock()
+	endsAt, found := room.muted[playerID]
+	room.mutex.RUnlock()
+	if !found || !endsAt.After(now) {
+		return 0, false
+	}
+
+	return endsAt.Sub(now), true
+}

@@ -210,6 +210,6 @@ func unitSnapshot(playerID int64, roomUnit *worldunit.Unit) UnitSnapshot {
 	return UnitSnapshot{
 		PlayerID: playerID, UnitID: roomUnit.ID(), Position: roomUnit.Position(), Previous: roomUnit.Previous(),
 		BodyRotation: roomUnit.BodyRotation(), HeadRotation: roomUnit.HeadRotation(),
-		Moving: roomUnit.InMotion(), Statuses: roomUnit.Statuses(), HandItem: roomUnit.HandItem(),
+		Moving: roomUnit.InMotion(), Statuses: roomUnit.Statuses(), HandItem: roomUnit.HandItem(), Idle: roomUnit.Idle(), IdleSince: roomUnit.IdleSince(), ActiveEffectID: roomUnit.ActiveEffect(),
 	}
 }

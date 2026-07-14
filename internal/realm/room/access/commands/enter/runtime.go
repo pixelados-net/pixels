@@ -51,6 +51,9 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		ConnectionID:   connection.ConnectionID,
 		ConnectionKind: connection.ConnectionKind,
 	}
+	if snapshot.ActiveEffectID != nil {
+		occupant.ActiveEffectID = *snapshot.ActiveEffectID
+	}
 	_, err = handler.Runtime.Join(ctx, room.ID, occupant)
 	if err == roomlive.ErrRoomFull && handler.Entry != nil {
 		allowed, permissionErr := handler.Entry.CanEnterFull(ctx, player.ID())

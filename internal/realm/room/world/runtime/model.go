@@ -3,6 +3,7 @@ package runtime
 
 import (
 	"errors"
+	"time"
 
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
@@ -68,6 +69,12 @@ type UnitSnapshot struct {
 	Statuses []worldunit.Status
 	// HandItem stores the currently carried protocol hand item id.
 	HandItem int32
+	// Idle reports whether the unit is projected as AFK.
+	Idle bool
+	// IdleSince stores when the current AFK projection began.
+	IdleSince time.Time
+	// ActiveEffectID stores the selected avatar effect.
+	ActiveEffectID int32
 }
 
 // Movement stores one unit tick movement.

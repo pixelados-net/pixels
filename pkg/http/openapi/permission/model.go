@@ -31,6 +31,8 @@ type GroupCreateRequest struct {
 	Prefix string `json:"prefix,omitempty"`
 	// PrefixColor stores the future chat prefix color.
 	PrefixColor string `json:"prefixColor,omitempty" example:"#ff0000"`
+	// RoomEffectID stores the synthetic room effect.
+	RoomEffectID *int32 `json:"roomEffectId,omitempty" minimum:"1"`
 	// ParentGroupID identifies the optional inherited group.
 	ParentGroupID *int64 `json:"parentGroupId,omitempty" minimum:"1"`
 }
@@ -48,6 +50,10 @@ type GroupPatchRequest struct {
 	Prefix *string `json:"prefix,omitempty"`
 	// PrefixColor replaces the future chat prefix color.
 	PrefixColor *string `json:"prefixColor,omitempty"`
+	// RoomEffectID replaces the synthetic room effect.
+	RoomEffectID *int32 `json:"roomEffectId,omitempty" minimum:"1"`
+	// ClearRoomEffect removes the synthetic room effect.
+	ClearRoomEffect bool `json:"clearRoomEffect,omitempty"`
 	// ParentGroupID replaces the inherited group.
 	ParentGroupID *int64 `json:"parentGroupId,omitempty" minimum:"1"`
 	// ClearParent removes the inherited group.
@@ -129,6 +135,8 @@ type GroupResponse struct {
 	Prefix string `json:"prefix" required:"true"`
 	// PrefixColor stores the future prefix color.
 	PrefixColor string `json:"prefixColor" required:"true"`
+	// RoomEffectID stores the synthetic room effect.
+	RoomEffectID *int32 `json:"roomEffectId,omitempty"`
 	// ParentGroupID identifies the optional inherited group.
 	ParentGroupID *int64 `json:"parentGroupId,omitempty"`
 	// Version stores optimistic locking state.

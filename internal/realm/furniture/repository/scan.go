@@ -15,6 +15,8 @@ func scanDefinition(row pgx.Row) (furnituremodel.Definition, error) {
 	var definition furnituremodel.Definition
 	var kind string
 	var metadata []byte
+	var effectMale pgtype.Int4
+	var effectFemale pgtype.Int4
 	var deletedAt pgtype.Timestamptz
 	err := row.Scan(
 		&definition.ID,
@@ -33,6 +35,9 @@ func scanDefinition(row pgx.Row) (furnituremodel.Definition, error) {
 		&definition.AllowTrade,
 		&definition.AllowMarketplaceSale,
 		&definition.RedeemableCredits,
+		&definition.EffectPool,
+		&effectMale,
+		&effectFemale,
 		&definition.InteractionType,
 		&definition.InteractionModesCount,
 		&definition.Multiheight,
@@ -48,6 +53,12 @@ func scanDefinition(row pgx.Row) (furnituremodel.Definition, error) {
 	}
 	definition.Kind = furnituremodel.Kind(kind)
 	definition.Metadata = json.RawMessage(metadata)
+	if effectMale.Valid {
+		definition.EffectMale = &effectMale.Int32
+	}
+	if effectFemale.Valid {
+		definition.EffectFemale = &effectFemale.Int32
+	}
 	definition.DeletedAt = timePointer(deletedAt)
 
 	return definition, nil

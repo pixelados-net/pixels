@@ -74,6 +74,15 @@ type Definition struct {
 	// CustomParams stores definition-specific behavior configuration.
 	CustomParams string
 
+	// EffectPool stores effect-giver candidates.
+	EffectPool []int32
+
+	// EffectMale stores the male effect-tile result.
+	EffectMale *int32
+
+	// EffectFemale stores the female effect-tile result.
+	EffectFemale *int32
+
 	// Width stores the footprint width at rotation 0.
 	Width int
 

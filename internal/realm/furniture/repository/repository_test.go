@@ -197,7 +197,7 @@ func definitionValuesForTest() []any {
 	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
 	return []any{
 		int64(2), 39, "chair_plasto", "chair_plasto", "floor", 1, 1, 1.0,
-		false, false, true, false, true, true, true, int32(0),
+		false, false, true, false, true, true, true, int32(0), []int32{101, 102}, pgtype.Int4{}, pgtype.Int4{},
 		"default", 2, "", "",
 		[]byte(`{"slots":[{"dx":0,"dy":0,"status":"sit","body_rotation":4}]}`),
 		now, now, pgtype.Timestamptz{}, int64(1),

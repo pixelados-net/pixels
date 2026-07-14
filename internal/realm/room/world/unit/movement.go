@@ -15,6 +15,7 @@ func (unit *Unit) SetPath(roomPath path.Path) {
 	unit.settling = false
 	unit.statuses.clear(StatusSit)
 	unit.statuses.clear(StatusLay)
+	unit.statuses.clear(StatusDance)
 	if unit.hasGoal {
 		unit.goal = steps[len(steps)-1].Position
 		unit.setMoveStatus(steps[0].Position)
@@ -109,6 +110,7 @@ func (unit *Unit) Reposition(position path.Position, rotation Rotation) {
 	unit.ClearPath()
 	unit.statuses.clear(StatusSit)
 	unit.statuses.clear(StatusLay)
+	unit.statuses.clear(StatusDance)
 }
 
 // Advance moves the unit by one pending step.

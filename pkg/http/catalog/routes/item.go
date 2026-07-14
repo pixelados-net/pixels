@@ -105,15 +105,23 @@ func optionalPageID(raw string) (*int64, error) {
 // itemPatch maps an HTTP item patch to administration input.
 func itemPatch(request ItemPatchRequest) catalogadmin.ItemPatch {
 	var templateRoomID **int64
+	var grantsEffectID **int32
 	if request.RoomBundleTemplateRoomID != nil {
 		templateRoomID = &request.RoomBundleTemplateRoomID
 	} else if request.ClearRoomBundleTemplate {
 		var cleared *int64
 		templateRoomID = &cleared
 	}
+	if request.GrantsEffectID != nil {
+		grantsEffectID = &request.GrantsEffectID
+	} else if request.ClearGrantsEffect {
+		var cleared *int32
+		grantsEffectID = &cleared
+	}
 	patch := catalogadmin.ItemPatch{PageID: request.PageID, DefinitionID: request.DefinitionID, Name: request.Name,
 		RoomBundleTemplateRoomID: templateRoomID,
-		CostCredits:              request.CostCredits, CostPoints: request.CostPoints, PointsType: request.PointsType,
+		GrantsEffectID:           grantsEffectID, GrantsEffectDurationSeconds: request.GrantsEffectDurationSeconds,
+		CostCredits: request.CostCredits, CostPoints: request.CostPoints, PointsType: request.PointsType,
 		Amount: request.Amount, LimitedStack: request.LimitedStack, BundleDiscountEnabled: request.BundleDiscountEnabled,
 		Giftable: request.Giftable, ClubOnly: request.ClubOnly,
 		OrderNum: request.OrderNum, Enabled: request.Enabled, ExtraData: request.ExtraData}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
@@ -30,6 +31,8 @@ type handler struct {
 	live *playerlive.Registry
 	// connections stores active network sessions.
 	connections *netconn.Registry
+	// effects administers durable player effects.
+	effects playereffect.Manager
 }
 
 // create creates one player and profile atomically.

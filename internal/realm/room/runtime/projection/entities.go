@@ -128,6 +128,9 @@ func statusPositionRecord(unit roomlive.UnitSnapshot, position worldpath.Positio
 func statusActions(statuses []worldunit.Status) []outstatus.Action {
 	actions := make([]outstatus.Action, 0, len(statuses))
 	for _, status := range statuses {
+		if status.Key == worldunit.StatusDance {
+			continue
+		}
 		actions = append(actions, outstatus.Action{Key: status.Key, Value: status.Value})
 	}
 

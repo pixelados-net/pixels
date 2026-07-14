@@ -10,6 +10,7 @@ import (
 	"github.com/niflaot/pixels/internal/auth/sso"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	navservice "github.com/niflaot/pixels/internal/realm/navigator/core"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
@@ -46,9 +47,9 @@ func registerPublic(app *fiber.App, config config.AppConfig, info build.Info, we
 }
 
 // registerPrivate registers private authenticated fallback routes.
-func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Client, players playerservice.AdminManager, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies, tradingAdmin tradingroutes.Dependencies) {
+func registerPrivate(app *fiber.App, sso *sso.Service, redisClient *redispkg.Client, players playerservice.AdminManager, effects playereffect.Manager, rooms roomservice.Manager, runtime *roomlive.Registry, roomEntry *roomentry.Service, navigator navservice.Manager, currencyAdmin currencyroutes.Dependencies, catalogAdmin catalogroutes.Dependencies, permissionAdmin permissionroutes.Dependencies, roomAdmin roomroutes.Dependencies, chatAdmin chatroutes.Dependencies, messengerAdmin messengerroutes.Dependencies, subscriptionAdmin subscriptionroutes.Dependencies, tradingAdmin tradingroutes.Dependencies) {
 	app.Post("/api/sso/tickets", createSSOTicketHandler(sso, redisClient))
-	playerroutes.Register(app, players, redisClient, currencyAdmin.Players, currencyAdmin.Connections)
+	playerroutes.Register(app, players, redisClient, currencyAdmin.Players, currencyAdmin.Connections, effects)
 	wsroutes.Register(app, currencyAdmin.Connections)
 	roomroutes.Register(app, rooms, runtime, currencyAdmin.Connections, navigator, currencyAdmin.Players, roomEntry, roomAdmin)
 	notificationroutes.Register(app, currencyAdmin.Players, currencyAdmin.Connections, currencyAdmin.Translations)

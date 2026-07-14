@@ -16,4 +16,5 @@
     <include file="development/0009_giftable_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0010_marketplace_pages.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0011_room_bundles.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0012_effects.sql" relativeToChangelogFile="true" contextFilter="development"/>
 </databaseChangeLog>

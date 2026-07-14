@@ -97,6 +97,10 @@ type ItemInput struct {
 	DefinitionID int64
 	// RoomBundleTemplateRoomID identifies an optional room template offer.
 	RoomBundleTemplateRoomID *int64
+	// GrantsEffectID identifies an additional or effect-only reward.
+	GrantsEffectID *int32
+	// GrantsEffectDurationSeconds stores one effect charge duration.
+	GrantsEffectDurationSeconds int32
 	// Name stores the stable localization slug.
 	Name string
 	// CostCredits stores the credits price.
@@ -131,6 +135,10 @@ type ItemPatch struct {
 	DefinitionID *int64
 	// RoomBundleTemplateRoomID replaces or clears the room template when present.
 	RoomBundleTemplateRoomID **int64
+	// GrantsEffectID replaces or clears the effect reward when present.
+	GrantsEffectID **int32
+	// GrantsEffectDurationSeconds replaces the effect charge duration.
+	GrantsEffectDurationSeconds *int32
 	// Name replaces the localization slug when present.
 	Name *string
 	// CostCredits replaces the credits price when present.

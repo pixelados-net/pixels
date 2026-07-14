@@ -17,6 +17,12 @@ const (
 
 	// StatusTrade stores the direct-trade activity status.
 	StatusTrade = "trd"
+
+	// StatusDance stores the persistent avatar dance id.
+	StatusDance = "dance"
+
+	// StatusSign stores the persistent held sign id.
+	StatusSign = "sign"
 )
 
 // Status stores one unit status value.

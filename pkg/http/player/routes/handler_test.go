@@ -10,6 +10,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
+	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
 	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
@@ -87,7 +88,7 @@ func TestReadUsesETag(t *testing.T) {
 }
 
 // testApplication creates player routes with deterministic dependencies.
-func testApplication(t *testing.T) (*fiber.App, *fakeManager) {
+func testApplication(t *testing.T, effectManagers ...playereffect.Manager) (*fiber.App, *fakeManager) {
 	t.Helper()
 	server := miniredis.RunT(t)
 	redisClient := redispkg.New(redispkg.Config{Address: server.Addr()})
@@ -98,7 +99,7 @@ func testApplication(t *testing.T) (*fiber.App, *fakeManager) {
 	})
 	manager := &fakeManager{record: testRecord()}
 	app := fiber.New()
-	Register(app, manager, redisClient, nil, nil)
+	Register(app, manager, redisClient, nil, nil, effectManagers...)
 
 	return app, manager
 }

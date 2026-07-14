@@ -109,6 +109,8 @@ type Occupant struct {
 	Figure string
 	// Gender stores the visible player gender.
 	Gender string
+	// ActiveEffectID stores the selected avatar effect.
+	ActiveEffectID int32
 	// ConnectionID identifies the active connection.
 	ConnectionID netconn.ID
 	// ConnectionKind identifies the active connection family.
@@ -238,16 +240,4 @@ func (room *Room) SetMuted(playerID int64, endsAt time.Time) {
 		room.muted[playerID] = endsAt
 	}
 	room.mutex.Unlock()
-}
-
-// RemainingMute returns one active mute duration without persistence I/O.
-func (room *Room) RemainingMute(playerID int64, now time.Time) (time.Duration, bool) {
-	room.mutex.RLock()
-	endsAt, found := room.muted[playerID]
-	room.mutex.RUnlock()
-	if !found || !endsAt.After(now) {
-		return 0, false
-	}
-
-	return endsAt.Sub(now), true
 }

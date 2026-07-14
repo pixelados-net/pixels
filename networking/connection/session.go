@@ -22,6 +22,8 @@ type Session struct {
 	authenticatedAt time.Time
 	// lastPongAt stores the most recent heartbeat pong time.
 	lastPongAt time.Time
+	// lastActivityAt stores the most recent inbound packet time.
+	lastActivityAt time.Time
 	// authenticated reports whether authentication has completed.
 	authenticated bool
 	// disconnected reports whether disposal started.
@@ -80,20 +82,21 @@ func NewSession(config SessionConfig) (*Session, error) {
 	}
 
 	return &Session{
-		id:         config.ID,
-		kind:       config.Kind,
-		startedAt:  startedAt,
-		remoteAddr: config.RemoteAddr,
-		lastPongAt: startedAt,
-		state:      StateCreated,
-		policy:     normalizeSecurityPolicy(config.SecurityPolicy),
-		logger:     config.PacketLogger,
-		done:       make(chan struct{}),
-		inbound:    inbound,
-		outbound:   outbound,
-		sender:     config.Sender,
-		disposer:   config.Disposer,
-		activator:  config.SecurityActivator,
+		id:             config.ID,
+		kind:           config.Kind,
+		startedAt:      startedAt,
+		remoteAddr:     config.RemoteAddr,
+		lastPongAt:     startedAt,
+		lastActivityAt: startedAt,
+		state:          StateCreated,
+		policy:         normalizeSecurityPolicy(config.SecurityPolicy),
+		logger:         config.PacketLogger,
+		done:           make(chan struct{}),
+		inbound:        inbound,
+		outbound:       outbound,
+		sender:         config.Sender,
+		disposer:       config.Disposer,
+		activator:      config.SecurityActivator,
 	}, nil
 }
 
@@ -143,6 +146,23 @@ func (session *Session) LastPongAt() time.Time {
 	defer session.mutex.RUnlock()
 
 	return session.lastPongAt
+}
+
+// LastActivityAt returns the most recent inbound packet time.
+func (session *Session) LastActivityAt() time.Time {
+	session.mutex.RLock()
+	defer session.mutex.RUnlock()
+	return session.lastActivityAt
+}
+
+// markActivity records authenticated or pre-authentication inbound traffic.
+func (session *Session) markActivity(at time.Time) {
+	session.mutex.Lock()
+	if at.IsZero() {
+		at = time.Now()
+	}
+	session.lastActivityAt = at
+	session.mutex.Unlock()
 }
 
 // MarkPong records a client heartbeat pong.

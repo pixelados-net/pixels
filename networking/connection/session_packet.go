@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/niflaot/pixels/networking/codec"
 )
@@ -12,6 +13,7 @@ func (session *Session) Receive(ctx context.Context, packet codec.Packet) error 
 	if err := session.markTraffic(EventPacketReceived); err != nil {
 		return err
 	}
+	session.markActivity(time.Now())
 
 	context := session.context(InboundDirection)
 	if context.Disconnected {

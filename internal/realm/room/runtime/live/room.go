@@ -94,6 +94,7 @@ func (room *Room) JoinWithCapacity(occupant Occupant, bypassCapacity bool) (Occu
 	room.occupants[occupant.PlayerID] = occupant.WithJoinTime(time.Now())
 	if room.world != nil {
 		room.world.AddUnit(occupant.PlayerID)
+		room.world.SetUnitEffect(occupant.PlayerID, occupant.ActiveEffectID)
 	}
 	room.idleSince = nil
 
