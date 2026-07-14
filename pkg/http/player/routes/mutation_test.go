@@ -21,6 +21,15 @@ type routeEffectManager struct {
 	playereffect.Manager
 	// effect stores the last granted stack.
 	effect playereffect.Effect
+	// enabled reports whether the route selected the stack.
+	enabled bool
+}
+
+// GrantEnabled records one administrative charge and immediate selection.
+func (manager *routeEffectManager) GrantEnabled(ctx context.Context, playerID int64, effectID int32, duration int32, source playereffect.Source) (playereffect.Effect, error) {
+	effect, err := manager.Grant(ctx, playerID, effectID, duration, source)
+	manager.enabled = err == nil
+	return effect, err
 }
 
 // Grant records one administrative effect charge.
@@ -38,8 +47,22 @@ func TestGrantEffectReturnsDocumentedStack(t *testing.T) {
 		t.Fatal(err)
 	}
 	body, _ := io.ReadAll(response.Body)
-	if response.StatusCode != fiber.StatusOK || effects.effect.ID != 101 || !strings.Contains(string(body), `"remainingCharges":1`) {
+	if response.StatusCode != fiber.StatusOK || effects.effect.ID != 101 || !effects.enabled || !strings.Contains(string(body), `"remainingCharges":1`) || !strings.Contains(string(body), `"enabled":true`) {
 		t.Fatalf("status=%d effect=%#v body=%s", response.StatusCode, effects.effect, body)
+	}
+}
+
+// TestGrantEffectCanRemainDisabled verifies the explicit inventory-only option.
+func TestGrantEffectCanRemainDisabled(t *testing.T) {
+	effects := &routeEffectManager{}
+	app, _ := testApplication(t, effects)
+	response, err := app.Test(requestForTest(t, http.MethodPost, "/api/admin/players/7/effects", `{"effectId":101,"durationSeconds":60,"enable":false}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(response.Body)
+	if response.StatusCode != fiber.StatusOK || effects.enabled || !strings.Contains(string(body), `"enabled":false`) {
+		t.Fatalf("status=%d enabled=%t body=%s", response.StatusCode, effects.enabled, body)
 	}
 }
 

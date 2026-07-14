@@ -60,6 +60,18 @@ func (world *World) ClearUnitStatus(playerID int64, key string) bool {
 	return true
 }
 
+// PulseUnitStatus snapshots one temporary status without retaining it in world state.
+func (world *World) PulseUnitStatus(playerID int64, key string, value string) (UnitSnapshot, bool) {
+	roomUnit, found := world.units[playerID]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+	roomUnit.SetStatus(key, value)
+	snapshot := unitSnapshot(playerID, roomUnit)
+	roomUnit.ClearStatus(key)
+	return snapshot, true
+}
+
 // FurnitureItems returns stable furniture snapshots in item id order.
 func (world *World) FurnitureItems() []worldfurniture.Item {
 	ids := make([]int64, 0, len(world.furniture))
@@ -210,6 +222,6 @@ func unitSnapshot(playerID int64, roomUnit *worldunit.Unit) UnitSnapshot {
 	return UnitSnapshot{
 		PlayerID: playerID, UnitID: roomUnit.ID(), Position: roomUnit.Position(), Previous: roomUnit.Previous(),
 		BodyRotation: roomUnit.BodyRotation(), HeadRotation: roomUnit.HeadRotation(),
-		Moving: roomUnit.InMotion(), Statuses: roomUnit.Statuses(), HandItem: roomUnit.HandItem(), Idle: roomUnit.Idle(), IdleSince: roomUnit.IdleSince(), ActiveEffectID: roomUnit.ActiveEffect(),
+		Moving: roomUnit.InMotion(), Statuses: roomUnit.Statuses(), HandItem: roomUnit.HandItem(), Idle: roomUnit.Idle(), IdleSince: roomUnit.IdleSince(), ManualIdle: roomUnit.ManualIdle(), ActiveEffectID: roomUnit.ActiveEffect(),
 	}
 }

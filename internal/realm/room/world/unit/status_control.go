@@ -50,10 +50,22 @@ func (unit *Unit) SetIdle(idle bool) {
 
 // SetIdleAt replaces the unit AFK projection at one deterministic instant.
 func (unit *Unit) SetIdleAt(idle bool, at time.Time) {
+	unit.setIdleAt(idle, false, at)
+}
+
+// SetManualIdleAt replaces the unit manual AFK projection at one deterministic instant.
+func (unit *Unit) SetManualIdleAt(idle bool, at time.Time) {
+	unit.setIdleAt(idle, idle, at)
+}
+
+// setIdleAt replaces the unit AFK projection and its source.
+func (unit *Unit) setIdleAt(idle bool, manual bool, at time.Time) {
 	unit.idle = idle
 	unit.idleSince = time.Time{}
+	unit.manualIdle = false
 	if idle {
 		unit.idleSince = at
+		unit.manualIdle = manual
 	}
 }
 
@@ -65,6 +77,11 @@ func (unit *Unit) Idle() bool {
 // IdleSince returns when the current AFK projection began.
 func (unit *Unit) IdleSince() time.Time {
 	return unit.idleSince
+}
+
+// ManualIdle reports whether explicit avatar activity must clear the AFK projection.
+func (unit *Unit) ManualIdle() bool {
+	return unit.manualIdle
 }
 
 // SetActiveEffect replaces the selected avatar effect.

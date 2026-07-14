@@ -13,6 +13,8 @@ type Config struct {
 	IdleTimeout time.Duration `env:"PIXELS_ROOM_IDLE_TIMEOUT" envDefault:"5m"`
 	// SweepInterval stores idle reconciliation cadence.
 	SweepInterval time.Duration `env:"PIXELS_ROOM_IDLE_SWEEP_INTERVAL" envDefault:"1s"`
+	// TransitionDelay stores the pause between cancelling and starting actions.
+	TransitionDelay time.Duration `env:"PIXELS_ROOM_ACTION_TRANSITION_DELAY" envDefault:"100ms"`
 }
 
 // LoadConfig reads room action configuration from environment variables.
@@ -25,6 +27,9 @@ func (config Config) Normalize() Config {
 	}
 	if config.SweepInterval <= 0 {
 		config.SweepInterval = time.Second
+	}
+	if config.TransitionDelay <= 0 {
+		config.TransitionDelay = 100 * time.Millisecond
 	}
 	return config
 }

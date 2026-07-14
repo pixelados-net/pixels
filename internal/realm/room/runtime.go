@@ -71,15 +71,20 @@ func publishFurnitureSteps(ctx context.Context, publisher bus.Publisher, active 
 	if publisher == nil {
 		return nil
 	}
+	previous, hadPrevious := active.InteractionAt(movement.Unit.Previous.Point)
+	current, hasCurrent := active.InteractionAt(movement.Unit.Position.Point)
+	if hadPrevious && hasCurrent && previous.ID == current.ID {
+		return nil
+	}
 	var result error
-	if item, found := active.InteractionAt(movement.Unit.Previous.Point); found {
+	if hadPrevious {
 		result = publisher.Publish(ctx, bus.Event{Name: furniturewalkedoff.Name, Payload: furniturewalkedoff.Payload{
-			PlayerID: movement.PlayerID, ItemID: item.ID, RoomID: active.ID(),
+			PlayerID: movement.PlayerID, ItemID: previous.ID, RoomID: active.ID(),
 		}})
 	}
-	if item, found := active.InteractionAt(movement.Unit.Position.Point); found {
+	if hasCurrent {
 		result = errors.Join(result, publisher.Publish(ctx, bus.Event{Name: furniturewalkedon.Name, Payload: furniturewalkedon.Payload{
-			PlayerID: movement.PlayerID, ItemID: item.ID, RoomID: active.ID(),
+			PlayerID: movement.PlayerID, ItemID: current.ID, RoomID: active.ID(),
 		}}))
 	}
 

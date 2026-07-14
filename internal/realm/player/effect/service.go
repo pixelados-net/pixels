@@ -85,6 +85,20 @@ func (service *Service) Grant(ctx context.Context, playerID int64, effectID int3
 	return granted, err
 }
 
+// GrantEnabled atomically adds, activates, and selects one durable effect charge.
+func (service *Service) GrantEnabled(ctx context.Context, playerID int64, effectID int32, durationSeconds int32, source Source) (Effect, error) {
+	var granted Effect
+	err := service.store.WithinTransaction(ctx, func(txCtx context.Context) error {
+		var grantErr error
+		granted, grantErr = service.Grant(txCtx, playerID, effectID, durationSeconds, source)
+		if grantErr != nil {
+			return grantErr
+		}
+		return service.enable(txCtx, playerID, effectID, source)
+	})
+	return granted, err
+}
+
 // Activate starts one effect charge without selecting it.
 func (service *Service) Activate(ctx context.Context, playerID int64, effectID int32) (Effect, error) {
 	if effectID <= 0 {
@@ -94,7 +108,7 @@ func (service *Service) Activate(ctx context.Context, playerID int64, effectID i
 	if err != nil {
 		return Effect{}, err
 	}
-	packet, err := outactivated.Encode(effect.ID)
+	packet, err := outactivated.Encode(effect.ID, wireDuration(effect), effect.Permanent())
 	if err == nil {
 		err = service.send(ctx, playerID, packet)
 	}
@@ -118,20 +132,26 @@ func (service *Service) activate(ctx context.Context, playerID int64, effectID i
 
 // Enable activates and selects one effect, or disables it with id zero.
 func (service *Service) Enable(ctx context.Context, playerID int64, effectID int32) error {
+	return service.enable(ctx, playerID, effectID, SourceAdmin)
+}
+
+// enable activates and selects one effect while preserving its source.
+func (service *Service) enable(ctx context.Context, playerID int64, effectID int32, source Source) error {
 	if effectID < 0 {
 		return ErrInvalidEffect
 	}
 	var selected *int32
+	var activated Effect
 	if effectID > 0 {
 		selected = &effectID
 	}
-	source := SourceAdmin
 	err := service.store.WithinTransaction(ctx, func(txCtx context.Context) error {
 		if effectID > 0 {
 			effect, activateErr := service.activate(txCtx, playerID, effectID)
 			if activateErr != nil {
 				return activateErr
 			}
+			activated = effect
 			if effect.Synthetic {
 				source = SourceRank
 			}
@@ -141,7 +161,7 @@ func (service *Service) Enable(ctx context.Context, playerID int64, effectID int
 		}
 		service.deferProjection(txCtx, func(projectionCtx context.Context) {
 			if effectID > 0 {
-				if packet, encodeErr := outactivated.Encode(effectID); encodeErr == nil {
+				if packet, encodeErr := outactivated.Encode(effectID, wireDuration(activated), activated.Permanent()); encodeErr == nil {
 					_ = service.send(projectionCtx, playerID, packet)
 				}
 			}

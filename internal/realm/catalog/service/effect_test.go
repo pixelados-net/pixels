@@ -14,10 +14,19 @@ type effectManagerForTest struct {
 	playereffect.Manager
 	// grants stores accepted effect ids.
 	grants []int32
-	// enables counts unexpected automatic selections.
+	// enables counts immediate selections.
 	enables int
 	// err fails grants when configured.
 	err error
+}
+
+// GrantEnabled records one catalog effect charge and immediate selection.
+func (manager *effectManagerForTest) GrantEnabled(ctx context.Context, playerID int64, effectID int32, duration int32, source playereffect.Source) (playereffect.Effect, error) {
+	effect, err := manager.Grant(ctx, playerID, effectID, duration, source)
+	if err == nil {
+		manager.enables++
+	}
+	return effect, err
 }
 
 // Grant records one catalog effect charge.
@@ -29,7 +38,7 @@ func (manager *effectManagerForTest) Grant(_ context.Context, playerID int64, ef
 	return playereffect.Effect{PlayerID: playerID, ID: effectID, DurationSeconds: duration, RemainingCharges: 1}, nil
 }
 
-// Enable records an unexpected catalog selection.
+// Enable records one direct catalog selection.
 func (manager *effectManagerForTest) Enable(context.Context, int64, int32) error {
 	manager.enables++
 	return nil
@@ -51,7 +60,7 @@ func TestPurchasePureEffectGrantsNoFurniture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.GrantedItems) != 0 || len(fixture.furniture.calls) != 0 || len(effects.grants) != 1 || effects.grants[0] != effectID || effects.enables != 0 {
+	if len(result.GrantedItems) != 0 || len(fixture.furniture.calls) != 0 || len(effects.grants) != 1 || effects.grants[0] != effectID || effects.enables != 1 {
 		t.Fatalf("result=%#v furniture=%#v effects=%#v", result, fixture.furniture.calls, effects)
 	}
 }
@@ -66,7 +75,7 @@ func TestPurchaseMixedRewardGrantsFurnitureAndEffect(t *testing.T) {
 	fixture.service.WithEffects(effects)
 
 	result, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: item.ID})
-	if err != nil || len(result.GrantedItems) != 1 || len(effects.grants) != 1 || result.GrantedEffectID == nil || *result.GrantedEffectID != effectID {
+	if err != nil || len(result.GrantedItems) != 1 || len(effects.grants) != 1 || effects.enables != 1 || result.GrantedEffectID == nil || *result.GrantedEffectID != effectID {
 		t.Fatalf("result=%#v effects=%#v err=%v", result, effects, err)
 	}
 }

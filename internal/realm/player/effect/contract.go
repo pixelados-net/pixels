@@ -31,6 +31,8 @@ type Manager interface {
 	List(context.Context, int64) ([]Effect, error)
 	// Grant adds one durable charge.
 	Grant(context.Context, int64, int32, int32, Source) (Effect, error)
+	// GrantEnabled atomically adds, activates, and selects one durable charge.
+	GrantEnabled(context.Context, int64, int32, int32, Source) (Effect, error)
 	// Enable activates and selects one effect, or disables it with id zero.
 	Enable(context.Context, int64, int32) error
 	// Activate starts one effect charge without selecting it.

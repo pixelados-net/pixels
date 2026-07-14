@@ -21,7 +21,7 @@ const (
 	// StatusDance stores the persistent avatar dance id.
 	StatusDance = "dance"
 
-	// StatusSign stores the persistent held sign id.
+	// StatusSign stores a held sign only while its one-shot status packet is assembled.
 	StatusSign = "sign"
 )
 

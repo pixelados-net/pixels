@@ -24,6 +24,15 @@ type tileEffectManager struct {
 	enabled []int32
 }
 
+// GrantEnabled records one tile effect grant and immediate selection.
+func (manager *tileEffectManager) GrantEnabled(ctx context.Context, playerID int64, effectID int32, duration int32, source playereffect.Source) (playereffect.Effect, error) {
+	effect, err := manager.Grant(ctx, playerID, effectID, duration, source)
+	if err == nil {
+		manager.enabled = append(manager.enabled, effectID)
+	}
+	return effect, err
+}
+
 // Grant records one tile effect grant.
 func (manager *tileEffectManager) Grant(_ context.Context, playerID int64, effectID int32, duration int32, source playereffect.Source) (playereffect.Effect, error) {
 	manager.granted = append(manager.granted, effectID)

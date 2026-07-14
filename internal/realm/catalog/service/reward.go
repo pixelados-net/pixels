@@ -26,8 +26,8 @@ func (service *Service) finishRewards(ctx context.Context, playerID int64, item 
 	if service.effects == nil {
 		return ErrCommerceUnavailable
 	}
-	if _, err := service.effects.Grant(ctx, playerID, *item.GrantsEffectID, item.GrantsEffectDurationSeconds, playereffect.SourceCatalog); err != nil {
-		return fmt.Errorf("grant catalog effect %d: %w", *item.GrantsEffectID, err)
+	if _, err := service.effects.GrantEnabled(ctx, playerID, *item.GrantsEffectID, item.GrantsEffectDurationSeconds, playereffect.SourceCatalog); err != nil {
+		return fmt.Errorf("grant and enable catalog effect %d: %w", *item.GrantsEffectID, err)
 	}
 	result.GrantedEffectID = item.GrantsEffectID
 

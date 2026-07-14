@@ -73,6 +73,8 @@ type UnitSnapshot struct {
 	Idle bool
 	// IdleSince stores when the current AFK projection began.
 	IdleSince time.Time
+	// ManualIdle reports whether explicit avatar activity must clear the AFK projection.
+	ManualIdle bool
 	// ActiveEffectID stores the selected avatar effect.
 	ActiveEffectID int32
 }

@@ -89,6 +89,9 @@ type Unit struct {
 	// idleSince stores when the current AFK projection began.
 	idleSince time.Time
 
+	// manualIdle reports whether the current AFK projection requires an avatar action to clear it.
+	manualIdle bool
+
 	// activeEffectID stores the selected avatar effect.
 	activeEffectID int32
 }

@@ -22,6 +22,15 @@ type effectManager struct {
 	enabled int32
 }
 
+// GrantEnabled records one furniture effect grant and immediate selection.
+func (manager *effectManager) GrantEnabled(ctx context.Context, playerID int64, effectID int32, duration int32, source playereffect.Source) (playereffect.Effect, error) {
+	effect, err := manager.Grant(ctx, playerID, effectID, duration, source)
+	if err == nil {
+		manager.enabled = effectID
+	}
+	return effect, err
+}
+
 // List returns no fixture effects.
 func (*effectManager) List(context.Context, int64) ([]playereffect.Effect, error) { return nil, nil }
 

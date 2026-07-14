@@ -2,6 +2,7 @@ package effect
 
 import (
 	"context"
+	"math"
 	"time"
 
 	effectenabled "github.com/niflaot/pixels/internal/realm/player/events/effectenabled"
@@ -45,7 +46,7 @@ func (service *Service) SendInventory(ctx context.Context, playerID int64) error
 // sendAdded sends one incremental effect inventory update.
 func (service *Service) sendAdded(ctx context.Context, item Effect) error {
 	record := listEffect(item, service.now())
-	packet, err := outadd.Encode(record.Type, record.SubType, record.Duration, record.InactiveEffectsInInventory, record.SecondsLeftIfActive, record.Permanent)
+	packet, err := outadd.Encode(record.Type, record.SubType, record.Duration, record.Permanent)
 	if err != nil {
 		return err
 	}
@@ -112,8 +113,16 @@ func listEffect(item Effect, now time.Time) outlist.Effect {
 	if item.ActivatedAt != nil && inactive > 0 {
 		inactive--
 	}
-	return outlist.Effect{Type: item.ID, Duration: item.DurationSeconds, InactiveEffectsInInventory: inactive,
+	return outlist.Effect{Type: item.ID, Duration: wireDuration(item), InactiveEffectsInInventory: inactive,
 		SecondsLeftIfActive: item.SecondsLeft(now), Permanent: item.Permanent()}
+}
+
+// wireDuration maps permanent effects to Nitro's non-expiring duration sentinel.
+func wireDuration(item Effect) int32 {
+	if item.Permanent() {
+		return math.MaxInt32
+	}
+	return item.DurationSeconds
 }
 
 // rankEffect resolves one synthetic primary-group effect without persistence.

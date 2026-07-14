@@ -26,8 +26,12 @@ func TestPostureMovementAndIdleClearTransientState(t *testing.T) {
 	if !roomUnit.Idle() || !roomUnit.IdleSince().Equal(now) {
 		t.Fatalf("unexpected idle projection idle=%t since=%s", roomUnit.Idle(), roomUnit.IdleSince())
 	}
+	roomUnit.SetManualIdleAt(true, now)
+	if !roomUnit.Idle() || !roomUnit.ManualIdle() {
+		t.Fatalf("unexpected manual idle projection idle=%t manual=%t", roomUnit.Idle(), roomUnit.ManualIdle())
+	}
 	roomUnit.SetIdleAt(false, now.Add(time.Second))
-	if roomUnit.Idle() || !roomUnit.IdleSince().IsZero() {
+	if roomUnit.Idle() || roomUnit.ManualIdle() || !roomUnit.IdleSince().IsZero() {
 		t.Fatalf("unexpected cleared idle projection idle=%t since=%s", roomUnit.Idle(), roomUnit.IdleSince())
 	}
 }

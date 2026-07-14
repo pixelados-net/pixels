@@ -125,7 +125,7 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
 	}, deps.Log))
 	movementhandler.RegisterWalk(handlers.Inbound, movementhandler.NewWalk(walkcmd.Handler{
-		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
+		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections, Actions: deps.Actions,
 	}, deps.Log))
 	actionhandler.Register(handlers.Inbound, actionhandler.New(actioncmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Actions: deps.Actions,

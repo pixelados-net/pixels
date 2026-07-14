@@ -312,16 +312,23 @@ minimum manual checks expected when touching it.
 - Owns `internal/realm/room/world/action`, focused room action commands and
   handlers, `internal/realm/player/effect`, effect persistence, effect packets,
   effect-granting furniture, catalog effect rewards, and player effect routes.
-- Provides persistent dances and signs, transient gestures, free-floor posture,
+- Provides persistent dances, transient signs and gestures, free-floor posture,
   manual and inactivity-driven idle projection, durable effect stacks capped at
   99 charges, one visible effect slot, active expiration, and synthetic primary
   permission-group effects.
+- Replacing a deliberate avatar action clears the prior projection, waits the
+  configured short transition delay, and then starts the replacement. Movement
+  cancellation remains immediate and does not allocate timers on the walk path.
 - Effect activation starts one charge once; selecting the same active effect
   must never restart its duration. The single global expiry query consumes at
   most one charge per selected row and clears a selected expired effect.
 - Effect-giver furniture chooses from its configured pool and effect tiles use
-  the live player's gender. Both grant and select immediately; catalog rewards
-  grant inside the purchase transaction but never select automatically.
+  the live player's gender. Furniture and catalog rewards grant, activate, and
+  select immediately; catalog changes remain inside the purchase transaction.
+- Administrative HTTP grants select by default so they work without Nitro's
+  missing effects panel; callers may send `enable: false` for inventory-only
+  delivery. Grant-and-enable is atomic and projects inventory, activation,
+  selection, and current-room state only after commit.
 - Pure-effect catalog offers use Nitro product type `e` and must not resolve
   furniture definition zero. Mixed offers grant their furniture and effect in
   the same transaction.
@@ -334,15 +341,16 @@ minimum manual checks expected when touching it.
     effect fields, and catalog effect reward fields.
   - With two clients in one room, test dance `0` through `5`, wave, kiss, laugh,
     sleep, sit, signs `0` through `18`, floor sit/stand, manual AFK, automatic
-    AFK, movement cancellation, and late-entry dance/sign/idle projection.
+    AFK, movement cancellation, and late-entry dance/idle projection.
   - Click the seeded effect giver while adjacent and from far away, walk male
     and female avatars over the seeded effect tile, and verify immediate room
     projection plus inventory charge changes.
   - Buy permanent, one-day, HC-only, and mixed effect offers; verify club gates,
-    balances, no furniture for pure effects, no automatic selection, activation,
-    switching, disabling with effect zero, expiry, reconnect, and charge cap.
+    balances, no furniture for pure effects, automatic selection, switching,
+    disabling with effect zero, expiry, reconnect, and charge cap.
   - Open `/docs`, grant and revoke an effect through `Admin Players`, and verify
-    online incremental packets and offline persistence.
+    default immediate selection, explicit `enable: false`, online incremental
+    packets, current-room projection, and offline persistence.
 
 ### FEATURE: Navigator Realm
 

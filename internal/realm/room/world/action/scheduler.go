@@ -81,6 +81,9 @@ func (scheduler *Scheduler) Sweep(ctx context.Context, now time.Time) error {
 // idleState resolves timeout entry and post-idle activity exit.
 func idleState(unit roomlive.UnitSnapshot, lastActivity time.Time, now time.Time, timeout time.Duration) bool {
 	if unit.Idle {
+		if unit.ManualIdle {
+			return true
+		}
 		return !lastActivity.After(unit.IdleSince)
 	}
 	return !lastActivity.Add(timeout).After(now)

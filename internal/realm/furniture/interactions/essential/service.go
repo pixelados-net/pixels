@@ -136,10 +136,7 @@ func (service *Service) useEffectGiver(ctx context.Context, request Request) err
 		return nil
 	}
 	effectID := pool[service.random.IntN(len(pool))]
-	if _, err := service.effects.Grant(ctx, request.PlayerID, effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectGiver); err != nil {
-		return err
-	}
-	if err := service.effects.Enable(ctx, request.PlayerID, effectID); err != nil {
+	if _, err := service.effects.GrantEnabled(ctx, request.PlayerID, effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectGiver); err != nil {
 		return err
 	}
 	if err := service.publishUsed(ctx, request); err != nil {

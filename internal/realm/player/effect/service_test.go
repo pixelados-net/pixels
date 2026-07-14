@@ -89,11 +89,11 @@ func (store *memoryStore) Expire(context.Context, time.Time, int32) ([]Expiratio
 func TestGrantEnableAndRevoke(t *testing.T) {
 	store := newMemoryStore()
 	service := New(store, nil, nil, nil, nil, nil)
-	granted, err := service.Grant(context.Background(), 7, 101, 60, SourceCatalog)
+	granted, err := service.GrantEnabled(context.Background(), 7, 101, 60, SourceCatalog)
 	if err != nil || granted.RemainingCharges != 1 {
 		t.Fatalf("granted=%#v err=%v", granted, err)
 	}
-	if err = service.Enable(context.Background(), 7, 101); err != nil || store.active[7] == nil || *store.active[7] != 101 {
+	if store.active[7] == nil || *store.active[7] != 101 || store.effects[7][101].ActivatedAt == nil {
 		t.Fatalf("active=%v err=%v", store.active[7], err)
 	}
 	if err = service.Revoke(context.Background(), 7, 101); err != nil || store.active[7] != nil {

@@ -29,8 +29,9 @@ func TestIdleState(t *testing.T) {
 	}{
 		{name: "active", last: last, now: last.Add(timeout - time.Second)},
 		{name: "timed out", last: last, now: last.Add(timeout), want: true},
-		{name: "manual idle remains", unit: roomlive.UnitSnapshot{Idle: true, IdleSince: idleSince}, last: idleSince.Add(-time.Nanosecond), now: idleSince.Add(time.Second), want: true},
+		{name: "automatic idle remains", unit: roomlive.UnitSnapshot{Idle: true, IdleSince: idleSince}, last: idleSince.Add(-time.Nanosecond), now: idleSince.Add(time.Second), want: true},
 		{name: "new input exits", unit: roomlive.UnitSnapshot{Idle: true, IdleSince: idleSince}, last: idleSince.Add(time.Nanosecond), now: idleSince.Add(time.Second)},
+		{name: "manual ignores unrelated input", unit: roomlive.UnitSnapshot{Idle: true, IdleSince: idleSince, ManualIdle: true}, last: idleSince.Add(time.Second), now: idleSince.Add(2 * time.Second), want: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -71,7 +72,7 @@ func TestSchedulerSweepMarksAndClearsIdle(t *testing.T) {
 	if _, err = runtime.Join(context.Background(), 9, roomlive.Occupant{PlayerID: 7, Username: "demo", ConnectionID: "action", ConnectionKind: "websocket"}); err != nil {
 		t.Fatal(err)
 	}
-	scheduler := NewScheduler(Config{IdleTimeout: 5 * time.Minute}, runtime, connections, New(nil, nil), zap.NewNop())
+	scheduler := NewScheduler(Config{IdleTimeout: 5 * time.Minute}, runtime, connections, New(Config{TransitionDelay: time.Nanosecond}, nil, nil), zap.NewNop())
 	if err = scheduler.Sweep(context.Background(), time.Unix(400, 0)); err != nil {
 		t.Fatal(err)
 	}
@@ -97,23 +98,24 @@ func TestSchedulerSweepMarksAndClearsIdle(t *testing.T) {
 // TestConfigDefaultsAndEnvironment verifies bounded idle configuration.
 func TestConfigDefaultsAndEnvironment(t *testing.T) {
 	defaults := (Config{}).Normalize()
-	if defaults.IdleTimeout != 5*time.Minute || defaults.SweepInterval != time.Second {
+	if defaults.IdleTimeout != 5*time.Minute || defaults.SweepInterval != time.Second || defaults.TransitionDelay != 100*time.Millisecond {
 		t.Fatalf("unexpected defaults %#v", defaults)
 	}
 	t.Setenv("PIXELS_ROOM_IDLE_TIMEOUT", "7m")
 	t.Setenv("PIXELS_ROOM_IDLE_SWEEP_INTERVAL", "2s")
+	t.Setenv("PIXELS_ROOM_ACTION_TRANSITION_DELAY", "75ms")
 	configured, err := LoadConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configured.IdleTimeout != 7*time.Minute || configured.SweepInterval != 2*time.Second {
+	if configured.IdleTimeout != 7*time.Minute || configured.SweepInterval != 2*time.Second || configured.TransitionDelay != 75*time.Millisecond {
 		t.Fatalf("unexpected environment config %#v", configured)
 	}
 }
 
 // TestSchedulerLifecycle verifies loop startup and idempotent shutdown.
 func TestSchedulerLifecycle(t *testing.T) {
-	scheduler := NewScheduler(Config{SweepInterval: time.Millisecond}, roomlive.NewRegistry(nil), netconn.NewRegistry(), New(nil, nil), zap.NewNop())
+	scheduler := NewScheduler(Config{SweepInterval: time.Millisecond}, roomlive.NewRegistry(nil), netconn.NewRegistry(), New(Config{TransitionDelay: time.Nanosecond}, nil, nil), zap.NewNop())
 	lifecycle := fxtest.NewLifecycle(t)
 	RegisterScheduler(lifecycle, scheduler)
 	lifecycle.RequireStart().RequireStop()

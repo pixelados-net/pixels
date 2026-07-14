@@ -10,7 +10,6 @@ import (
 	roomsession "github.com/niflaot/pixels/internal/realm/room/runtime/commands/session"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	actionservice "github.com/niflaot/pixels/internal/realm/room/world/action"
-	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
 )
@@ -26,7 +25,7 @@ const (
 	KindDance Kind = iota + 1
 	// KindGesture emits a transient gesture.
 	KindGesture
-	// KindSign emits and stores a held sign.
+	// KindSign emits a transient held sign.
 	KindSign
 	// KindPosture changes free-standing posture.
 	KindPosture
@@ -85,11 +84,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		return handler.Actions.Dance(ctx, active, player.ID(), value)
 	case KindGesture:
 		if value == 5 {
-			unit, ok := active.Unit(player.ID())
-			if !ok {
-				return nil
-			}
-			return handler.Actions.SetIdle(ctx, active, player.ID(), !unit.Idle)
+			return handler.Actions.SetIdle(ctx, active, player.ID(), true)
 		}
 		if !validGesture(value) {
 			return nil
@@ -99,8 +94,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		if value < 0 || value > 18 {
 			return nil
 		}
-		active.SetUnitStatus(player.ID(), worldunit.StatusSign, stringValue(value))
-		return handler.Actions.Express(ctx, active, player.ID(), value)
+		return handler.Actions.Sign(ctx, active, player.ID(), value)
 	case KindPosture:
 		if value != 1 && value != 2 {
 			return nil
@@ -114,12 +108,4 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 // validGesture reports supported Nitro gesture ids.
 func validGesture(value int32) bool {
 	return value == 1 || value == 2 || value == 3 || value == 6 || value == 7
-}
-
-// stringValue formats a small protocol id without allocation-heavy formatting.
-func stringValue(value int32) string {
-	if value < 10 {
-		return string(rune('0' + value))
-	}
-	return string([]byte{byte('0' + value/10), byte('0' + value%10)})
 }

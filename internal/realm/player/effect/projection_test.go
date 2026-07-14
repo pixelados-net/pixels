@@ -2,6 +2,7 @@ package effect
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	roomout "github.com/niflaot/pixels/networking/outbound/room/entities/effect"
+	outactivated "github.com/niflaot/pixels/networking/outbound/user/effect/activated"
+	outadd "github.com/niflaot/pixels/networking/outbound/user/effect/add"
+	outselected "github.com/niflaot/pixels/networking/outbound/user/effect/selected"
 )
 
 // TestInventoryAndSelectionProjection verifies owner and room packet delivery.
@@ -21,16 +26,22 @@ func TestInventoryAndSelectionProjection(t *testing.T) {
 	rooms, active := effectRoom(t)
 	service := New(store, nil, players, connections, rooms, nil)
 	service.now = func() time.Time { return time.Unix(100, 0) }
-	if _, err := service.Grant(context.Background(), 7, 101, 60, SourceAdmin); err != nil {
+	if _, err := service.GrantEnabled(context.Background(), 7, 101, 60, SourceAdmin); err != nil {
 		t.Fatal(err)
 	}
-	if err := service.Enable(context.Background(), 7, 101); err != nil {
-		t.Fatal(err)
+	wantHeaders := []uint16{outadd.Header, outactivated.Header, outselected.Header, roomout.Header}
+	if len(*packets) != len(wantHeaders) {
+		t.Fatalf("expected grant-and-enable packets %v, got %#v", wantHeaders, *packets)
+	}
+	for index, header := range wantHeaders {
+		if (*packets)[index].Header != header {
+			t.Fatalf("packet %d: expected header %d, got %d", index, header, (*packets)[index].Header)
+		}
 	}
 	if err := service.SendInventory(context.Background(), 7); err != nil {
 		t.Fatal(err)
 	}
-	if len(*packets) < 5 {
+	if len(*packets) < 6 {
 		t.Fatalf("expected inventory, activation, selection, and room packets, got %d", len(*packets))
 	}
 	player, _ := players.Find(7)
@@ -56,7 +67,7 @@ func TestProjectionHelpersVerifyProtocolFields(t *testing.T) {
 		t.Fatalf("unexpected record %#v", record)
 	}
 	permanent := listEffect(Effect{ID: 8, RemainingCharges: 1}, now)
-	if !permanent.Permanent || permanent.InactiveEffectsInInventory != 1 {
+	if !permanent.Permanent || permanent.Duration != math.MaxInt32 || permanent.InactiveEffectsInInventory != 1 {
 		t.Fatalf("unexpected permanent record %#v", permanent)
 	}
 	service := New(newMemoryStore(), nil, nil, nil, nil, nil)

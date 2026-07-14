@@ -10,10 +10,83 @@ import (
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
 	roomoccupancy "github.com/niflaot/pixels/internal/realm/room/runtime/events/occupancychanged"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	"github.com/niflaot/pixels/pkg/bus"
 	"go.uber.org/fx/fxtest"
 )
+
+// noopMovementPublisher accepts benchmark events without retaining them.
+type noopMovementPublisher struct{}
+
+// Publish accepts one benchmark event.
+func (noopMovementPublisher) Publish(context.Context, bus.Event) error { return nil }
+
+// TestPublishFurnitureStepsIgnoresSameItemFootprint verifies multi-tile effects do not restart per step.
+func TestPublishFurnitureStepsIgnoresSameItemFootprint(t *testing.T) {
+	active, err := live.NewRoom(live.Snapshot{ID: 9, MaxUsers: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	roomGrid, err := grid.Parse("000", grid.WithDoor(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	item := worldfurniture.Item{ID: 12, Point: grid.MustPoint(0, 0), Definition: worldfurniture.Definition{
+		InteractionType: "effect_tile", Width: 2, Length: 1, AllowWalk: true,
+	}}
+	if err = active.LoadWorld(live.WorldConfig{Grid: roomGrid, Furniture: []worldfurniture.Item{item}, Door: worldpath.Position{Point: grid.MustPoint(0, 0)}}); err != nil {
+		t.Fatal(err)
+	}
+	events := bus.New()
+	count := 0
+	for _, name := range []bus.Name{"furniture.walked_on", "furniture.walked_off"} {
+		if _, err = events.Subscribe(name, bus.PriorityNormal, func(context.Context, bus.Event) error { count++; return nil }); err != nil {
+			t.Fatal(err)
+		}
+	}
+	movement := live.Movement{PlayerID: 7, Unit: live.UnitSnapshot{
+		Previous: worldpath.Position{Point: grid.MustPoint(0, 0)}, Position: worldpath.Position{Point: grid.MustPoint(1, 0)}, BodyRotation: worldunit.RotationSouth,
+	}}
+	if err = publishFurnitureSteps(context.Background(), events, active, movement); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("expected no same-item transition events, got %d", count)
+	}
+}
+
+// BenchmarkPublishFurnitureStepsSameItem measures the multi-tile no-transition movement path.
+func BenchmarkPublishFurnitureStepsSameItem(b *testing.B) {
+	active, err := live.NewRoom(live.Snapshot{ID: 9, MaxUsers: 5})
+	if err != nil {
+		b.Fatal(err)
+	}
+	roomGrid, err := grid.Parse("000", grid.WithDoor(0, 0))
+	if err != nil {
+		b.Fatal(err)
+	}
+	item := worldfurniture.Item{ID: 12, Point: grid.MustPoint(0, 0), Definition: worldfurniture.Definition{
+		InteractionType: "effect_tile", Width: 2, Length: 1, AllowWalk: true,
+	}}
+	if err = active.LoadWorld(live.WorldConfig{Grid: roomGrid, Furniture: []worldfurniture.Item{item}, Door: worldpath.Position{Point: grid.MustPoint(0, 0)}}); err != nil {
+		b.Fatal(err)
+	}
+	movement := live.Movement{PlayerID: 7, Unit: live.UnitSnapshot{
+		Previous: worldpath.Position{Point: grid.MustPoint(0, 0)}, Position: worldpath.Position{Point: grid.MustPoint(1, 0)},
+	}}
+	ctx := context.Background()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		if err = publishFurnitureSteps(ctx, noopMovementPublisher{}, active, movement); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
 
 // TestMovementPublisherCompletesDoorExitAfterMovement verifies tick exits use standard teardown.
 func TestMovementPublisherCompletesDoorExitAfterMovement(t *testing.T) {

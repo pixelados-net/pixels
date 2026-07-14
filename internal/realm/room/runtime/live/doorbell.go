@@ -108,6 +108,26 @@ func (room *Room) SetUnitIdleAt(playerID int64, idle bool, at time.Time) (UnitSn
 	return room.world.SetUnitIdleAt(playerID, idle, at)
 }
 
+// SetUnitManualIdleAt replaces one unit's manual AFK projection at one deterministic instant.
+func (room *Room) SetUnitManualIdleAt(playerID int64, idle bool, at time.Time) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.SetUnitManualIdleAt(playerID, idle, at)
+}
+
+// PulseUnitStatus snapshots one temporary status without retaining it in the live room.
+func (room *Room) PulseUnitStatus(playerID int64, key string, value string) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.PulseUnitStatus(playerID, key, value)
+}
+
 // SetUnitPosture changes one unit's free-standing posture.
 func (room *Room) SetUnitPosture(playerID int64, sitting bool) (UnitSnapshot, bool) {
 	room.mutex.Lock()

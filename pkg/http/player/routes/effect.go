@@ -15,6 +15,8 @@ type EffectRequest struct {
 	EffectID int32 `json:"effectId"`
 	// DurationSeconds stores one charge duration; zero means permanent.
 	DurationSeconds int32 `json:"durationSeconds"`
+	// Enable selects the granted effect immediately and defaults to true.
+	Enable *bool `json:"enable"`
 }
 
 // EffectResponse contains the resulting effect stack.
@@ -27,6 +29,8 @@ type EffectResponse struct {
 	DurationSeconds int32 `json:"durationSeconds"`
 	// RemainingCharges stores the stack count.
 	RemainingCharges int32 `json:"remainingCharges"`
+	// Enabled reports whether the effect was selected immediately.
+	Enabled bool `json:"enabled"`
 }
 
 // grantEffect grants one effect charge to a player.
@@ -42,11 +46,17 @@ func (handler handler) grantEffect(ctx *fiber.Ctx) error {
 	if handler.effects == nil {
 		return fiber.NewError(fiber.StatusServiceUnavailable, "player effects are unavailable")
 	}
-	effect, err := handler.effects.Grant(ctx.Context(), playerID, request.EffectID, request.DurationSeconds, playereffect.SourceAdmin)
+	enabled := request.Enable == nil || *request.Enable
+	var effect playereffect.Effect
+	if enabled {
+		effect, err = handler.effects.GrantEnabled(ctx.Context(), playerID, request.EffectID, request.DurationSeconds, playereffect.SourceAdmin)
+	} else {
+		effect, err = handler.effects.Grant(ctx.Context(), playerID, request.EffectID, request.DurationSeconds, playereffect.SourceAdmin)
+	}
 	if err != nil {
 		return effectError(err)
 	}
-	return ctx.JSON(EffectResponse{PlayerID: effect.PlayerID, EffectID: effect.ID, DurationSeconds: effect.DurationSeconds, RemainingCharges: effect.RemainingCharges})
+	return ctx.JSON(EffectResponse{PlayerID: effect.PlayerID, EffectID: effect.ID, DurationSeconds: effect.DurationSeconds, RemainingCharges: effect.RemainingCharges, Enabled: enabled})
 }
 
 // revokeEffect removes one player's durable effect stack.

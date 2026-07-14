@@ -38,15 +38,15 @@ func TestHandleCoordinatesSupportedActions(t *testing.T) {
 		}
 	}
 	unit, _ := active.Unit(7)
-	if !unit.Idle || commandStatus(unit, worldunit.StatusSign) != "18" || commandStatus(unit, worldunit.StatusSit) == "" {
+	if unit.Idle || commandStatus(unit, worldunit.StatusSign) != "" || commandStatus(unit, worldunit.StatusSit) == "" {
 		t.Fatalf("unexpected final unit %#v", unit)
 	}
 	if err := handler.Handle(ctx, command.Envelope[Command]{Command: Command{Handler: connection, Kind: KindGesture, Value: 5}}); err != nil {
 		t.Fatal(err)
 	}
 	unit, _ = active.Unit(7)
-	if unit.Idle {
-		t.Fatal("expected second manual idle action to resume")
+	if !unit.Idle || !unit.ManualIdle {
+		t.Fatal("expected manual idle action to remain active")
 	}
 }
 
@@ -98,13 +98,10 @@ func TestHandleValidatesSessionRoomAndUnit(t *testing.T) {
 	}
 }
 
-// TestCommandHelpers verifies command identity and compact sign formatting.
+// TestCommandHelpers verifies command identity and gesture validation.
 func TestCommandHelpers(t *testing.T) {
 	if (Command{}).CommandName() != Name || !validGesture(7) || validGesture(8) {
 		t.Fatal("unexpected command helpers")
-	}
-	if stringValue(7) != "7" || stringValue(18) != "18" {
-		t.Fatal("unexpected compact values")
 	}
 }
 
@@ -142,7 +139,7 @@ func commandFixture(t testing.TB) (Handler, *playerlive.Player, *roomlive.Room) 
 	if _, err = runtime.Join(context.Background(), 9, roomlive.Occupant{PlayerID: 7, Username: "demo", ConnectionID: "conn", ConnectionKind: "websocket"}); err != nil {
 		t.Fatal(err)
 	}
-	return Handler{Players: players, Bindings: bindings, Runtime: runtime, Actions: actionservice.New(nil, nil)}, player, active
+	return Handler{Players: players, Bindings: bindings, Runtime: runtime, Actions: actionservice.New(actionservice.Config{TransitionDelay: time.Nanosecond}, nil, nil)}, player, active
 }
 
 // commandConnection creates one matching packet context.

@@ -36,11 +36,25 @@ func (world *World) SetUnitIdle(playerID int64, idle bool) (UnitSnapshot, bool) 
 
 // SetUnitIdleAt replaces one unit's AFK projection at one deterministic instant.
 func (world *World) SetUnitIdleAt(playerID int64, idle bool, at time.Time) (UnitSnapshot, bool) {
+	return world.setUnitIdleAt(playerID, idle, false, at)
+}
+
+// SetUnitManualIdleAt replaces one unit's manual AFK projection at one deterministic instant.
+func (world *World) SetUnitManualIdleAt(playerID int64, idle bool, at time.Time) (UnitSnapshot, bool) {
+	return world.setUnitIdleAt(playerID, idle, idle, at)
+}
+
+// setUnitIdleAt replaces one unit's AFK projection and its source.
+func (world *World) setUnitIdleAt(playerID int64, idle bool, manual bool, at time.Time) (UnitSnapshot, bool) {
 	roomUnit, found := world.units[playerID]
 	if !found {
 		return UnitSnapshot{}, false
 	}
-	roomUnit.SetIdleAt(idle, at)
+	if manual {
+		roomUnit.SetManualIdleAt(idle, at)
+	} else {
+		roomUnit.SetIdleAt(idle, at)
+	}
 	if idle {
 		roomUnit.ClearStatus(worldunit.StatusDance)
 	}

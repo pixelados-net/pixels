@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	actionservice "github.com/niflaot/pixels/internal/realm/room/world/action"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -33,6 +34,27 @@ func TestHandleMovesPlayer(t *testing.T) {
 	room, _ := handler.Runtime.Find(9)
 	if units := room.Units(); len(units) != 1 || !units[0].Moving {
 		t.Fatalf("expected moving unit %#v", units)
+	}
+}
+
+// TestHandleWalkClearsManualIdleAndDance verifies accepted movement cancels incompatible actions.
+func TestHandleWalkClearsManualIdleAndDance(t *testing.T) {
+	handler, player := handlerForTest(t)
+	if err := player.EnterRoom(9); err != nil {
+		t.Fatal(err)
+	}
+	room, _ := handler.Runtime.Find(9)
+	room.SetUnitManualIdleAt(7, true, time.Unix(100, 0))
+	room.SetUnitDance(7, 3)
+	err := handler.Handle(context.Background(), command.Envelope[Command]{
+		Command: Command{Handler: connectionForTest(), X: 1, Y: 0},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	unit, _ := room.Unit(7)
+	if unit.Idle || unit.ManualIdle || commandHasStatus(unit, worldunit.StatusDance) {
+		t.Fatalf("expected movement to resume unit %#v", unit)
 	}
 }
 
@@ -179,7 +201,7 @@ func handlerForTest(t *testing.T) (Handler, *playerlive.Player) {
 		t.Fatalf("join runtime: %v", err)
 	}
 
-	return Handler{Players: players, Bindings: bindings, Runtime: runtime}, player
+	return Handler{Players: players, Bindings: bindings, Runtime: runtime, Actions: actionservice.New(actionservice.Config{TransitionDelay: time.Nanosecond}, nil, nil)}, player
 }
 
 // connectionForTest creates a connection context.
@@ -221,4 +243,14 @@ func registeredConnectionForWalkTest(t *testing.T, connections *netconn.Registry
 	}
 
 	return &sent
+}
+
+// commandHasStatus reports whether one walk fixture snapshot contains a status.
+func commandHasStatus(unit roomlive.UnitSnapshot, key string) bool {
+	for _, status := range unit.Statuses {
+		if status.Key == key {
+			return true
+		}
+	}
+	return false
 }

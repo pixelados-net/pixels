@@ -21,6 +21,8 @@ type AdminPlayerEffectRequest struct {
 	EffectID int32 `json:"effectId" required:"true" minimum:"1"`
 	// DurationSeconds stores one charge duration; zero means permanent.
 	DurationSeconds int32 `json:"durationSeconds" minimum:"0"`
+	// Enable selects the granted effect immediately and defaults to true.
+	Enable *bool `json:"enable,omitempty" default:"true"`
 }
 
 // AdminPlayerEffectDeleteRequest revokes one player effect stack.
@@ -42,6 +44,8 @@ type AdminPlayerEffectResponse struct {
 	DurationSeconds int32 `json:"durationSeconds" required:"true"`
 	// RemainingCharges stores the stack count.
 	RemainingCharges int32 `json:"remainingCharges" required:"true"`
+	// Enabled reports whether the effect was selected immediately.
+	Enabled bool `json:"enabled" required:"true"`
 }
 
 // AdminPlayerIDRequest documents one player id lookup.
@@ -156,7 +160,7 @@ func adminPlayerOperations() []operation {
 		adminPlayer(http.MethodGet, "/api/admin/players/{id}", "Read player profile", &AdminPlayerIDRequest{}, &AdminPlayerResponse{}, http.StatusOK),
 		adminPlayer(http.MethodPatch, "/api/admin/players/{id}", "Update player profile", &AdminPlayerUpdateRequest{}, &AdminPlayerResponse{}, http.StatusOK),
 		adminPlayer(http.MethodDelete, "/api/admin/players/{id}", "Soft delete player", &AdminPlayerPathRequest{}, nil, http.StatusNoContent),
-		adminPlayer(http.MethodPost, "/api/admin/players/{playerId}/effects", "Grant player effect", &AdminPlayerEffectRequest{}, &AdminPlayerEffectResponse{}, http.StatusOK),
+		adminPlayer(http.MethodPost, "/api/admin/players/{playerId}/effects", "Grant and optionally enable player effect", &AdminPlayerEffectRequest{}, &AdminPlayerEffectResponse{}, http.StatusOK),
 		adminPlayer(http.MethodDelete, "/api/admin/players/{playerId}/effects/{effectId}", "Revoke player effect", &AdminPlayerEffectDeleteRequest{}, nil, http.StatusNoContent),
 	}
 }

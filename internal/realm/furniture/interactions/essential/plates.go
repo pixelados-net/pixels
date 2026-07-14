@@ -54,10 +54,8 @@ func (service *Service) giveTileEffect(ctx context.Context, playerID int64, item
 	if effectID == nil {
 		return nil
 	}
-	if _, err := service.effects.Grant(ctx, playerID, *effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectTile); err != nil {
-		return err
-	}
-	return service.effects.Enable(ctx, playerID, *effectID)
+	_, err := service.effects.GrantEnabled(ctx, playerID, *effectID, effectFurnitureDurationSeconds, playereffect.SourceEffectTile)
+	return err
 }
 
 // walkedOff handles occupancy-driven interaction exit.
