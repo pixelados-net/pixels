@@ -8,8 +8,14 @@ Upon already coded things.
   already sends the full and incremental effect inventory and handles Nitro's
   activation, selection, and disable composers, but this Nitro React checkout
   has no component that consumes those events or sends those composers. The UI
-  must show charges and remaining time, activate an owned effect, select exactly
-  one visible effect, and disable it with effect id zero.
+  must render cached effect thumbnails, consume the Pixels external-text source,
+  show permanent state, charge count, duration, and remaining active time,
+  activate an owned charge with composer `2959`, select exactly one visible
+  effect with composer `1752`, and disable it with effect id zero. Once this
+  panel is usable, restore Arcturus-compatible catalog behavior: purchases add
+  effects without activating or selecting them; effect-giver and effect-tile
+  furniture may continue granting and selecting immediately. Make the admin API
+  grant-only by default while retaining explicit `enable: true` support.
 - Complete room favorites. Persistence, initialization, packet definitions, and
   `navigator.favorite_changed` already exist, but commands, handlers, room
   validation, the favorite limit, packet `2524` projection, and handler
