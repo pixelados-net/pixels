@@ -39,6 +39,21 @@ Upon already coded things.
   integration because Nitro's native room-settings packet has no roller-speed
   field. Do not treat `PIXELS_ROLLER_HOOK_DELAY` as roller cadence and do not add
   a global speed override unless its precedence over per-room values is defined.
+- MODERATION/NITRO IMPROVEMENT: Finish the Guardian chat-review integration
+  before treating it as manually testable. Nitro React currently has no views or
+  message-event listeners for review offers, acceptance, anonymized transcripts,
+  voting status, votes, results, or detach behavior even though nitro-renderer
+  exposes the corresponding composers and parsers. Reconcile packet `1922` field
+  order between `GuideSessionOnDutyUpdateMessageComposer` and Pixels' guide-duty
+  decoder, and correct packets `735`, `143`, `1829`, and `3276` to match Nitro's
+  timeout, status-array, winning-vote, own-vote, and final-status wire shapes.
+  Add exact wire tests on both sides and a complete UI flow. Acceptance must work
+  with `PIXELS_GUARDIAN_COUNT=1` using Bob as reporter, Alice as the reported
+  player, and Carol as the sole on-duty guardian; then repeat with the default
+  count of three using Demo, Alice, and Carol as reviewers, Bob as reporter, and
+  a fifth non-reviewer player as the reported target. Verify accept, reject,
+  timeout, disconnect, anonymization, strict-majority sanction, mixed-result
+  staff escalation, Redis ignored-offer exclusion, and durable ticket/vote audit.
 
 ## Store Boundaries
 
