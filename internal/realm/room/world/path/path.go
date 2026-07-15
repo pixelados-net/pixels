@@ -104,8 +104,8 @@ type Rules struct {
 // DefaultRules returns conservative room movement rules.
 func DefaultRules() Rules {
 	return Rules{
-		MaxStepUp:   1,
-		MaxStepDown: 1,
+		MaxStepUp:   6,
+		MaxStepDown: 6,
 		MaxVisited:  4096,
 	}
 }

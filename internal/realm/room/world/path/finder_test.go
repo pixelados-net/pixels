@@ -78,8 +78,8 @@ func TestFinderHonorsStepUp(t *testing.T) {
 		t.Fatalf("find stepped path: %v", err)
 	}
 	assertSteps(t, roomPath, []Position{
-		{Point: grid.MustPoint(1, 0), Z: 1},
-		{Point: grid.MustPoint(2, 0), Z: 2},
+		{Point: grid.MustPoint(1, 0), Z: grid.HeightFromInt(1)},
+		{Point: grid.MustPoint(2, 0), Z: grid.HeightFromInt(2)},
 	})
 
 	finder = finderForTest(t, "02", nil, DefaultRules())
@@ -87,6 +87,19 @@ func TestFinderHonorsStepUp(t *testing.T) {
 	if !errors.Is(err, ErrNoPath) {
 		t.Fatalf("expected no path for tall step, got %v", err)
 	}
+}
+
+// TestFinderAllowsEscapeFromBlockedStart verifies furniture changes cannot permanently freeze a unit.
+func TestFinderAllowsEscapeFromBlockedStart(t *testing.T) {
+	start := grid.MustPoint(0, 0)
+	fixture := fixtureForTest(t, surface.FixtureParams{Point: start, Z: 0, Bottom: 0, HasBottom: true, Top: grid.HeightFromInt(1), State: surface.StateBlocked})
+	resolver := resolverForTest(t, "00", []surface.Fixture{fixture})
+	finder := NewFinder(resolver, DefaultRules())
+	roomPath, err := finder.Find(Position{Point: start, Z: 0}, grid.MustPoint(1, 0))
+	if err != nil {
+		t.Fatalf("escape blocked start: %v", err)
+	}
+	assertSteps(t, roomPath, []Position{{Point: grid.MustPoint(1, 0), Z: 0}})
 }
 
 // TestFinderHonorsFalling verifies downward step rules.

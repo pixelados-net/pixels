@@ -35,7 +35,7 @@ func TestEncodeRejectsInvalidHeight(t *testing.T) {
 	roomGrid := Grid{
 		width:   1,
 		height:  1,
-		heights: []Height{36},
+		heights: []Height{HeightFromInt(36)},
 		flags:   []TileFlag{0},
 	}
 

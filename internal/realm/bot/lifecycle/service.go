@@ -98,7 +98,7 @@ func (service *Service) Place(ctx context.Context, params PlaceParams) (botrecor
 	if err != nil {
 		return botrecord.Bot{}, botrecord.ErrTileNotFree
 	}
-	placed, found, err := service.store.Place(ctx, bot.ID, bot.OwnerPlayerID, params.RoomID, int(params.Point.X), int(params.Point.Y), float64(unit.Position.Z), int16(unit.BodyRotation))
+	placed, found, err := service.store.Place(ctx, bot.ID, bot.OwnerPlayerID, params.RoomID, int(params.Point.X), int(params.Point.Y), unit.Position.Z.Units(), int16(unit.BodyRotation))
 	if err != nil || !found {
 		active.RemoveEntity(botcore.EntityKey(bot.ID))
 		return botrecord.Bot{}, firstError(err, botrecord.ErrConflict)

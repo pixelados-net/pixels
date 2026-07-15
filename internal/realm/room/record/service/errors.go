@@ -25,6 +25,9 @@ var (
 	// ErrInvalidTradeMode reports a malformed trade mode.
 	ErrInvalidTradeMode = errors.New("invalid room trade mode")
 
+	// ErrInvalidRollerSpeed reports an unsupported roller cycle interval.
+	ErrInvalidRollerSpeed = errors.New("invalid room roller speed")
+
 	// ErrRoomNotFound reports a missing room.
 	ErrRoomNotFound = errors.New("room not found")
 

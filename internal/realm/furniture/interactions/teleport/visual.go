@@ -2,7 +2,6 @@ package teleport
 
 import (
 	"context"
-	"strconv"
 
 	teleportcompleted "github.com/niflaot/pixels/internal/realm/furniture/events/teleportcompleted"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/broadcast"
@@ -148,7 +147,7 @@ func opposite(rotation worldunit.Rotation) worldunit.Rotation {
 func (service *Service) broadcastItem(ctx context.Context, active *roomlive.Room, item worldfurniture.Item) error {
 	packet, err := outupdate.Encode(outupdate.FloorItem{
 		ID: item.ID, SpriteID: item.Definition.SpriteID, X: int(item.Point.X), Y: int(item.Point.Y),
-		Rotation: int(item.Rotation), Z: strconv.Itoa(int(item.Z)), ExtraData: item.ExtraData, OwnerID: item.OwnerPlayerID,
+		Rotation: int(item.Rotation), Z: item.Z.String(), ExtraData: item.ExtraData, OwnerID: item.OwnerPlayerID,
 	})
 	if err != nil {
 		return err

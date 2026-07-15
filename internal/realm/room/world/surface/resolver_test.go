@@ -22,7 +22,7 @@ func TestResolverReturnsBaseSection(t *testing.T) {
 	if len(column.Sections()) != 1 {
 		t.Fatalf("expected one section, got %d", len(column.Sections()))
 	}
-	assertSection(t, column.Sections()[0], grid.Height(4), StateOpen, SourceBase)
+	assertSection(t, column.Sections()[0], grid.HeightFromInt(4), StateOpen, SourceBase)
 }
 
 // TestResolverAppliesFixtures verifies dynamic section resolution.
@@ -30,8 +30,8 @@ func TestResolverAppliesFixtures(t *testing.T) {
 	point := grid.MustPoint(1, 1)
 	fixture := fixtureForTest(t, FixtureParams{
 		Point:    point,
-		Z:        7,
-		Top:      8,
+		Z:        grid.HeightFromInt(7),
+		Top:      grid.HeightFromInt(8),
 		State:    StateBlocked,
 		Stacking: false,
 		SourceID: 42,
@@ -49,28 +49,28 @@ func TestResolverAppliesFixtures(t *testing.T) {
 	if len(column.Sections()) != 2 {
 		t.Fatalf("expected two sections, got %d", len(column.Sections()))
 	}
-	assertSection(t, column.Sections()[0], grid.Height(4), StateOpen, SourceBase)
-	assertSection(t, column.Sections()[1], grid.Height(7), StateBlocked, SourceFixture)
+	assertSection(t, column.Sections()[0], grid.HeightFromInt(4), StateOpen, SourceBase)
+	assertSection(t, column.Sections()[1], grid.HeightFromInt(7), StateBlocked, SourceFixture)
 }
 
 // TestResolverFindsSections verifies exact and top section lookup.
 func TestResolverFindsSections(t *testing.T) {
 	point := grid.MustPoint(1, 1)
 	resolver := resolverForTest(t, []Fixture{
-		fixtureForTest(t, FixtureParams{Point: point, Z: 9, Top: 10, State: StateSit, Source: SourceStack}),
+		fixtureForTest(t, FixtureParams{Point: point, Z: grid.HeightFromInt(9), Top: grid.HeightFromInt(10), State: StateSit, Source: SourceStack}),
 	})
 
 	top, err := resolver.TopSection(point)
 	if err != nil {
 		t.Fatalf("resolve top section: %v", err)
 	}
-	assertSection(t, top, grid.Height(9), StateSit, SourceStack)
+	assertSection(t, top, grid.HeightFromInt(9), StateSit, SourceStack)
 
-	base, err := resolver.SectionAt(point, 4)
+	base, err := resolver.SectionAt(point, grid.HeightFromInt(4))
 	if err != nil {
 		t.Fatalf("resolve base section: %v", err)
 	}
-	assertSection(t, base, grid.Height(4), StateOpen, SourceBase)
+	assertSection(t, base, grid.HeightFromInt(4), StateOpen, SourceBase)
 }
 
 // TestResolverReportsMissingSections verifies lookup failures.
@@ -148,7 +148,7 @@ func TestResolverRemoveFixturesClearsTileAndBumpsVersion(t *testing.T) {
 	if len(column.Sections()) != 1 {
 		t.Fatalf("expected fixture removed, got %d sections", len(column.Sections()))
 	}
-	assertSection(t, column.Sections()[0], grid.Height(4), StateOpen, SourceBase)
+	assertSection(t, column.Sections()[0], grid.HeightFromInt(4), StateOpen, SourceBase)
 }
 
 // TestResolverRemoveFixturesIgnoresUnknownSource verifies removal is a no-op for unmatched sources.
@@ -168,5 +168,45 @@ func TestResolverRemoveFixturesIgnoresUnknownSource(t *testing.T) {
 	}
 	if column.Version() != 1 || len(column.Sections()) != 2 {
 		t.Fatalf("expected untouched column, got version=%d sections=%d", column.Version(), len(column.Sections()))
+	}
+}
+
+// TestResolverBlocksFloorUnderFurnitureTower verifies occupied volumes suppress hidden floor planes.
+func TestResolverBlocksFloorUnderFurnitureTower(t *testing.T) {
+	point := grid.MustPoint(1, 1)
+	base := grid.HeightFromInt(4)
+	resolver := resolverForTest(t, []Fixture{
+		fixtureForTest(t, FixtureParams{Point: point, Z: base, Bottom: base, HasBottom: true, Top: base + 4, State: StateBlocked, SourceID: 1}),
+		fixtureForTest(t, FixtureParams{Point: point, Z: base + 4, Bottom: base + 4, HasBottom: true, Top: base + 8, State: StateBlocked, SourceID: 2}),
+	})
+	column, err := resolver.Column(point)
+	if err != nil {
+		t.Fatalf("resolve tower: %v", err)
+	}
+	for _, section := range column.Sections() {
+		if column.Accepts(section) {
+			t.Fatalf("tower exposed walkable section %#v", section)
+		}
+	}
+}
+
+// TestResolverPreservesQuarterHeightPlanes verifies fractional stack layers do not tie whole units.
+func TestResolverPreservesQuarterHeightPlanes(t *testing.T) {
+	point := grid.MustPoint(1, 1)
+	whole := grid.HeightFromUnits(1)
+	quarter := grid.HeightFromUnits(1.25)
+	resolver := resolverForTest(t, []Fixture{
+		fixtureForTest(t, FixtureParams{Point: point, Z: whole, Top: whole, State: StateOpen, SourceID: 1}),
+		fixtureForTest(t, FixtureParams{Point: point, Z: quarter, Top: quarter, State: StateOpen, SourceID: 2}),
+	})
+	column, err := resolver.Column(point)
+	if err != nil {
+		t.Fatalf("resolve fractional layers: %v", err)
+	}
+	if _, found := column.SectionAt(whole); !found {
+		t.Fatal("whole-unit layer disappeared")
+	}
+	if _, found := column.SectionAt(quarter); !found {
+		t.Fatal("quarter-unit layer disappeared")
 	}
 }

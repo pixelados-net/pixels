@@ -89,6 +89,9 @@ type Room struct {
 	// TradeMode describes trading behavior.
 	TradeMode TradeMode
 
+	// RollerSpeed stores owner-loop cycles between roller steps, or -1 when disabled.
+	RollerSpeed int
+
 	// AllowWalkthrough reports whether users can walk through each other.
 	AllowWalkthrough bool
 

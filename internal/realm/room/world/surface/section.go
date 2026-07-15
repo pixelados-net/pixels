@@ -58,6 +58,9 @@ type Section struct {
 	// z stores the walkable section height.
 	z grid.Height
 
+	// bottom stores the occupied volume bottom height.
+	bottom grid.Height
+
 	// top stores the occupied top height of the section source.
 	top grid.Height
 
@@ -82,6 +85,7 @@ func NewSection(params SectionParams) Section {
 	return Section{
 		point:     params.Point,
 		z:         params.Z,
+		bottom:    params.Bottom,
 		top:       params.Top,
 		clearance: params.Clearance,
 		state:     params.State,
@@ -98,6 +102,9 @@ type SectionParams struct {
 
 	// Z stores the walkable section height.
 	Z grid.Height
+
+	// Bottom stores the occupied volume bottom height.
+	Bottom grid.Height
 
 	// Top stores the occupied top height of the section source.
 	Top grid.Height
@@ -126,6 +133,11 @@ func (section Section) Point() grid.Point {
 // Z returns the walkable section height.
 func (section Section) Z() grid.Height {
 	return section.z
+}
+
+// Bottom returns the occupied volume bottom height.
+func (section Section) Bottom() grid.Height {
+	return section.bottom
 }
 
 // Top returns the occupied top height.

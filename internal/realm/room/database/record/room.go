@@ -13,7 +13,7 @@ import (
 
 const (
 	// roomColumns contains the shared room select list.
-	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban, staff_picked, public_room, is_bundle_template, floor_paint, wallpaper, landscape, created_at, updated_at, deleted_at, version`
+	roomColumns = `id, owner_player_id, owner_name, name, description, model_name, door_mode, password_hash, max_users, score, category_id, trade_mode, roller_speed, allow_walkthrough, allow_pets, allow_pets_eat, hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed, chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban, staff_picked, public_room, is_bundle_template, floor_paint, wallpaper, landscape, created_at, updated_at, deleted_at, version`
 
 	// createRoomSQL inserts a room record.
 	createRoomSQL = `
@@ -42,10 +42,10 @@ returning ` + roomColumns
 	// updateRoomSQL replaces editable settings using optimistic locking.
 	updateRoomSQL = `
 update rooms set name=$3, description=$4, door_mode=$5, password_hash=$6, max_users=$7,
-category_id=$8, trade_mode=$9, allow_walkthrough=$10, allow_pets=$11, allow_pets_eat=$12,
-hide_walls=$13, wall_thickness=$14, floor_thickness=$15, chat_mode=$16, chat_weight=$17,
-chat_speed=$18, chat_distance=$19, chat_protection=$20, moderation_mute=$21,
-moderation_kick=$22, moderation_ban=$23, updated_at=now(), version=version+1
+category_id=$8, trade_mode=$9, roller_speed=$10, allow_walkthrough=$11, allow_pets=$12, allow_pets_eat=$13,
+hide_walls=$14, wall_thickness=$15, floor_thickness=$16, chat_mode=$17, chat_weight=$18,
+chat_speed=$19, chat_distance=$20, chat_protection=$21, moderation_mute=$22,
+moderation_kick=$23, moderation_ban=$24, updated_at=now(), version=version+1
 where id=$1 and version=$2 and deleted_at is null returning ` + roomColumns
 )
 
@@ -103,7 +103,7 @@ func (repository *Repository) UpdateRoom(ctx context.Context, params roomservice
 		var err error
 		updated, err = scanRoom(executor.QueryRow(txCtx, updateRoomSQL,
 			room.ID, params.ExpectedVersion, room.Name, room.Description, room.DoorMode,
-			room.PasswordHash, room.MaxUsers, room.CategoryID, room.TradeMode,
+			room.PasswordHash, room.MaxUsers, room.CategoryID, room.TradeMode, room.RollerSpeed,
 			room.AllowWalkthrough, room.AllowPets, room.AllowPetsEat, room.HideWalls,
 			room.WallThickness, room.FloorThickness, room.ChatMode, room.ChatWeight,
 			room.ChatSpeed, room.ChatDistance, room.ChatProtection, room.ModerationMute,

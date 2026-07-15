@@ -95,9 +95,9 @@ func TestToWorldDefinitionRejectsMalformedMetadata(t *testing.T) {
 	}
 }
 
-// TestRoundHeightRoundsToNearestInteger verifies decimal height conversion.
-func TestRoundHeightRoundsToNearestInteger(t *testing.T) {
-	cases := map[float64]int{1.00: 1, 1.10: 1, 1.80: 2, 0: 0}
+// TestRoundHeightRoundsToNearestQuarter verifies fixed-point decimal height conversion.
+func TestRoundHeightRoundsToNearestQuarter(t *testing.T) {
+	cases := map[float64]int{1.00: 4, 1.10: 4, 1.80: 7, 0.50: 2, 0: 0}
 	for value, expected := range cases {
 		if got := RoundHeight(value); int(got) != expected {
 			t.Fatalf("round height %v: expected %d, got %d", value, expected, got)

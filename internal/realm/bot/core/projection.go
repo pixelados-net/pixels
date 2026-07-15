@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"strconv"
 
 	botrecord "github.com/niflaot/pixels/internal/realm/bot/record"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/broadcast"
@@ -54,7 +53,7 @@ func SkillRecords(bot botrecord.Bot) []outskilllist.Skill {
 
 // roomBot maps one active bot into Nitro's rentable-bot UNIT variant.
 func roomBot(bot botrecord.Bot, unit roomlive.UnitSnapshot) outunits.Unit {
-	return outunits.Unit{Type: outunits.RentableBotType, UserID: -bot.ID, Name: bot.Name, Motto: bot.Motto, Figure: bot.Figure, RoomIndex: unit.UnitID, X: int32(unit.Position.Point.X), Y: int32(unit.Position.Point.Y), Z: strconv.Itoa(int(unit.Position.Z)), Direction: int32(unit.BodyRotation), Gender: bot.Gender, OwnerID: bot.OwnerPlayerID, OwnerName: bot.OwnerName, Skills: botSkills(bot)}
+	return outunits.Unit{Type: outunits.RentableBotType, UserID: -bot.ID, Name: bot.Name, Motto: bot.Motto, Figure: bot.Figure, RoomIndex: unit.UnitID, X: int32(unit.Position.Point.X), Y: int32(unit.Position.Point.Y), Z: unit.Position.Z.String(), Direction: int32(unit.BodyRotation), Gender: bot.Gender, OwnerID: bot.OwnerPlayerID, OwnerName: bot.OwnerName, Skills: botSkills(bot)}
 }
 
 // ProjectSpawn broadcasts one bot spawn and persistent visual state.

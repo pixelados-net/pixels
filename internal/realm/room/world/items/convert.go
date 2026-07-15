@@ -3,7 +3,6 @@ package furniture
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
@@ -122,5 +121,5 @@ func parseSlots(metadata json.RawMessage) ([]worldfurniture.SlotDefinition, erro
 
 // RoundHeight rounds a persisted decimal height into a compact grid height.
 func RoundHeight(value float64) grid.Height {
-	return grid.Height(math.Round(value))
+	return grid.HeightFromUnits(value)
 }

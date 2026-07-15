@@ -134,7 +134,7 @@ func TestRoomTickAppliesSitStatusOnSettle(t *testing.T) {
 	chair := worldfurniture.Item{
 		ID: 5, Point: seat, Rotation: worldunit.RotationNorth,
 		Definition: worldfurniture.Definition{
-			Width: 1, Length: 1, StackHeight: 1, AllowStack: true, AllowSit: true,
+			Width: 1, Length: 1, StackHeight: grid.HeightFromInt(1), AllowStack: true, AllowSit: true,
 			Slots: []worldfurniture.SlotDefinition{{Status: worldfurniture.SlotStatusSit}},
 		},
 	}

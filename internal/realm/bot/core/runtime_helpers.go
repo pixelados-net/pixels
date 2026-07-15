@@ -98,7 +98,7 @@ func (service *Service) activeByID(roomID int64, botID int64) (*activeBot, bool)
 
 // capturePosition queues deferred persistence when a moving bot changed position.
 func (service *Service) capturePosition(roomID int64, bot *activeBot, unit roomlive.UnitSnapshot, now time.Time) {
-	x, y, z, rotation := int(unit.Position.Point.X), int(unit.Position.Point.Y), float64(unit.Position.Z), int16(unit.BodyRotation)
+	x, y, z, rotation := int(unit.Position.Point.X), int(unit.Position.Point.Y), unit.Position.Z.Units(), int16(unit.BodyRotation)
 	unchanged := bot.record.X != nil && *bot.record.X == x && bot.record.Y != nil && *bot.record.Y == y && bot.record.Z != nil && *bot.record.Z == z && bot.record.Rotation != nil && *bot.record.Rotation == rotation
 	if unchanged || now.Sub(bot.lastPositionFlush) < service.config.PositionFlushInterval {
 		return

@@ -123,13 +123,13 @@ func parseHeight(value rune) (Height, bool, error) {
 		return 0, false, nil
 	}
 	if value >= '0' && value <= '9' {
-		return Height(value - '0'), true, nil
+		return HeightFromInt(int(value - '0')), true, nil
 	}
 	if value >= 'a' && value <= 'z' {
-		return Height(value-'a') + 10, true, nil
+		return HeightFromInt(int(value-'a') + 10), true, nil
 	}
 	if value >= 'A' && value <= 'Z' {
-		return Height(value-'A') + 10, true, nil
+		return HeightFromInt(int(value-'A') + 10), true, nil
 	}
 
 	return 0, false, fmt.Errorf("%w: %q", ErrInvalidHeight, value)

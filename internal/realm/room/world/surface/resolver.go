@@ -136,8 +136,9 @@ func baseSection(tile grid.Tile) Section {
 	return NewSection(SectionParams{
 		Point:     tile.Point(),
 		Z:         tile.Height(),
+		Bottom:    tile.Height(),
 		Top:       tile.Height(),
-		Clearance: 0,
+		Clearance: grid.AvatarClearance,
 		State:     StateOpen,
 		Stacking:  true,
 		Source:    SourceBase,

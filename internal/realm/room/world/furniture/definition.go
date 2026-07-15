@@ -2,7 +2,6 @@
 package furniture
 
 import (
-	"math"
 	"strconv"
 	"strings"
 
@@ -54,7 +53,7 @@ func (definition Definition) HeightAtState(state string) grid.Height {
 		return definition.StackHeight
 	}
 
-	return grid.Height(math.Round(value))
+	return grid.HeightFromUnits(value)
 }
 
 // Definition stores the minimal furniture definition snapshot used by the room world.

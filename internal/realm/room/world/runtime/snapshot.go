@@ -100,6 +100,21 @@ func (world *World) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
 	return item, found
 }
 
+// FurnitureAt returns stable furniture snapshots whose footprints cover a tile.
+func (world *World) FurnitureAt(point grid.Point) []worldfurniture.Item {
+	ids := world.furnitureTiles[point]
+	if len(ids) == 0 {
+		return nil
+	}
+	items := make([]worldfurniture.Item, 0, len(ids))
+	for _, id := range ids {
+		if item, found := world.furniture[id]; found {
+			items = append(items, item)
+		}
+	}
+	return items
+}
+
 // InteractionAt returns one interactive item on a tile without allocating.
 func (world *World) InteractionAt(point grid.Point) (worldfurniture.Item, bool) {
 	itemID, found := world.interactions[point]

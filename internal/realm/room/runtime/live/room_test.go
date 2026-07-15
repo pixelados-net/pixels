@@ -123,6 +123,25 @@ func TestRoomSnapshotAndOccupants(t *testing.T) {
 	}
 }
 
+// TestAdvanceRollerCycleHonorsSpeedAndDisable verifies live cadence updates reset scheduling.
+func TestAdvanceRollerCycleHonorsSpeedAndDisable(t *testing.T) {
+	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 2, RollerSpeed: 2})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	if room.AdvanceRollerCycle(true) || !room.AdvanceRollerCycle(true) {
+		t.Fatal("expected roller every second room cycle")
+	}
+	room.UpdateRollerSpeed(-1)
+	if room.AdvanceRollerCycle(true) {
+		t.Fatal("disabled rollers advanced")
+	}
+	room.UpdateRollerSpeed(0)
+	if !room.AdvanceRollerCycle(true) {
+		t.Fatal("zero-speed roller did not advance")
+	}
+}
+
 // TestRoomCloseRejectsFutureJoins verifies closed room behavior.
 func TestRoomCloseRejectsFutureJoins(t *testing.T) {
 	room, err := NewRoom(Snapshot{ID: 9, MaxUsers: 1})

@@ -11,8 +11,8 @@ import (
 func TestHeightMapTilesEncodesKnownCases(t *testing.T) {
 	tiles := []roomlive.TileHeight{
 		{Valid: true, Height: 0, StackingBlocked: false},
-		{Valid: true, Height: 1, StackingBlocked: false},
-		{Valid: true, Height: 1, StackingBlocked: true},
+		{Valid: true, Height: grid.HeightFromInt(1), StackingBlocked: false},
+		{Valid: true, Height: grid.HeightFromInt(1), StackingBlocked: true},
 		{},
 	}
 
@@ -34,8 +34,8 @@ func TestHeightMapUpdateTilesSelectsRequestedPointsAndDedupes(t *testing.T) {
 	width := uint16(2)
 	tiles := []roomlive.TileHeight{
 		{Valid: true, Height: 0},
-		{Valid: true, Height: 1},
-		{Valid: true, Height: 2, StackingBlocked: true},
+		{Valid: true, Height: grid.HeightFromInt(1)},
+		{Valid: true, Height: grid.HeightFromInt(2), StackingBlocked: true},
 		{},
 	}
 	pointA := grid.Point{X: 0, Y: 0}

@@ -20,6 +20,7 @@ import (
 	usehandler "github.com/niflaot/pixels/internal/realm/furniture/handlers/use"
 	"github.com/niflaot/pixels/internal/realm/furniture/interactions"
 	essential "github.com/niflaot/pixels/internal/realm/furniture/interactions/essential"
+	roller "github.com/niflaot/pixels/internal/realm/furniture/interactions/roller"
 	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
 	"github.com/niflaot/pixels/internal/realm/furniture/service"
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
@@ -69,6 +70,8 @@ type HandlerDeps struct {
 	Interactions *interactions.Registry
 	// EssentialInteractions coordinates specialized furniture behavior.
 	EssentialInteractions *essential.Service
+	// Rollers coordinates autonomous roller furniture.
+	Rollers *roller.Service
 	// Decoration manages room surfaces and mood-light presets.
 	Decoration *roomdecor.Service
 	// WordFilters applies room-local filtering to decorator text.
@@ -89,10 +92,12 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	placehandler.Register(handlers.Inbound, placehandler.New(placecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Furniture: deps.Furniture, PlayerDirectory: deps.PlayerDirectory,
 		Runtime: deps.Runtime, Permissions: deps.Permissions, Connections: deps.Connections, Events: deps.Events, Translations: deps.Translations, Log: deps.Log,
+		RollerNoRules: deps.Rollers.NoRules(),
 	}, deps.Log))
 	moveCommands := movecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Furniture: deps.Furniture,
 		Runtime: deps.Runtime, Permissions: deps.Permissions, Connections: deps.Connections, Events: deps.Events, Translations: deps.Translations, Log: deps.Log,
+		RollerNoRules: deps.Rollers.NoRules(),
 	}
 	movehandler.Register(handlers.Inbound, movehandler.New(moveCommands, deps.Log))
 	movehandler.RegisterWall(handlers.Inbound, movehandler.NewWall(moveCommands, deps.Log))

@@ -188,6 +188,46 @@ func (room *Room) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
 	return room.world.FurnitureItem(itemID)
 }
 
+// FurnitureByInteraction returns indexed furniture for one behavior type.
+func (room *Room) FurnitureByInteraction(interactionType string) []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	return room.world.FurnitureByInteraction(interactionType)
+}
+
+// FurnitureAt returns furniture whose footprints cover one tile.
+func (room *Room) FurnitureAt(point grid.Point) []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	return room.world.FurnitureAt(point)
+}
+
+// SurfaceColumn returns the resolved vertical surface column for one tile.
+func (room *Room) SurfaceColumn(point grid.Point) (surface.Column, error) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return surface.Column{}, ErrWorldNotLoaded
+	}
+	return room.world.SurfaceColumn(point)
+}
+
+// RollUnit repositions one idle unit without reserving player control.
+func (room *Room) RollUnit(entityKey int64, position worldpath.Position) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+	return room.world.RollUnit(entityKey, position)
+}
+
 // InteractionAt returns one interactive furniture item on a tile without allocating.
 func (room *Room) InteractionAt(point grid.Point) (worldfurniture.Item, bool) {
 	room.mutex.RLock()

@@ -172,7 +172,7 @@ func (handler Handler) loadWorld(ctx context.Context, room *roomlive.Room, roomD
 
 	return room.LoadWorld(roomlive.WorldConfig{
 		Grid: roomGrid, Furniture: furnitureItems,
-		Door: worldpath.Position{Point: doorPoint, Z: grid.Height(roomLayout.DoorZ)},
+		Door: worldpath.Position{Point: doorPoint, Z: grid.HeightFromInt(roomLayout.DoorZ)},
 		Body: rotation, Head: rotation, Rules: worldpath.DefaultRules(),
 	})
 }

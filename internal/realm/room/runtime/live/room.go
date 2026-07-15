@@ -43,6 +43,8 @@ type Room struct {
 	tasks roomtask.Queue
 	// interactionLocks stores temporary furniture cooldown deadlines.
 	interactionLocks map[int64]time.Time
+	// rollerCycle stores owner-loop ticks accumulated toward the next roller step.
+	rollerCycle int
 }
 
 // NewRoom creates an active room.

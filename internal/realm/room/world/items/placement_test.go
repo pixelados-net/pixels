@@ -7,6 +7,7 @@ import (
 
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
@@ -44,6 +45,23 @@ func TestResolveWorldItemRejectsInvalidRotation(t *testing.T) {
 	_, _, err := ResolveWorldItem(context.Background(), active, manager, item, 3, 3, furnituremodel.Rotation(1))
 	if !errors.Is(err, ErrInvalidTarget) {
 		t.Fatalf("expected invalid target, got %v", err)
+	}
+}
+
+// TestValidateRollerPlacementRejectsFurnitureSupport verifies rollers remain floor-only.
+func TestValidateRollerPlacementRejectsFurnitureSupport(t *testing.T) {
+	active := roomForPlacementTest(t)
+	point := grid.MustPoint(1, 0)
+	support := worldfurniture.Item{ID: 4, Point: point, Definition: worldfurniture.Definition{Width: 1, Length: 1, StackHeight: grid.HeightFromInt(1), AllowStack: true}}
+	if _, err := active.ReloadFurniture(support.ID, &support); err != nil {
+		t.Fatalf("place support: %v", err)
+	}
+	roller := worldfurniture.Item{ID: 5, Point: point, Definition: worldfurniture.Definition{InteractionType: "roller", Width: 1, Length: 1, StackHeight: 2, AllowStack: true, AllowWalk: true}}
+	if err := ValidateRollerPlacement(active, roller, false); !errors.Is(err, roomlive.ErrCannotStack) {
+		t.Fatalf("expected roller stacking rejection, got %v", err)
+	}
+	if err := ValidateRollerPlacement(active, roller, true); err != nil {
+		t.Fatalf("expected no-rules bypass, got %v", err)
 	}
 }
 

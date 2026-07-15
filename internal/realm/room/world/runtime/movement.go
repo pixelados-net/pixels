@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"strconv"
-
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
@@ -121,7 +119,7 @@ func (world *World) Tick() []Movement {
 			if err := roomUnit.ValidatePath(world.resolver); err != nil {
 				exited := roomUnit.Exiting()
 				roomUnit.ClearPath()
-				if section, sectionErr := world.resolver.TopSection(roomUnit.Position().Point); sectionErr == nil {
+				if section, sectionErr := world.nearestWalkableSection(roomUnit.Position()); sectionErr == nil {
 					roomUnit.SetHeight(section.Z())
 				}
 				movements = append(movements, Movement{
@@ -244,5 +242,5 @@ func (world *World) occupancyExcept(playerID int64) worldpath.Occupancy {
 
 // heightValue formats a grid height for a unit status value.
 func heightValue(height grid.Height) string {
-	return strconv.Itoa(int(height))
+	return height.String()
 }

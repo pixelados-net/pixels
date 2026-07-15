@@ -1,7 +1,40 @@
 package grid
 
+import (
+	"math"
+	"strconv"
+)
+
 // Height stores a room height value in compact fixed-point units.
 type Height int16
+
+const (
+	// HeightScale stores the number of fixed-point steps in one room height unit.
+	HeightScale Height = 4
+
+	// AvatarClearance stores the standing avatar clearance in fixed-point units.
+	AvatarClearance Height = 8
+)
+
+// HeightFromUnits converts a protocol or persistence height into fixed-point units.
+func HeightFromUnits(value float64) Height {
+	return Height(math.Round(value * float64(HeightScale)))
+}
+
+// HeightFromInt converts a whole room height into fixed-point units.
+func HeightFromInt(value int) Height {
+	return Height(value) * HeightScale
+}
+
+// Units converts a fixed-point height into room units.
+func (height Height) Units() float64 {
+	return float64(height) / float64(HeightScale)
+}
+
+// String returns a protocol-compatible decimal room height.
+func (height Height) String() string {
+	return strconv.FormatFloat(height.Units(), 'f', -1, 64)
+}
 
 // Point stores tile coordinates in a room grid.
 type Point struct {
@@ -29,6 +62,34 @@ func MustPoint(x int, y int) Point {
 	}
 
 	return point
+}
+
+// PointInFront returns the adjacent point reached by one Habbo rotation.
+func PointInFront(point Point, rotation uint8) (Point, bool) {
+	dx, dy := directionOffset(rotation)
+	return NewPoint(int(point.X)+dx, int(point.Y)+dy)
+}
+
+// directionOffset maps a Habbo rotation to its adjacent grid offset.
+func directionOffset(rotation uint8) (int, int) {
+	switch rotation % 8 {
+	case 0:
+		return 0, -1
+	case 1:
+		return 1, -1
+	case 2:
+		return 1, 0
+	case 3:
+		return 1, 1
+	case 4:
+		return 0, 1
+	case 5:
+		return -1, 1
+	case 6:
+		return -1, 0
+	default:
+		return -1, -1
+	}
 }
 
 // TileFlag stores compact tile metadata.

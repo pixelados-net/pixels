@@ -69,10 +69,39 @@ type Snapshot struct {
 	MaxUsers int
 	// TradeMode describes direct-trade behavior in the room.
 	TradeMode int16
+	// RollerSpeed stores owner-loop cycles between roller steps, or -1 when disabled.
+	RollerSpeed int
 	// ChatDistance stores the normal chat hearing radius in tiles.
 	ChatDistance int16
 	// ChatProtection stores the room flood-control tier.
 	ChatProtection int16
+}
+
+// AdvanceRollerCycle reports whether indexed rollers should run on this owner-loop cycle.
+func (room *Room) AdvanceRollerCycle(hasRollers bool) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if !hasRollers || room.snapshot.RollerSpeed < 0 {
+		room.rollerCycle = 0
+		return false
+	}
+	if room.snapshot.RollerSpeed == 0 {
+		return true
+	}
+	room.rollerCycle++
+	if room.rollerCycle < room.snapshot.RollerSpeed {
+		return false
+	}
+	room.rollerCycle = 0
+	return true
+}
+
+// UpdateRollerSpeed replaces live roller cadence and resets its current cycle.
+func (room *Room) UpdateRollerSpeed(speed int) {
+	room.mutex.Lock()
+	room.snapshot.RollerSpeed = speed
+	room.rollerCycle = 0
+	room.mutex.Unlock()
 }
 
 // Presence pairs one active occupant with its room unit state.

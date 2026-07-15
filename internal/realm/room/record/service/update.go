@@ -33,6 +33,8 @@ type UpdateParams struct {
 	Password *string
 	// TradeMode replaces room trading behavior.
 	TradeMode *roommodel.TradeMode
+	// RollerSpeed replaces owner-loop cycles between roller steps.
+	RollerSpeed *int
 	// AllowWalkthrough replaces unit walkthrough behavior.
 	AllowWalkthrough *bool
 	// AllowPets replaces pet admission behavior.

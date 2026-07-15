@@ -46,6 +46,8 @@ type RoomListResponse struct {
 type RoomResponse struct {
 	// ID identifies the room.
 	ID int64 `json:"id" required:"true"`
+	// Version stores the optimistic-lock version.
+	Version int64 `json:"version" required:"true" minimum:"1"`
 	// Name stores the room name.
 	Name string `json:"name" required:"true"`
 	// OwnerPlayerID identifies the owner.
@@ -62,6 +64,17 @@ type RoomResponse struct {
 	Score int `json:"score" required:"true"`
 	// IsBundleTemplate reports whether the room is a catalog bundle source.
 	IsBundleTemplate bool `json:"isBundleTemplate" required:"true"`
+	// RollerSpeed stores room cycles between roller steps, or -1 when disabled.
+	RollerSpeed int `json:"rollerSpeed" required:"true" minimum:"-1" maximum:"20"`
+}
+
+// RoomRollerSettingsRequest documents an optimistic room roller cadence update.
+type RoomRollerSettingsRequest struct {
+	RoomIDRequest
+	// ExpectedVersion stores the current durable room version.
+	ExpectedVersion int64 `json:"expectedVersion" required:"true" minimum:"1"`
+	// RollerSpeed stores cycles between steps, or -1 to disable rollers.
+	RollerSpeed int `json:"rollerSpeed" required:"true" minimum:"-1" maximum:"20"`
 }
 
 // RoomOccupancyResponse contains active room occupancy.

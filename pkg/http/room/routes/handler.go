@@ -55,6 +55,34 @@ func occupancyHandler(rooms roomservice.Manager, runtime *roomlive.Registry) fib
 	}
 }
 
+// rollerSettingsHandler updates durable and live roller cadence.
+func rollerSettingsHandler(rooms roomservice.ConfigManager, runtime *roomlive.Registry) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		roomID, err := roomIDParam(ctx)
+		if err != nil {
+			return err
+		}
+		var request RollerSettingsRequest
+		if err = ctx.BodyParser(&request); err != nil || request.ExpectedVersion <= 0 {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid roller settings request")
+		}
+		updated, err := rooms.Update(ctx.Context(), roomID, request.ExpectedVersion, roomservice.UpdateParams{RollerSpeed: &request.RollerSpeed})
+		if errors.Is(err, roomservice.ErrRoomNotFound) {
+			return fiber.NewError(fiber.StatusNotFound, err.Error())
+		}
+		if errors.Is(err, roomservice.ErrVersionConflict) {
+			return fiber.NewError(fiber.StatusConflict, err.Error())
+		}
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+		if active, found := runtime.Find(roomID); found {
+			active.UpdateRollerSpeed(updated.RollerSpeed)
+		}
+		return ctx.JSON(roomResponse(updated))
+	}
+}
+
 // closeHandler closes one active room.
 func closeHandler(runtime *roomlive.Registry) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {

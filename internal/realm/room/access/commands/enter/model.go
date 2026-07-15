@@ -235,6 +235,7 @@ func roomSnapshot(room roommodel.Room) roomlive.Snapshot {
 	return roomlive.Snapshot{
 		ID: room.ID, OwnerPlayerID: room.OwnerPlayerID,
 		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers, TradeMode: int16(room.TradeMode),
+		RollerSpeed:  room.RollerSpeed,
 		ChatDistance: room.ChatDistance, ChatProtection: room.ChatProtection,
 	}
 }

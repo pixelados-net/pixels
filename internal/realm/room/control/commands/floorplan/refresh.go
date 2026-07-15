@@ -37,7 +37,7 @@ func (handler SaveHandler) reload(ctx context.Context, room roommodel.Room, acti
 	rotation := worldunit.Rotation(roomLayout.DoorDirection % 8)
 	if err = active.LoadWorld(roomlive.WorldConfig{
 		Grid: roomGrid, Furniture: furniture,
-		Door: worldpath.Position{Point: door, Z: grid.Height(roomLayout.DoorZ)},
+		Door: worldpath.Position{Point: door, Z: grid.HeightFromInt(roomLayout.DoorZ)},
 		Body: rotation, Head: rotation, Rules: worldpath.DefaultRules(),
 	}); err != nil {
 		return err

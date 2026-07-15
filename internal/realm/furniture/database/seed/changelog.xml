@@ -24,6 +24,7 @@
     <include file="development/0017_misc_wall_items.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0018_misc_floor_classics.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0019_misc_behavior_fixes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0020_roller_chain.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_furniture_items.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

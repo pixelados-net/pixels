@@ -1,8 +1,6 @@
 package projection
 
 import (
-	"strconv"
-
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	roomdecor "github.com/niflaot/pixels/internal/realm/room/decoration"
 	roomfurniture "github.com/niflaot/pixels/internal/realm/room/world/items"
@@ -163,5 +161,5 @@ func UsagePolicyValue(definition furnituremodel.Definition) int32 {
 
 // FurnitureHeightValue formats a persisted decimal height using the room world's rounded height.
 func FurnitureHeightValue(value float64) string {
-	return strconv.Itoa(int(roomfurniture.RoundHeight(value)))
+	return roomfurniture.RoundHeight(value).String()
 }

@@ -457,6 +457,33 @@ minimum manual checks expected when touching it.
   - Fill a runtime room to capacity and verify `room.entry_error`.
   - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
 
+### FEATURE: Rollers and Room Heights
+
+- Owns fixed-point room heights under `internal/realm/room/world`, roller
+  interactions under `internal/realm/furniture/interactions/roller`, packet
+  `3207`, room roller speed, and the roller development seed.
+- Heights use quarter-unit fixed point. Convert only at database and wire
+  boundaries; world physics must never mix scaled and unscaled values.
+- Physical furniture volumes suppress covered walking planes and enforce avatar
+  clearance. Invalidated paths re-anchor only to walkable sections and trapped
+  units retain an escape path.
+- One room-owned cycle advances indexed rollers. A unit or item moves at most
+  once per cycle, walking units take precedence, occupied destinations block,
+  furniture never rolls uphill, and walk hooks run after the configured delay.
+- Roller speed `-1` disables movement, `0` advances every room tick, and positive
+  values count 500ms room cycles. Nitro does not send this field in its settings
+  packet, so live edits use `PATCH /api/admin/rooms/:id/roller`.
+- Test after changes:
+  - `go test -race ./internal/realm/furniture/interactions/roller ./internal/realm/room/world/... ./internal/realm/room/runtime/live ./networking/outbound/room/furniture/rolling`
+  - `go test -run '^$' -bench BenchmarkRollerTick -benchmem ./internal/realm/furniture/interactions/roller`
+  - Build a three-roller chain and verify one-tile-per-cycle movement, packet
+    animation, durable final positions, stationary-unit movement, and destination
+    blocking.
+  - Stack furniture and verify fractional heights, blocked occupied volumes,
+    avatar clearance, path invalidation recovery, and no movement freeze.
+  - Change roller speed through the protected admin route and verify active rooms
+    adopt the new cadence without reconnecting.
+
 ### FEATURE: Room Chat
 
 - Owns `internal/realm/chat`, `networking/inbound/chat`,

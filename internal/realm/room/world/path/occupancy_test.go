@@ -32,9 +32,9 @@ func TestFinderRoutesAroundOccupiedPositions(t *testing.T) {
 // TestFinderOccupancyIsSectionSpecific verifies z-specific occupancy.
 func TestFinderOccupancyIsSectionSpecific(t *testing.T) {
 	point := grid.MustPoint(1, 0)
-	fixture := fixtureForTest(t, surface.FixtureParams{Point: point, Z: 1, Top: 1, State: surface.StateOpen})
+	fixture := fixtureForTest(t, surface.FixtureParams{Point: point, Z: grid.AvatarClearance, Top: grid.AvatarClearance, State: surface.StateOpen})
 	resolver := resolverForTest(t, "00", []surface.Fixture{fixture})
-	occupancy := NewOccupancy([]Position{{Point: point, Z: 1}})
+	occupancy := NewOccupancy([]Position{{Point: point, Z: grid.AvatarClearance}})
 	finder := NewFinderWithOccupancy(resolver, DefaultRules(), occupancy)
 
 	roomPath, err := finder.Find(Position{Point: grid.MustPoint(0, 0), Z: 0}, point)

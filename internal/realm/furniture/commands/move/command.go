@@ -85,6 +85,9 @@ type Handler struct {
 
 	// Log records rejected move attempts.
 	Log *zap.Logger
+
+	// RollerNoRules disables roller-on-furniture placement restrictions.
+	RollerNoRules bool
 }
 
 // CommandName returns the stable command name.
@@ -130,6 +133,9 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err != nil {
 		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
 	}
+	if err = roomfurniture.ValidateRollerPlacement(active, worldItem, handler.RollerNoRules); err != nil {
+		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
+	}
 	previousWorld, previousFound := active.FurnitureItem(item.ID)
 
 	moved, err := handler.Furniture.Move(ctx, furnitureservice.MoveParams{
@@ -138,7 +144,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		RoomID:        roomID,
 		Placement: furnituremodel.Placement{
 			X: envelope.Command.X, Y: envelope.Command.Y,
-			Z: float64(worldItem.Z), Rotation: rotation,
+			Z: worldItem.Z.Units(), Rotation: rotation,
 		},
 	})
 	if err != nil {
