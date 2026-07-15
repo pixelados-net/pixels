@@ -14,5 +14,6 @@
     <include file="development/0007_trade_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0008_room_bundle_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0009_player_effect_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_moderation_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_permission_groups.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

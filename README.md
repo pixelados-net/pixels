@@ -160,6 +160,11 @@ docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liqu
 - `GET /client/texts/:locale/ExternalTexts.json` serves localized Nitro currency names.
 - `POST /api/sso/tickets` creates one-time SSO tickets and accepts
   `Idempotency-Key` for replay-safe retries.
+- `/api/admin/players/{playerId}/punishments` lists and applies global bans,
+  mutes, warnings, trade locks, and kicks; `DELETE /api/admin/punishments/{id}`
+  revokes through the same centralized sanction engine.
+- `/api/admin/moderation/*` exposes the issue queue, call-for-help topics,
+  moderator presets, and sanction ladder; every operation is documented in `/docs`.
 - `POST /api/admin/players` atomically creates a player, profile, and default
   permission assignment; `Idempotency-Key` is required.
 - `GET /api/admin/players/by-username/{username}` finds a player by canonical

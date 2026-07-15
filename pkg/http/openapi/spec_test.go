@@ -42,6 +42,12 @@ func TestSpecDocumentsRoutes(t *testing.T) {
 		"/api/admin/permissions/players/{playerId}/groups/{groupId}",
 		"/api/admin/permissions/players/{playerId}/effective",
 		"/api/admin/permissions/players/{playerId}/check",
+		"/api/admin/players/{playerId}/punishments",
+		"/api/admin/punishments/{id}",
+		"/api/admin/moderation/issues",
+		"/api/admin/moderation/cfh-topics",
+		"/api/admin/moderation/presets",
+		"/api/admin/moderation/sanction-ladder",
 	} {
 		if _, ok := document.Paths[path]; !ok {
 			t.Fatalf("expected path %s to be documented", path)
@@ -89,6 +95,9 @@ func TestSpecGroupsRoutes(t *testing.T) {
 	}
 	if !hasTag(document.Tags, "Admin Players") {
 		t.Fatal("expected admin player tag")
+	}
+	if !hasTag(document.Tags, "Admin Moderation") {
+		t.Fatal("expected admin moderation tag")
 	}
 
 	groups := document.Paths["/api/admin/connections"]["get"].Tags

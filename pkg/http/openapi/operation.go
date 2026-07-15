@@ -43,6 +43,7 @@ func operations() []operation {
 	items = append(items, adminOperations()...)
 	items = append(items, roomVoteOperations()...)
 	items = append(items, adminTradingOperations()...)
+	items = append(items, moderationAdminOperations()...)
 	items = append(items, fallbackOperation())
 
 	return items

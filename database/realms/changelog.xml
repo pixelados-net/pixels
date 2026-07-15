@@ -18,4 +18,6 @@
     <include file="../../internal/realm/marketplace/database/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/trade/database/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/bot/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/sanction/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/moderation/database/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

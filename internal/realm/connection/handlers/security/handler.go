@@ -80,7 +80,11 @@ func authenticate(handler netconn.Context, authenticator *Authenticator, ticket 
 		return handler.Disconnect(ctx, netconn.Reason{Code: netconn.DisconnectAuthenticationFailed, Message: err.Error()})
 	}
 
-	return sendBootstrap(handler, record, authenticator)
+	if err := sendBootstrap(handler, record, authenticator); err != nil {
+		return err
+	}
+	authenticator.Connected(ctx, handler, record.Player.ID)
+	return nil
 }
 
 // sendBootstrap sends the minimal connection bootstrap.

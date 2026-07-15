@@ -12,9 +12,11 @@ import (
 	realminventory "github.com/niflaot/pixels/internal/realm/inventory"
 	realmmarketplace "github.com/niflaot/pixels/internal/realm/marketplace"
 	realmmessenger "github.com/niflaot/pixels/internal/realm/messenger"
+	realmmoderation "github.com/niflaot/pixels/internal/realm/moderation"
 	realmnavigator "github.com/niflaot/pixels/internal/realm/navigator"
 	realmplayer "github.com/niflaot/pixels/internal/realm/player"
 	realmroom "github.com/niflaot/pixels/internal/realm/room"
+	realmsanction "github.com/niflaot/pixels/internal/realm/sanction"
 	realmsession "github.com/niflaot/pixels/internal/realm/session"
 	realmsubscription "github.com/niflaot/pixels/internal/realm/subscription"
 	realmtrade "github.com/niflaot/pixels/internal/realm/trade"
@@ -58,10 +60,12 @@ func options() []fx.Option {
 	options = append(options, realmfurniture.Module)
 	options = append(options, realminventory.Module)
 	options = append(options, realmmessenger.Module)
+	options = append(options, realmmoderation.Module)
 	options = append(options, realmmarketplace.Module)
 	options = append(options, realmnavigator.Module)
 	options = append(options, realmplayer.Module)
 	options = append(options, realmroom.Module)
+	options = append(options, realmsanction.Module)
 	options = append(options, realmsession.Module)
 	options = append(options, realmsubscription.Module)
 	options = append(options, realmtrade.Module)

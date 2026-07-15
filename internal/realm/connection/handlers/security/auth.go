@@ -37,6 +37,19 @@ type Authenticator struct {
 	currencies *currencyrequest.Handler
 	// permissions sends the player's permission and perk bootstrap.
 	permissions *permissionbroadcast.Projector
+	// sanctions rejects active global bans before binding a live session.
+	sanctions SanctionGate
+}
+
+// SanctionGate reports whether a player is currently banned.
+type SanctionGate interface {
+	// CheckBan returns active state and a visible reason.
+	CheckBan(context.Context, int64) (bool, string, error)
+}
+
+// SetSanctionGate installs global login-ban validation.
+func (authenticator *Authenticator) SetSanctionGate(gate SanctionGate) {
+	authenticator.sanctions = gate
 }
 
 // NewAuthenticator creates a security authenticator.
@@ -75,6 +88,15 @@ func (authenticator *Authenticator) Resolve(ctx context.Context, handler netconn
 		authenticator.publish(ctx, playerauthfailed.Name, playerauthfailed.Payload(authenticationPayloadFromHandler(handler, ticket.PlayerID, playerservice.ErrPlayerNotFound.Error())))
 		return playerservice.Record{}, playerservice.ErrPlayerNotFound
 	}
+	if authenticator.sanctions != nil {
+		banned, reason, banErr := authenticator.sanctions.CheckBan(ctx, ticket.PlayerID)
+		if banErr != nil {
+			return playerservice.Record{}, fmt.Errorf("check player ban: %w", banErr)
+		}
+		if banned {
+			return playerservice.Record{}, fmt.Errorf("player banned: %s", reason)
+		}
+	}
 
 	authenticator.publish(ctx, playerprofileloaded.Name, playerprofileloaded.Payload(authenticationPayloadFromHandler(handler, ticket.PlayerID, "")))
 
@@ -110,9 +132,12 @@ func (authenticator *Authenticator) Bind(ctx context.Context, handler netconn.Co
 
 	authenticator.publish(ctx, sessionbound.Name, sessionbound.Payload{Binding: sessionBinding})
 	authenticator.publish(ctx, playerauthenticated.Name, playerauthenticated.Payload(authenticationPayloadFromHandler(handler, record.Player.ID, "")))
-	authenticator.publish(ctx, playerconnected.Name, playerconnected.Payload(authenticationPayloadFromHandler(handler, record.Player.ID, "")))
-
 	return nil
+}
+
+// Connected publishes the ready-session lifecycle event after protocol bootstrap.
+func (authenticator *Authenticator) Connected(ctx context.Context, handler netconn.Context, playerID int64) {
+	authenticator.publish(ctx, playerconnected.Name, playerconnected.Payload(authenticationPayloadFromHandler(handler, playerID, "")))
 }
 
 // publish emits an event when an event bus is configured.

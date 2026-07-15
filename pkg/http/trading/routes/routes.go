@@ -4,11 +4,13 @@ package routes
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	marketcore "github.com/niflaot/pixels/internal/realm/marketplace/core"
-	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	sanctioncore "github.com/niflaot/pixels/internal/realm/sanction/core"
+	sanctionrecord "github.com/niflaot/pixels/internal/realm/sanction/record"
 	tradeadmin "github.com/niflaot/pixels/internal/realm/trade/admin"
 	"go.uber.org/fx"
 )
@@ -47,6 +49,8 @@ type Dependencies struct {
 	Marketplace *marketcore.Service
 	// Trade manages locks and audit reads.
 	Trade *tradeadmin.Service
+	// Sanctions owns the superseding global trade-lock records.
+	Sanctions *sanctioncore.Service
 }
 
 // Register mounts protected trading administration routes.
@@ -101,11 +105,26 @@ func (dependencies Dependencies) setLock(ctx *fiber.Ctx, locked bool) error {
 	if err != nil {
 		return err
 	}
-	if err = dependencies.Trade.SetLocked(ctx.Context(), id, locked); err != nil {
-		if errors.Is(err, playerservice.ErrPlayerNotFound) {
-			return fiber.NewError(fiber.StatusNotFound, err.Error())
+	if dependencies.Sanctions == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "global sanction service unavailable")
+	}
+	if locked {
+		_, err = dependencies.Sanctions.Apply(ctx.Context(), sanctionrecord.ApplyParams{ReceiverPlayerID: id, IssuerKind: "system", Kind: sanctionrecord.KindTradeLock, Reason: "Administrative direct-trade lock", Source: "admin_http"})
+		if err != nil {
+			return err
 		}
+		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+	history, err := dependencies.Sanctions.History(ctx.Context(), id, 500)
+	if err != nil {
 		return err
+	}
+	for _, punishment := range history {
+		if punishment.Kind == sanctionrecord.KindTradeLock && punishment.ActiveAt(time.Now()) && (punishment.Source == "admin_http" || strings.HasPrefix(punishment.Reason, "Migrated legacy")) {
+			if _, err = dependencies.Sanctions.RevokeSystem(ctx.Context(), punishment.ID); err != nil {
+				return err
+			}
+		}
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
 }

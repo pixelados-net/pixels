@@ -50,6 +50,38 @@ type Snapshot struct {
 
 	// ActiveEffectID stores the selected avatar effect.
 	ActiveEffectID *int32
+
+	// Sanctions stores active global punishment projection.
+	Sanctions Sanctions
+}
+
+// Sanctions stores allocation-free active global punishment state.
+type Sanctions struct {
+	// MuteUntil stores finite mute expiry.
+	MuteUntil time.Time
+	// MutePermanent reports an active permanent mute.
+	MutePermanent bool
+	// TradeLockUntil stores finite trade-lock expiry.
+	TradeLockUntil time.Time
+	// TradeLockPermanent reports an active permanent trade lock.
+	TradeLockPermanent bool
+}
+
+// MutedAt reports whether global chat is muted at one instant.
+func (sanctions Sanctions) MutedAt(now time.Time) bool {
+	return sanctions.MutePermanent || sanctions.MuteUntil.After(now)
+}
+
+// TradeLockedAt reports whether direct trading is globally locked at one instant.
+func (sanctions Sanctions) TradeLockedAt(now time.Time) bool {
+	return sanctions.TradeLockPermanent || sanctions.TradeLockUntil.After(now)
+}
+
+// SetSanctions replaces the live global punishment projection.
+func (player *Player) SetSanctions(sanctions Sanctions) {
+	player.mutex.Lock()
+	defer player.mutex.Unlock()
+	player.snapshot.Sanctions = sanctions
 }
 
 // SetClub replaces the live club entitlement projection.

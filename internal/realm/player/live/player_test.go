@@ -244,3 +244,27 @@ func mustPlayer(t *testing.T, id int64, username string) *Player {
 func navSearchForTest() navviewer.LastSearch {
 	return navviewer.LastSearch{Code: "hotel_view", Query: "demo"}
 }
+
+// BenchmarkMuteCheck measures the global chat hot-path predicate.
+func BenchmarkMuteCheck(b *testing.B) {
+	sanctions := Sanctions{MuteUntil: time.Now().Add(time.Hour)}
+	now := time.Now()
+	b.ReportAllocs()
+	for range b.N {
+		if !sanctions.MutedAt(now) {
+			b.Fatal("expected active mute")
+		}
+	}
+}
+
+// BenchmarkTradeLockCheck measures the direct-trade hot-path predicate.
+func BenchmarkTradeLockCheck(b *testing.B) {
+	sanctions := Sanctions{TradeLockPermanent: true}
+	now := time.Now()
+	b.ReportAllocs()
+	for range b.N {
+		if !sanctions.TradeLockedAt(now) {
+			b.Fatal("expected active trade lock")
+		}
+	}
+}

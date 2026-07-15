@@ -51,6 +51,10 @@ func (service *Service) Handle(ctx context.Context, request Request) error {
 	if message == "" {
 		return nil
 	}
+	if player.Snapshot().Sanctions.MutedAt(service.now()) {
+		service.publishMute(ctx, roomID, player.ID(), "global_mute")
+		return service.sendMute(ctx, request.Handler, 0)
+	}
 	if remaining, muted := active.RemainingMute(player.ID(), service.now()); muted {
 		service.publishMute(ctx, roomID, player.ID(), "mute")
 		return service.sendMute(ctx, request.Handler, remaining)

@@ -14,4 +14,5 @@
     <include file="../../internal/realm/subscription/database/seed/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/navigator/database/seed/changelog.xml" relativeToChangelogFile="true"/>
     <include file="../../internal/realm/bot/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/moderation/database/seed/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

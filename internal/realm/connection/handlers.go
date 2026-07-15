@@ -43,6 +43,8 @@ type Handlers struct {
 	bindings *binding.Registry
 	// events publishes realm lifecycle events.
 	events bus.Publisher
+	// authenticator resolves login tickets and global admission gates.
+	authenticator *security.Authenticator
 }
 
 // NewHandlers creates connection-realm handler registries.
@@ -59,12 +61,21 @@ func NewHandlersWithPermissions(sso *sso.Service, finder playerservice.Finder, p
 func newHandlers(sso *sso.Service, finder playerservice.Finder, players *live.Registry, bindings *binding.Registry, events *bus.Bus, currencies *currencyrequest.Handler, permissions *permissionbroadcast.Projector) *Handlers {
 	inbound := netconn.NewHandlerRegistry()
 	outbound := netconn.NewHandlerRegistry()
-	handlers := &Handlers{Inbound: inbound, Outbound: outbound, players: players, bindings: bindings, events: events}
+	authenticator := security.NewAuthenticator(sso, finder, players, bindings, events, currencies, permissions)
+	handlers := &Handlers{Inbound: inbound, Outbound: outbound, players: players, bindings: bindings, events: events, authenticator: authenticator}
 
-	registerInbound(inbound, security.NewAuthenticator(sso, finder, players, bindings, events, currencies, permissions))
+	registerInbound(inbound, authenticator)
 	outbound.SetFallback(noopHandler, netconn.AllowAnyActiveState(), netconn.AllowUnauthenticated())
 
 	return handlers
+}
+
+// SetSanctionGate replaces the global login sanction validator.
+func (handlers *Handlers) SetSanctionGate(gate security.SanctionGate) {
+	if handlers == nil || handlers.authenticator == nil {
+		return
+	}
+	handlers.authenticator.SetSanctionGate(gate)
 }
 
 // registerInbound registers connection-realm inbound handlers.

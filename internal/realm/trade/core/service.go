@@ -18,6 +18,7 @@ import (
 	"github.com/niflaot/pixels/pkg/redis"
 	"net"
 	"strconv"
+	"time"
 )
 
 // Service implements direct-trade lifecycle and settlement.
@@ -98,13 +99,15 @@ func (service *Service) Start(ctx context.Context, actorID int64, targetUnitID i
 	if _, busy := service.registry.Find(actorID); busy {
 		return nil, ErrUnavailable
 	}
-	if !actor.Snapshot().AllowTrade {
+	actorSnapshot := actor.Snapshot()
+	if !actorSnapshot.AllowTrade || actorSnapshot.Sanctions.TradeLockedAt(time.Now()) {
 		return nil, ErrActorNotAllowed
 	}
 	if _, busy := service.registry.Find(targetUnit.PlayerID); busy {
 		return nil, ErrUnavailable
 	}
-	if !target.Snapshot().AllowTrade {
+	targetSnapshot := target.Snapshot()
+	if !targetSnapshot.AllowTrade || targetSnapshot.Sanctions.TradeLockedAt(time.Now()) {
 		return nil, ErrTargetNotAllowed
 	}
 	actorUnit, found := room.Unit(actorID)

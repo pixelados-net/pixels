@@ -431,6 +431,42 @@ minimum manual checks expected when touching it.
   - Change room-invite privacy in Nitro and all privacy flags through the
     protected `Admin Messenger` routes in `/docs`.
 
+### FEATURE: Moderation and Global Sanctions
+
+- Owns `internal/realm/sanction`, `internal/realm/moderation`, moderation packets
+  under `networking`, and `pkg/http/moderation/routes`.
+- Moderation is capability-first: `cfh` owns reporter adapters and sanction
+  status, `staff` owns the modtool queue/read/action adapters, `guide` and
+  `guardian` own their domain managers with nested handlers, `runtime` owns
+  shared live-session delivery, `core` coordinates common issue persistence,
+  `record` defines contracts, and `database` provides PostgreSQL implementations.
+  Do not restore a realm-wide moderation `handlers` package.
+- Sanctions keep the common mutation workflow in `core`; registered side effects
+  live below `enforcement/projection`, `enforcement/session`, or
+  `enforcement/warning`; login hydration and ban gating belong to `session`;
+  persistence contracts and PostgreSQL implementations remain in `record` and
+  `database` respectively. Do not restore the flat `sanction/effect` package.
+- Provides one global punishment record and registrable effects for bans, mutes,
+  warnings, trade locks, and kicks; timestamp-derived active state; offline
+  warnings; escalation policy; CFH topics and frozen evidence; atomic moderator
+  issue claims; modtool information and actions; guide sessions; and durable,
+  anonymized guardian voting.
+- Global mute and trade-lock checks use the live player sanction snapshot. Do not
+  add database reads to room-chat or direct-trade hot paths, and do not restore a
+  second writer for `players.allow_trade`.
+- Test after changes:
+  - `go test -race ./internal/realm/sanction/... ./internal/realm/moderation/...`
+  - `go test ./networking/inbound/moderation/... ./networking/outbound/moderation/... ./pkg/http/moderation/routes ./pkg/http/openapi`
+  - `go test ./internal/realm/player/live ./internal/realm/sanction/core -run '^$' -bench 'Benchmark(MuteCheck|TradeLockCheck|ActiveSanctionLookup)$' -benchmem`
+  - In Nitro, report another player, inspect pending calls, pick/release/close the
+    issue from a moderator account, and verify the reporter receives the result.
+  - Apply and revoke overlapping mutes and trade locks; verify chat and trading
+    update immediately, and verify active bans reject login.
+  - Put guide and guardian accounts on duty, complete one guide session with
+    feedback, and complete acceptable, actionable, and tied guardian votes.
+  - Open `/docs` and verify the `Admin Moderation` group; exercise every route
+    with and without `X-API-Key`.
+
 ### FEATURE: Room Realm
 
 - Owns `internal/realm/room`.
