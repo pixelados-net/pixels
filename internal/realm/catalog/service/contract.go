@@ -53,6 +53,12 @@ type BundleReader interface {
 	Products(ctx context.Context, catalogItemID int64) []catalogmodel.Product
 }
 
+// TrophyFormatter creates immutable protocol-compatible trophy inscriptions.
+type TrophyFormatter interface {
+	// Format composes one buyer name and requested inscription.
+	Format(username string, text string) string
+}
+
 // NoveltyManager manages per-player catalog freshness state.
 type NoveltyManager interface {
 	// MarkNewAdditionsSeen records catalog novelty acknowledgement.
@@ -82,6 +88,9 @@ type PurchaseParams struct {
 
 	// Amount stores the requested offer quantity.
 	Amount int32
+
+	// ExtraData stores client-supplied product data used only by supported layouts.
+	ExtraData string
 
 	// RecipientPlayerID optionally overrides the furniture recipient.
 	RecipientPlayerID int64
@@ -134,6 +143,8 @@ type GiftPurchaseParams struct {
 	RibbonID int32
 	// Message stores the gift message.
 	Message string
+	// ExtraData stores client-supplied product data used only by supported layouts.
+	ExtraData string
 	// ShowMyFace reports whether sender identity is visible.
 	ShowMyFace bool
 }

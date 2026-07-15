@@ -8,7 +8,6 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	leavecmd "github.com/niflaot/pixels/internal/realm/room/access/commands/leave"
 	roomdoorbell "github.com/niflaot/pixels/internal/realm/room/access/doorbell"
-	roomentered "github.com/niflaot/pixels/internal/realm/room/access/events/entered"
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
@@ -68,7 +67,7 @@ func (handler Handler) join(ctx context.Context, player *playerlive.Player, conn
 		return nil, err
 	}
 
-	return active, handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID})
+	return active, nil
 }
 
 // loadMutes projects persistent active mutes into a newly loaded room.

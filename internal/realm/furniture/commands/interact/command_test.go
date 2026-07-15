@@ -130,6 +130,22 @@ func TestHandlerHelpersCoverSilentBranches(t *testing.T) {
 	}
 }
 
+// TestHandleIgnoresRollerUse verifies clicks never toggle or animate autonomous rollers.
+func TestHandleIgnoresRollerUse(t *testing.T) {
+	handler, connection, sent, _ := interactionHandlerForTest(t, 7, worldfurniture.Item{
+		ID: 1, Point: grid.MustPoint(2, 0), ExtraData: "0",
+		Definition: worldfurniture.Definition{InteractionType: "roller", InteractionModesCount: 1, Width: 1, Length: 1, AllowWalk: true},
+	})
+	state := &stateUpdaterForTest{}
+	handler.States = state
+	if err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Handler: connection, ItemID: 1}}); err != nil {
+		t.Fatalf("ignore roller use: %v", err)
+	}
+	if state.calls != 0 || len(*sent) != 0 {
+		t.Fatalf("roller click mutated state calls=%d packets=%#v", state.calls, *sent)
+	}
+}
+
 // TestCommandName verifies the stable generic interaction command name.
 func TestCommandName(t *testing.T) {
 	if (Command{}).CommandName() != Name {

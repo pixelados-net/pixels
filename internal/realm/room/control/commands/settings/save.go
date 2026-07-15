@@ -150,6 +150,7 @@ func (handler SaveHandler) Handle(ctx context.Context, envelope command.Envelope
 		active, activeFound := handler.Runtime.Find(roomID)
 		if activeFound {
 			active.UpdateSettings(updated.CategoryID, updated.MaxUsers, updated.ChatDistance, updated.ChatProtection)
+			active.UpdateRollerSpeed(updated.RollerSpeed)
 			if err = handler.broadcast(ctx, active, updated); err != nil {
 				return err
 			}

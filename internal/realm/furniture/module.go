@@ -3,13 +3,16 @@ package furniture
 
 import (
 	"context"
+
 	"github.com/niflaot/pixels/internal/realm/furniture/interactions"
 	essential "github.com/niflaot/pixels/internal/realm/furniture/interactions/essential"
+	roller "github.com/niflaot/pixels/internal/realm/furniture/interactions/roller"
 	teleport "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport"
 	teleportdb "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/database"
 	teleportpair "github.com/niflaot/pixels/internal/realm/furniture/interactions/teleport/pair"
 	"github.com/niflaot/pixels/internal/realm/furniture/repository"
 	"github.com/niflaot/pixels/internal/realm/furniture/service"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/pkg/postgres"
 	"go.uber.org/fx"
 )
@@ -28,6 +31,8 @@ var Module = fx.Module(
 		NewTradingManager,
 		interactions.NewRegistry,
 		essential.NewWithEffects,
+		roller.LoadConfig,
+		roller.New,
 		teleport.LoadConfig,
 		teleportdb.New,
 		NewTeleportPairService,
@@ -36,8 +41,18 @@ var Module = fx.Module(
 	),
 	fx.Invoke(teleport.Register),
 	fx.Invoke(essential.Register),
+	fx.Invoke(RegisterRollers),
 	fx.Invoke(RegisterConnectionHandlers),
 )
+
+// RegisterRollers attaches roller cycles and their bounded persistence worker.
+func RegisterRollers(lifecycle fx.Lifecycle, rooms *roomlive.Registry, service *roller.Service) {
+	rooms.AddCyclePublisher(service.Cycle)
+	lifecycle.Append(fx.Hook{
+		OnStart: func(context.Context) error { service.Start(); return nil },
+		OnStop:  func(context.Context) error { service.Stop(); return nil },
+	})
+}
 
 // NewTeleportPairService creates validated teleport pairing behavior.
 func NewTeleportPairService(store *teleportdb.Repository, furniture service.Manager) *teleportpair.Service {

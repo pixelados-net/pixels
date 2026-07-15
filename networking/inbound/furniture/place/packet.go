@@ -30,6 +30,9 @@ type Payload struct {
 
 	// Rotation stores the destination floor instance rotation.
 	Rotation int32
+
+	// WallPosition stores Nitro wall coordinates for a wall item.
+	WallPosition string
 }
 
 // Definition describes the PLACE_FLOOR_ITEM payload fields.
@@ -51,6 +54,13 @@ func Decode(packet codec.Packet) (Payload, error) {
 // parsePlacement parses the space-separated "itemId x y rotation" placement payload.
 func parsePlacement(raw string) (Payload, error) {
 	parts := strings.Fields(raw)
+	if len(parts) == 4 && strings.HasPrefix(parts[1], ":w=") {
+		itemID, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return Payload{}, ErrMalformedPlacement
+		}
+		return Payload{ItemID: int32(itemID), WallPosition: strings.Join(parts[1:], " ")}, nil
+	}
 	if len(parts) != 4 {
 		return Payload{}, ErrMalformedPlacement
 	}

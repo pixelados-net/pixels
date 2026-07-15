@@ -33,22 +33,38 @@ returning ` + itemColumns
 
 	// placeItemSQL moves an owned inventory item into a room.
 	placeItemSQL = `
+with room_lock as (select pg_advisory_xact_lock($3))
 update furniture_items
-set room_id = $3, x = $4, y = $5, z = $6, rotation = $7, updated_at = now(), version = version + 1
+set room_id = $3,
+    x = case when $8::text = '' then $4::smallint else null::smallint end,
+    y = case when $8::text = '' then $5::smallint else null::smallint end,
+    z = case when $8::text = '' then $6::numeric(6,2) else null::numeric(6,2) end,
+    rotation = case when $8::text = '' then $7::smallint else 0::smallint end,
+    wall_position = nullif($8::text, ''), updated_at = now(), version = version + 1
+from room_lock
 where id = $1 and owner_player_id = $2 and room_id is null and deleted_at is null
+  and ($9::text = '' or not exists (
+      select 1 from furniture_items placed
+      join furniture_definitions definition on definition.id = placed.definition_id
+      where placed.room_id = $3 and placed.deleted_at is null and definition.interaction_type = $9::text
+  ))
 returning ` + itemColumns
 
 	// moveItemSQL repositions an item within its authorized room.
 	moveItemSQL = `
 update furniture_items
-set x = $3, y = $4, z = $5, rotation = $6, updated_at = now(), version = version + 1
+set x = case when $7::text = '' then $3::smallint else null::smallint end,
+    y = case when $7::text = '' then $4::smallint else null::smallint end,
+    z = case when $7::text = '' then $5::numeric(6,2) else null::numeric(6,2) end,
+    rotation = case when $7::text = '' then $6::smallint else 0::smallint end,
+    wall_position = nullif($7::text, ''), updated_at = now(), version = version + 1
 where id = $1 and room_id = $2 and deleted_at is null
 returning ` + itemColumns
 
 	// pickupItemSQL returns an owned, placed item to inventory.
 	pickupItemSQL = `
 update furniture_items
-set room_id = null, x = null, y = null, z = null, updated_at = now(), version = version + 1
+set room_id = null, x = null, y = null, z = null, wall_position = null, updated_at = now(), version = version + 1
 where id = $1 and owner_player_id = $2 and room_id is not null and deleted_at is null
 returning ` + itemColumns
 
@@ -111,69 +127,6 @@ type GiftItemParams struct {
 	Message string
 }
 
-// PlaceItemParams contains input for placing an owned inventory item into a room.
-type PlaceItemParams struct {
-	// ID identifies the furniture item.
-	ID int64
-
-	// OwnerPlayerID identifies the required current owner.
-	OwnerPlayerID int64
-
-	// RoomID identifies the destination room.
-	RoomID int64
-
-	// Placement stores the destination floor coordinates and rotation.
-	Placement furnituremodel.Placement
-}
-
-// MoveItemParams contains input for repositioning an item within one room.
-type MoveItemParams struct {
-	// ID identifies the furniture item.
-	ID int64
-
-	// RoomID identifies the required current room.
-	RoomID int64
-
-	// Placement stores the destination floor coordinates and rotation.
-	Placement furnituremodel.Placement
-}
-
-// PickupItemParams contains input for returning an owned, placed item to inventory.
-type PickupItemParams struct {
-	// ID identifies the furniture item.
-	ID int64
-
-	// OwnerPlayerID identifies the required current owner.
-	OwnerPlayerID int64
-}
-
-// UpdateItemStateParams contains one guarded furniture state mutation.
-type UpdateItemStateParams struct {
-	// ID identifies the furniture item.
-	ID int64
-
-	// RoomID identifies the required current room.
-	RoomID int64
-
-	// Expected stores the state observed by the active room.
-	Expected string
-
-	// Next stores the state to persist.
-	Next string
-}
-
-// OpenGiftItemParams contains input for opening one placed gift.
-type OpenGiftItemParams struct {
-	// ID identifies the furniture item.
-	ID int64
-
-	// OwnerPlayerID identifies the required current owner.
-	OwnerPlayerID int64
-
-	// RoomID identifies the required current room.
-	RoomID int64
-}
-
 // CreateItems creates inventory items for one owner and definition.
 func (repository *Repository) CreateItems(ctx context.Context, definitionID int64, ownerPlayerID int64, quantity int32, extraData string, limitedEditionNumber *int32) ([]furnituremodel.Item, error) {
 	rows, err := repository.executorFor(ctx).Query(ctx, createItemsSQL, definitionID, ownerPlayerID, quantity, extraData, limitedEditionNumber)
@@ -208,31 +161,6 @@ func (repository *Repository) ListInventoryItems(ctx context.Context, ownerPlaye
 // ListRoomItems lists active items placed in a room.
 func (repository *Repository) ListRoomItems(ctx context.Context, roomID int64) ([]furnituremodel.Item, error) {
 	return repository.listItems(ctx, listRoomItemsSQL, roomID)
-}
-
-// PlaceItem moves an owned inventory item into a room.
-func (repository *Repository) PlaceItem(ctx context.Context, params PlaceItemParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, placeItemSQL, params.ID, params.OwnerPlayerID, params.RoomID, params.Placement.X, params.Placement.Y, params.Placement.Z, params.Placement.Rotation)
-}
-
-// MoveItem repositions an item guarded by its current room.
-func (repository *Repository) MoveItem(ctx context.Context, params MoveItemParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, moveItemSQL, params.ID, params.RoomID, params.Placement.X, params.Placement.Y, params.Placement.Z, params.Placement.Rotation)
-}
-
-// PickupItem returns an owned, placed item to inventory.
-func (repository *Repository) PickupItem(ctx context.Context, params PickupItemParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, pickupItemSQL, params.ID, params.OwnerPlayerID)
-}
-
-// UpdateItemState changes one placed item's state with compare-and-swap semantics.
-func (repository *Repository) UpdateItemState(ctx context.Context, params UpdateItemStateParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, updateItemStateSQL, params.ID, params.RoomID, params.Expected, params.Next)
-}
-
-// OpenGiftItem marks one placed gift as opened by its owner.
-func (repository *Repository) OpenGiftItem(ctx context.Context, params OpenGiftItemParams) (furnituremodel.Item, bool, error) {
-	return repository.queryItem(ctx, openGiftItemSQL, params.ID, params.OwnerPlayerID, params.RoomID)
 }
 
 // ReserveForMarketplace withdraws one owned inventory item into Marketplace limbo.

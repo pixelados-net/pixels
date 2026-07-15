@@ -72,6 +72,9 @@ func (handler Handler) sendEntered(ctx context.Context, connection netconn.Conte
 	if err := handler.sendFloorItems(ctx, connection, room, active); err != nil {
 		return err
 	}
+	if err := sendAppearance(ctx, connection, room); err != nil {
+		return err
+	}
 	if err := handler.sendHeightMap(ctx, connection, active); err != nil {
 		return err
 	}
@@ -232,6 +235,7 @@ func roomSnapshot(room roommodel.Room) roomlive.Snapshot {
 	return roomlive.Snapshot{
 		ID: room.ID, OwnerPlayerID: room.OwnerPlayerID,
 		CategoryID: room.CategoryID, MaxUsers: room.MaxUsers, TradeMode: int16(room.TradeMode),
+		RollerSpeed:  room.RollerSpeed,
 		ChatDistance: room.ChatDistance, ChatProtection: room.ChatProtection,
 	}
 }

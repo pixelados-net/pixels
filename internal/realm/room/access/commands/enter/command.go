@@ -10,6 +10,7 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
 	roomentry "github.com/niflaot/pixels/internal/realm/room/access/entry"
+	roomentered "github.com/niflaot/pixels/internal/realm/room/access/events/entered"
 	roommoderation "github.com/niflaot/pixels/internal/realm/room/control/moderation"
 	roomrights "github.com/niflaot/pixels/internal/realm/room/control/rights"
 	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
@@ -136,6 +137,9 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 
 	if err := handler.sendEntered(ctx, envelope.Command.Handler, room, roomLayout, active, player.ID()); err != nil {
+		return err
+	}
+	if err := handler.publish(ctx, roomentered.Name, roomentered.Payload{PlayerID: player.ID(), RoomID: room.ID}); err != nil {
 		return err
 	}
 

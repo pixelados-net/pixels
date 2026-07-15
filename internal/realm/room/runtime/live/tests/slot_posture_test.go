@@ -22,7 +22,7 @@ func TestRoomTickLaysOnTallBedAndWalksOff(t *testing.T) {
 	bed := worldfurniture.Item{
 		ID: 6,
 		Definition: worldfurniture.Definition{
-			Width: 1, Length: 3, StackHeight: 2, AllowLay: true,
+			Width: 1, Length: 3, StackHeight: grid.HeightFromInt(2), AllowLay: true,
 			Slots: []worldfurniture.SlotDefinition{{DX: 0, DY: 0, Status: worldfurniture.SlotStatusLay, BodyRotation: worldunit.RotationNorth}},
 		},
 		Point: pillowTile, Rotation: worldunit.RotationNorth,

@@ -31,6 +31,14 @@ Upon already coded things.
   `room.furniture.any.manage` and active room-rights check authoritative; any
   client-side gate must remain consistent with owner, local rights, and global
   furniture-management permissions rather than treating it as security.
+- ROOM/NITRO IMPROVEMENT: Expose the existing per-room roller speed to hotel
+  users. Add localized owner/rights commands `:speed <value>` and
+  `:setspeed <value>` that persist and immediately project values from `-1`
+  (disabled) through `20`, while retaining the protected admin route. Add a
+  Nitro room-settings control for the same value through a dedicated compatible
+  integration because Nitro's native room-settings packet has no roller-speed
+  field. Do not treat `PIXELS_ROLLER_HOOK_DELAY` as roller cadence and do not add
+  a global speed override unless its precedence over per-room values is defined.
 
 ## Store Boundaries
 

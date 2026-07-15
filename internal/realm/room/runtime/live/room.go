@@ -43,6 +43,8 @@ type Room struct {
 	tasks roomtask.Queue
 	// interactionLocks stores temporary furniture cooldown deadlines.
 	interactionLocks map[int64]time.Time
+	// rollerCycle stores owner-loop ticks accumulated toward the next roller step.
+	rollerCycle int
 }
 
 // NewRoom creates an active room.
@@ -140,6 +142,15 @@ func (room *Room) Occupants() []Occupant {
 	return occupants
 }
 
+// Occupant returns one active occupant without allocating a room audience.
+func (room *Room) Occupant(playerID int64) (Occupant, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	occupant, found := room.occupants[playerID]
+
+	return occupant, found
+}
+
 // Close marks the active room as closed.
 func (room *Room) Close() Occupancy {
 	occupancy, _ := room.CloseWithDoorbell()
@@ -197,26 +208,20 @@ func (room *Room) CanManageFurniture(playerID int64) bool {
 	return room.HasRights(playerID)
 }
 
-// IdleSince returns when the room became empty.
-func (room *Room) IdleSince() *time.Time {
-	room.mutex.RLock()
-	defer room.mutex.RUnlock()
-	if room.idleSince == nil {
-		return nil
+// UpdateOccupantProfile replaces visible avatar fields for one active player.
+func (room *Room) UpdateOccupantProfile(playerID int64, figure string, gender string, motto string) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	occupant, found := room.occupants[playerID]
+	if !found {
+		return false
 	}
-	idleSince := *room.idleSince
+	occupant.Figure = figure
+	occupant.Gender = gender
+	occupant.Motto = motto
+	room.occupants[playerID] = occupant
 
-	return &idleSince
-}
-
-// occupancyLocked returns occupancy while a room lock is held.
-func (room *Room) occupancyLocked() Occupancy {
-	playerIDs := make([]int64, 0, len(room.occupants))
-	for playerID := range room.occupants {
-		playerIDs = append(playerIDs, playerID)
-	}
-
-	return Occupancy{RoomID: room.snapshot.ID, CategoryID: room.snapshot.CategoryID, Count: len(room.occupants), MaxUsers: room.snapshot.MaxUsers, PlayerIDs: playerIDs}
+	return true
 }
 
 // startLoop starts the room owner goroutine.

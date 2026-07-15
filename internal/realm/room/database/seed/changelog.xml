@@ -14,6 +14,7 @@
     <include file="development/0007_nitro_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0008_enable_lobby_trading.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0009_room_bundle_templates.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_room_decorations.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_room_layouts.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_rooms.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0003_reconcile_room_vote_scores.sql" relativeToChangelogFile="true" contextFilter="test"/>

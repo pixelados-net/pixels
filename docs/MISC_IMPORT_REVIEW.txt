@@ -1,0 +1,366 @@
+generated wall definitions: 563
+generated floor definitions: 495
+poster offers: 96
+skipped matched records: 88
+unmatched scoped assets: 269
+
+[skipped]
+BattleShip: excluded family
+Chess: excluded family
+TicTacToe: excluded family
+ads_lin_wh_c: interaction outside whitelist: colorwheel
+ads_tlc_wheel: interaction outside whitelist: colorwheel
+bar_armas: interaction outside whitelist: vendingmachine
+bar_basic: interaction outside whitelist: vendingmachine
+bar_polyfon: interaction outside whitelist: vendingmachine
+barchair_silo*9: duplicate sprite 2010 already used by Poker
+bb_painimies1: excluded family
+bb_painimies2: excluded family
+bed_silo_one: existing manual seed
+bed_silo_two: existing manual seed
+bed_silo_two_notrd: duplicate sprite 4352 already used by ads_nokiax3_wall2
+chair_plasto: existing manual seed
+chair_plasto_lm1: duplicate sprite 4575 already used by bathroom_wall3
+cine_curtain_red: duplicate sprite 4485 already used by pixel_clock_black
+clothing_ruggedbackpack: interaction outside whitelist: clothing
+diamond_painting2: duplicate sprite 4547 already used by diamond_painting2
+diamond_painting3: duplicate sprite 4550 already used by diamond_painting3
+diamond_painting4: duplicate sprite 4546 already used by diamond_painting4
+diamond_painting5: duplicate sprite 4548 already used by diamond_painting5
+diamond_painting6: duplicate sprite 4545 already used by diamond_painting6
+dimmer_buttn: interaction outside whitelist: dimmer
+dimmer_fuse2: interaction outside whitelist: dimmer
+dimmer_fuse6: interaction outside whitelist: dimmer
+dimmer_steampunk: interaction outside whitelist: dimmer
+dimmer_swtch: interaction outside whitelist: dimmer
+divider_poly3: existing manual seed
+es_big1: excluded family
+es_big2: excluded family
+es_big3: excluded family
+es_build1: excluded family
+es_build2: excluded family
+es_build3: excluded family
+es_build4: excluded family
+es_window: excluded family
+external_image_wallitem: interaction outside whitelist: external_image
+external_image_wallitem_photo: interaction outside whitelist: external_image
+external_image_wallitem_poster: interaction outside whitelist: external_image
+external_image_wallitem_poster_small: interaction outside whitelist: external_image
+floor: interaction outside whitelist: roomeffect
+football12_de: excluded family
+football12_es: excluded family
+football12_it: excluded family
+football12_pt: excluded family
+habbowheel: interaction outside whitelist: colorwheel
+js_exe_rug: duplicate sprite 4630 already used by ktchn_c15_cupboard
+lamp_armas: existing manual seed
+landscape: interaction outside whitelist: roomeffect
+plant_rose: interaction outside whitelist: vendingmachine
+plant_rose_black: interaction outside whitelist: vendingmachine
+plant_sunflower: interaction outside whitelist: vendingmachine
+post.it.vd: interaction outside whitelist: postit
+post.it: interaction outside whitelist: postit
+post_it: interaction outside whitelist: postit
+post_it_dreams: interaction outside whitelist: postit
+post_it_juninas: interaction outside whitelist: 
+post_it_shakesp: interaction outside whitelist: postit
+post_it_vd: interaction outside whitelist: postit
+post_it_xmas: interaction outside whitelist: postit
+roomdimmer: interaction outside whitelist: dimmer
+safe_silo*10: interaction outside whitelist: vendingmachine
+safe_silo*2: interaction outside whitelist: vendingmachine
+safe_silo*3: interaction outside whitelist: vendingmachine
+safe_silo*4: interaction outside whitelist: vendingmachine
+safe_silo*5: interaction outside whitelist: vendingmachine
+safe_silo*6: interaction outside whitelist: vendingmachine
+safe_silo*7: interaction outside whitelist: vendingmachine
+safe_silo*8: interaction outside whitelist: vendingmachine
+safe_silo*9: interaction outside whitelist: vendingmachine
+safe_silo: interaction outside whitelist: vendingmachine
+safe_silo_pb: interaction outside whitelist: vendingmachine
+shelves_silo: interaction outside whitelist: intelligence_bookcase
+snowb_mountain_wall: excluded family
+sofa_silo: existing manual seed
+table_plasto_4leg: existing manual seed
+table_plasto_4leg_lm1: duplicate sprite 4573 already used by bathroom_wall4
+table_plasto_bigsq_lm1: duplicate sprite 4569 already used by uni_girlcoatrack
+table_plasto_round_lm1: duplicate sprite 4559 already used by wildwest_wallpaper
+table_plasto_sq_lm1: duplicate sprite 4565 already used by uni_hipdeer
+table_silo_med*10: interaction outside whitelist: badge_display
+theatre_curtain: duplicate sprite 4500 already used by steampunk_wall2
+theatre_rug: duplicate sprite 4495 already used by pixel_painting_red
+usva3_rug: duplicate sprite 4108 already used by ads_idol_logo
+usva_rug: duplicate sprite 4112 already used by ads_reebok_tv
+wallpaper: interaction outside whitelist: roomeffect
+xmas08_wallpaper: interaction outside whitelist: roomeffect
+
+[assets requiring manual behavior review]
+adobe_b_poster
+adobe_rugcarpet_01
+ads_aftv_rug
+antique_c21_oldenrug
+area_dice_by_nagu
+atlanta_japandi_curtain
+atlanta_japandi_rug
+bardeskcorner_polyfon*13
+bohogarden_c21_rug
+cabana_rug
+cafe_rug1
+carpet_floret_fufu
+carpet_tulip_fufu
+chair_nt_polyfon
+cine_nt_light1
+cstm_hw16_curtain
+cstm_hw16_curtain_v2
+cstm_hween_c20_curtain_pole
+cstm_hween_c20_curtains
+cstm_modern_rug01
+cstm_modern_rug02
+cubie_nt_decal_1_p
+cubie_nt_decal_2_p
+cupid_curtain
+diamond_painting53
+diamond_painting55
+diamond_painting56
+diamond_painting57
+diamond_painting58
+diamond_painting61
+diamond_painting63
+fb_rug3
+fb_rug4
+fb_rug8
+flexy_23_curtain_01
+flexy_23_curtain_pole_01
+haaziq_rug_1
+haaziq_rug_2
+haaziq_rug_white_tiger
+habblet_mel_curtain
+habblet_mel_flowerrug
+habbox_boho_rug1
+habbox_boho_rug2
+habbox_boho_rug3
+habbox_curtains_xiaomin
+habbox_klyford_hog_curtains
+habbox_largerug_xiaomin
+habbox_linette_banc_iced
+habbox_linette_tabouret_iced
+habbox_recycler_rugblue
+habbox_recycler_rugred
+habbox_rug01_xiaomin
+habbox_rug02_xiaomin
+habbox_rug03_xiaomin
+habbox_rug04_xiaomin
+habbox_zeref_curtain1
+hween_c20_floorwallb
+hween_c22_gothicrug
+iso_rug
+kasja_cf_bigrug
+kasja_cf_smallrug
+kasja_s_rug
+kasja_s_rug1
+lamp_2
+lt_nt_jngl_wall
+magitech_c22_rug
+messy_c21_messyrug
+nft_h22_fusetronics_rug
+party_nt_led
+party_nt_neon4
+party_nt_shelf
+pixelduck_wall
+plant_11111
+plant_budha
+plant_c15_tee
+plant_gobud
+plant_rhino
+plant_weedx
+plant_widdo
+plant_wreck
+plant_yucc1
+plasto_dj_turntable*0
+plasto_dj_turntable*1
+plasto_dj_turntable*2
+plasto_dj_turntable*3
+plasto_dj_turntable*4
+plasto_dj_turntable*5
+plasto_dj_turntable*6
+plasto_dj_turntable*7
+plasto_dj_turntable*8
+plasto_dj_turntable*9
+plasto_elephant*0
+plasto_elephant*1
+plasto_elephant*2
+plasto_elephant*3
+plasto_elephant*4
+plasto_elephant*5
+plasto_elephant*6
+plasto_elephant*7
+plasto_elephant*8
+plasto_elephant*9
+plasto_fountain*0
+plasto_fountain*1
+plasto_fountain*2
+plasto_fountain*3
+plasto_fountain*4
+plasto_fountain*5
+plasto_fountain*6
+plasto_fountain*7
+plasto_fountain*8
+plasto_fountain*9
+plasto_petal*0
+plasto_petal*1
+plasto_petal*2
+plasto_petal*3
+plasto_petal*4
+plasto_petal*5
+plasto_petal*6
+plasto_petal*7
+plasto_petal*8
+plasto_petal*9
+plasto_sofas*0
+plasto_sofas*1
+plasto_sofas*2
+plasto_sofas*3
+plasto_sofas*4
+plasto_sofas*5
+plasto_sofas*6
+plasto_sofas*7
+plasto_throne*0
+plasto_throne*1
+plasto_throne*2
+plasto_throne*3
+plasto_throne*4
+plasto_throne*5
+plasto_throne*6
+plasto_throne*7
+plasto_throne*8
+plasto_throne*9
+plasto_typingmachine*0
+plasto_typingmachine*1
+plasto_typingmachine*2
+plasto_typingmachine*3
+plasto_typingmachine*4
+plasto_typingmachine*5
+plasto_typingmachine*6
+plasto_typingmachine*7
+plasto_typingmachine*8
+plasto_typingmachine*9
+poster1
+poster10
+poster1000
+poster1001
+poster1002
+poster1003
+poster1004
+poster1005
+poster1006
+poster11
+poster12
+poster13
+poster14
+poster15
+poster16
+poster17
+poster18
+poster19
+poster2
+poster20
+poster2000
+poster2001
+poster2002
+poster2003
+poster2004
+poster2005
+poster2006
+poster2007
+poster2008
+poster21
+poster22
+poster23
+poster24
+poster25
+poster26
+poster27
+poster28
+poster29
+poster3
+poster30
+poster31
+poster32
+poster33
+poster34
+poster35
+poster36
+poster37
+poster38
+poster39
+poster4
+poster40
+poster41
+poster42
+poster43
+poster44
+poster45
+poster46
+poster47
+poster48
+poster49
+poster5
+poster50
+poster500
+poster501
+poster502
+poster504
+poster505
+poster506
+poster507
+poster508
+poster509
+poster51
+poster510
+poster511
+poster512
+poster513
+poster514
+poster515
+poster516
+poster517
+poster518
+poster52
+poster520
+poster521
+poster522
+poster523
+poster53
+poster54
+poster55
+poster56
+poster57
+poster58
+poster6
+poster7
+poster8
+poster9
+poster_duck
+posterjb
+prehistoric_curtain
+rela_nt_wall
+sanrio_c21_hellokittyrug
+silo_escritori
+simsek_22_curtain_01
+simsek_22_curtain_01_01
+simsek_22_rug_01
+simsek_22_rug_01_01
+smiley_c23_rug
+teschietto_2023_wednesday_rug
+tiger_curtains
+usva5_nt_rug
+usva_nt_rug
+usva_nt_wallrug
+val09_nt_wdrobe_g
+vwave_c21_glitchsunsetbg
+vwave_c21_sunsetbg
+window_nt_diner2
+window_nt_skyscraper
+xmas_c20_forestbg
+year2021
+yummy_22_rug_01

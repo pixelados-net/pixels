@@ -123,7 +123,7 @@ func normalizeCustom(roomLayout Layout) (Layout, error) {
 	if !found {
 		return Layout{}, ErrInvalidLayout
 	}
-	roomLayout.DoorZ = int(height)
+	roomLayout.DoorZ = int(height / grid.HeightScale)
 	roomLayout.TileSize = roomGrid.ValidCount()
 	roomLayout.Enabled = true
 

@@ -55,6 +55,8 @@ type Command struct {
 	ReceiverName string
 	// Message stores an optional gift message.
 	Message string
+	// ExtraData stores optional product-specific buyer data.
+	ExtraData string
 	// SpriteID identifies the selected wrapping furniture sprite.
 	SpriteID int32
 	// BoxID identifies an optional wrapping box.

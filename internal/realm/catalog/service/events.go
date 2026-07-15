@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	catalogpurchased "github.com/niflaot/pixels/internal/realm/catalog/events/purchased"
 	catalogmodel "github.com/niflaot/pixels/internal/realm/catalog/model"
@@ -10,6 +11,21 @@ import (
 	"github.com/niflaot/pixels/pkg/bus"
 	"go.uber.org/zap"
 )
+
+// logPurchase writes extended commerce history when enabled.
+func (service *Service) logPurchase(ctx context.Context, params PurchaseParams, item catalogmodel.Item, result *PurchaseResult, credits int64, points int64) error {
+	if params.Free || service.commerce == nil {
+		return nil
+	}
+	itemIDs := make([]int64, len(result.GrantedItems))
+	for index, granted := range result.GrantedItems {
+		itemIDs[index] = granted.ID
+	}
+	if err := service.commerce.LogPurchase(ctx, params.PlayerID, item, params.Amount, credits, points, itemIDs); err != nil {
+		return fmt.Errorf("log catalog purchase: %w", err)
+	}
+	return nil
+}
 
 // publishPurchase emits completed catalog and room bundle purchase facts.
 func (service *Service) publishPurchase(ctx context.Context, playerID int64, result PurchaseResult) {

@@ -20,6 +20,12 @@ type PlaceParams struct {
 
 	// Placement stores the destination floor coordinates and rotation.
 	Placement furnituremodel.Placement
+
+	// WallPosition stores Nitro wall coordinates for wall furniture.
+	WallPosition string
+
+	// UniqueInteractionType rejects another placed item with the same interaction.
+	UniqueInteractionType string
 }
 
 // MoveParams contains input for repositioning a placed item.
@@ -35,6 +41,9 @@ type MoveParams struct {
 
 	// Placement stores the destination floor coordinates and rotation.
 	Placement furnituremodel.Placement
+
+	// WallPosition stores Nitro wall coordinates for wall furniture.
+	WallPosition string
 }
 
 // PickupParams contains input for returning a placed item to inventory.
@@ -87,8 +96,12 @@ func (service *Service) Place(ctx context.Context, params PlaceParams) (furnitur
 	if params.RoomID <= 0 {
 		return furnituremodel.Item{}, ErrInvalidRoomID
 	}
-	if err := validatePlacement(params.Placement); err != nil {
-		return furnituremodel.Item{}, err
+	if params.WallPosition == "" {
+		if err := validatePlacement(params.Placement); err != nil {
+			return furnituremodel.Item{}, err
+		}
+	} else if !furnituremodel.ValidWallPosition(params.WallPosition) {
+		return furnituremodel.Item{}, ErrInvalidPlacement
 	}
 
 	item, err := service.ownedItem(ctx, params.ItemID, params.ActorPlayerID)
@@ -103,10 +116,12 @@ func (service *Service) Place(ctx context.Context, params PlaceParams) (furnitur
 	}
 
 	placed, updated, err := service.store.PlaceItem(ctx, repository.PlaceItemParams{
-		ID:            params.ItemID,
-		OwnerPlayerID: params.ActorPlayerID,
-		RoomID:        params.RoomID,
-		Placement:     params.Placement,
+		ID:                    params.ItemID,
+		OwnerPlayerID:         params.ActorPlayerID,
+		RoomID:                params.RoomID,
+		Placement:             params.Placement,
+		WallPosition:          params.WallPosition,
+		UniqueInteractionType: params.UniqueInteractionType,
 	})
 	if err != nil {
 		return furnituremodel.Item{}, err
@@ -126,8 +141,12 @@ func (service *Service) Move(ctx context.Context, params MoveParams) (furniturem
 	if params.RoomID <= 0 {
 		return furnituremodel.Item{}, ErrInvalidRoomID
 	}
-	if err := validatePlacement(params.Placement); err != nil {
-		return furnituremodel.Item{}, err
+	if params.WallPosition == "" {
+		if err := validatePlacement(params.Placement); err != nil {
+			return furnituremodel.Item{}, err
+		}
+	} else if !furnituremodel.ValidWallPosition(params.WallPosition) {
+		return furnituremodel.Item{}, ErrInvalidPlacement
 	}
 
 	item, found, err := service.store.FindItemByID(ctx, params.ItemID)
@@ -142,9 +161,10 @@ func (service *Service) Move(ctx context.Context, params MoveParams) (furniturem
 	}
 
 	moved, updated, err := service.store.MoveItem(ctx, repository.MoveItemParams{
-		ID:        params.ItemID,
-		RoomID:    params.RoomID,
-		Placement: params.Placement,
+		ID:           params.ItemID,
+		RoomID:       params.RoomID,
+		Placement:    params.Placement,
+		WallPosition: params.WallPosition,
 	})
 	if err != nil {
 		return furnituremodel.Item{}, err

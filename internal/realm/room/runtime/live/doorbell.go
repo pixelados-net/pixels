@@ -6,6 +6,28 @@ import (
 	roomdoorbell "github.com/niflaot/pixels/internal/realm/room/access/doorbell"
 )
 
+// IdleSince returns when the room became empty.
+func (room *Room) IdleSince() *time.Time {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.idleSince == nil {
+		return nil
+	}
+	idleSince := *room.idleSince
+
+	return &idleSince
+}
+
+// occupancyLocked returns occupancy while a room lock is held.
+func (room *Room) occupancyLocked() Occupancy {
+	playerIDs := make([]int64, 0, len(room.occupants))
+	for playerID := range room.occupants {
+		playerIDs = append(playerIDs, playerID)
+	}
+
+	return Occupancy{RoomID: room.snapshot.ID, CategoryID: room.snapshot.CategoryID, Count: len(room.occupants), MaxUsers: room.snapshot.MaxUsers, PlayerIDs: playerIDs}
+}
+
 // RequestDoorbell queues a player when an authorized responder is present.
 func (room *Room) RequestDoorbell(entry roomdoorbell.Entry, approverPresent bool) bool {
 	room.mutex.Lock()

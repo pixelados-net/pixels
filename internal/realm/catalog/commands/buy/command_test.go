@@ -31,8 +31,8 @@ import (
 // TestHandleCompletesPurchaseAndRefreshesInventory verifies successful purchase responses.
 func TestHandleCompletesPurchaseAndRefreshesInventory(t *testing.T) {
 	handler, connection, sent, manager := buyFixture(t)
-	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, PageID: 2, OfferID: 5, Amount: 1}})
-	if err != nil || manager.purchases != 1 || len(*sent) != 3 ||
+	err := handler.Handle(context.Background(), command.Envelope[Command]{Command: Command{Connection: connection, PageID: 2, OfferID: 5, ExtraData: "inscription", Amount: 1}})
+	if err != nil || manager.purchases != 1 || manager.extraData != "inscription" || len(*sent) != 3 ||
 		(*sent)[0].Header != outunseen.Header || (*sent)[1].Header != outok.Header || (*sent)[2].Header != outrefresh.Header {
 		t.Fatalf("unexpected packets %#v purchases=%d error %v", *sent, manager.purchases, err)
 	}
@@ -136,6 +136,8 @@ type buyManager struct {
 	err error
 	// purchases counts purchase calls.
 	purchases int
+	// extraData stores the last client product data.
+	extraData string
 	// pageItems overrides page offer fixtures when non-nil.
 	pageItems []catalogmodel.Item
 	// definitionFound overrides furniture metadata availability.
@@ -168,6 +170,7 @@ func (buyManager) SanitizeList(context.Context) ([]furnituremodel.Definition, er
 // Purchase returns a configured purchase outcome.
 func (manager *buyManager) Purchase(_ context.Context, params catalogservice.PurchaseParams) (catalogservice.PurchaseResult, error) {
 	manager.purchases++
+	manager.extraData = params.ExtraData
 	if params.Amount > 1 && !manager.item.BundleDiscountEnabled {
 		return catalogservice.PurchaseResult{}, catalogservice.ErrInvalidAmount
 	}

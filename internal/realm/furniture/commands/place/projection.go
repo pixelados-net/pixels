@@ -32,7 +32,7 @@ func (handler Handler) giftSender(ctx context.Context, item furnituremodel.Item)
 
 // addRecord maps a placed item and its definition into an ADD_FLOOR_ITEM record.
 func addRecord(item furnituremodel.Item, definition furnituremodel.Definition, ownerName string, sender projection.GiftSender) outadd.FloorItem {
-	return outadd.FloorItem{
+	record := outadd.FloorItem{
 		ID: item.ID, SpriteID: projection.FurnitureSpriteID(item, definition),
 		X: *item.X, Y: *item.Y, Rotation: int(item.Rotation),
 		Z: projection.FurnitureHeightValue(*item.Z), ExtraHeight: projection.ExtraHeightValue(definition),
@@ -41,6 +41,9 @@ func addRecord(item furnituremodel.Item, definition furnituremodel.Definition, o
 		OwnerID: item.OwnerPlayerID, OwnerName: ownerName, GiftMessage: giftMessage(item),
 		GiftProductCode: definition.Name, GiftSenderName: sender.Name, GiftSenderFigure: sender.Figure,
 	}
+	record.Data = projection.SpecializedObjectData(definition.InteractionType, item.ExtraData)
+
+	return record
 }
 
 // giftMessage returns the optional persisted gift message.

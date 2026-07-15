@@ -457,6 +457,33 @@ minimum manual checks expected when touching it.
   - Fill a runtime room to capacity and verify `room.entry_error`.
   - Verify `room.occupancy_changed`, `room.entered`, and `room.left` events.
 
+### FEATURE: Rollers and Room Heights
+
+- Owns fixed-point room heights under `internal/realm/room/world`, roller
+  interactions under `internal/realm/furniture/interactions/roller`, packet
+  `3207`, room roller speed, and the roller development seed.
+- Heights use quarter-unit fixed point. Convert only at database and wire
+  boundaries; world physics must never mix scaled and unscaled values.
+- Physical furniture volumes suppress covered walking planes and enforce avatar
+  clearance. Invalidated paths re-anchor only to walkable sections and trapped
+  units retain an escape path.
+- One room-owned cycle advances indexed rollers. A unit or item moves at most
+  once per cycle, walking units take precedence, occupied destinations block,
+  furniture never rolls uphill, and walk hooks run after the configured delay.
+- Roller speed `-1` disables movement, `0` advances every room tick, and positive
+  values count 500ms room cycles. Nitro does not send this field in its settings
+  packet, so live edits use `PATCH /api/admin/rooms/:id/roller`.
+- Test after changes:
+  - `go test -race ./internal/realm/furniture/interactions/roller ./internal/realm/room/world/... ./internal/realm/room/runtime/live ./networking/outbound/room/furniture/rolling`
+  - `go test -run '^$' -bench BenchmarkRollerTick -benchmem ./internal/realm/furniture/interactions/roller`
+  - Build a three-roller chain and verify one-tile-per-cycle movement, packet
+    animation, durable final positions, stationary-unit movement, and destination
+    blocking.
+  - Stack furniture and verify fractional heights, blocked occupied volumes,
+    avatar clearance, path invalidation recovery, and no movement freeze.
+  - Change roller speed through the protected admin route and verify active rooms
+    adopt the new cadence without reconnecting.
+
 ### FEATURE: Room Chat
 
 - Owns `internal/realm/chat`, `networking/inbound/chat`,
@@ -593,6 +620,28 @@ minimum manual checks expected when touching it.
   - Gift a seeded furniture offer to an online and offline player; verify the
     buyer dialog closes and the online recipient receives an inventory novelty.
   - Call `/api/admin/catalog/refresh` and verify connected clients re-fetch.
+
+### FEATURE: MISC Furniture Catalog
+
+- Owns MISC furniture/catalog development seeds and
+  `internal/realm/catalog/trophy`.
+- Provides asset-safe wall decoration, plants, carpets, lighting, dividers,
+  complete classic lines, shared-definition poster variants, trophies, and
+  multi-product decoration packs.
+- Supports definition-configured reversed gate states for assets whose closed
+  Nitro frame is state `1`, without changing normal gate semantics.
+- Trophy purchases consume client extra data only for trophy definitions. The
+  server resolves the buyer, strips protocol separators, applies the global
+  hotel filter, truncates Unicode text, and persists the immutable inscription.
+- Test after changes:
+  - `go test ./internal/realm/catalog/trophy ./internal/realm/catalog/...`
+  - Run Liquibase validation and apply the development seed changelog.
+  - Verify generated definitions have unique sprites, whitelisted interactions,
+    and enabled offers; keep the sanitize-list baseline documented in
+    `docs/MISC.md`.
+  - In Nitro, exercise every new page, poster art, wall placement, carpet
+    traversal, closed/open Bazaar curtain collision, classic sit/lay slot,
+    trophy inscription, the top-level room-paint page, and both packs.
 
 ### FEATURE: Store Final and Subscriptions
 
@@ -907,6 +956,46 @@ minimum manual checks expected when touching it.
   - Buy a complete-room bundle containing a template bot and verify the cloned
     room owns a separate bot with the same placement and chat configuration.
   - Open `/docs` and verify the protected `Admin Bots` route group.
+
+### FEATURE: Room Decoration and Remaining Room Entities
+
+- Owns `internal/realm/room/decoration`, decorator commands below
+  `internal/realm/furniture/commands/decor`, wall-furniture projections, room
+  appearance persistence, and hand-item transfer commands below
+  `internal/realm/room/world/commands/handitem`.
+- Provides consumable floor colors/patterns, wallpaper, and window landscapes;
+  generic wall-item placement, movement, pickup, and entry snapshots; editable
+  filtered post-its with sticky-pole guest placement; mannequin outfit naming,
+  saving, and same-gender application; three durable mood-light presets; and
+  typed background-toner object data.
+- Room bundles clone floor, wallpaper, landscape, wall items, decorator object
+  data, and dimmer presets in their existing purchase transaction. Development
+  seeds include catalog surface variants and a decorated bundle template.
+- A room may contain only one dimmer. The persistence guard serializes placement
+  by room so concurrent requests cannot bypass the limit.
+- Player hand-item drop and adjacent transfer resolve room-local unit ids through
+  the world's reverse unit index. Keep that lookup at zero allocations and do
+  not scan all units or query persistence on this path.
+- `UNIT_NUMBER` and `UNIT_INFO` remain focused outbound encoders; they do not own
+  additional room state.
+- Test after changes:
+  - `go test -race ./internal/realm/room/... ./internal/realm/furniture/...`
+  - `go test ./networking/inbound/furniture/... ./networking/outbound/room/...`
+  - `go test -run '^$' -bench BenchmarkUnitByID -benchmem ./internal/realm/room/world/runtime/tests`
+  - Buy and apply every seeded floor, wallpaper, and landscape variant; verify
+    every current occupant updates immediately and re-entry restores the choice.
+  - Buy, place, move, and pick up a mood light; verify a second mood light is
+    rejected, all three presets save, and toggle state survives a restart.
+  - Place a post-it as owner and through a sticky pole as a visitor; edit color
+    and filtered text, then re-enter and verify the durable wall snapshot.
+  - Save and rename male and female mannequins; apply them with matching and
+    mismatched genders and verify only clothing parts change in the valid case.
+  - Configure and toggle a background toner and verify other occupants and late
+    entrants receive its integer-array object data.
+  - Give a hand item to an adjacent player, reject a distant target, and drop it;
+    verify every occupant sees both unit hand-item updates.
+  - Buy the decorated complete-room bundle and verify its surfaces, post-it,
+    mannequin, toner, mood light, and mood-light presets are independent copies.
 
 ## SDK Rules
 

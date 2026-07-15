@@ -65,7 +65,7 @@ func decode(connection netconn.Context, packet codec.Packet) (commercecmd.Comman
 	case ingiftpurchase.Header:
 		payload, err := ingiftpurchase.Decode(packet)
 		input.Action, input.OfferID = commercecmd.BuyGift, int64(payload.ItemID)
-		input.ReceiverName, input.Message = payload.ReceiverName, payload.GiftMessage
+		input.ReceiverName, input.Message, input.ExtraData = payload.ReceiverName, payload.GiftMessage, payload.ExtraData
 		input.SpriteID, input.BoxID, input.RibbonID = payload.SpriteID, payload.BoxID, payload.RibbonID
 		input.ShowMyFace = payload.ShowMyFace
 		return input, err

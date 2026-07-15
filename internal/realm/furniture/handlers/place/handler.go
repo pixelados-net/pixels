@@ -26,7 +26,7 @@ func New(handler placecmd.Handler, log *zap.Logger) netconn.Handler {
 		return dispatcher.Dispatch(context.Background(), command.Envelope[placecmd.Command]{
 			Command: placecmd.Command{
 				Handler: connection, ItemID: int64(payload.ItemID),
-				X: int(payload.X), Y: int(payload.Y), Rotation: int(payload.Rotation),
+				X: int(payload.X), Y: int(payload.Y), Rotation: int(payload.Rotation), WallPosition: payload.WallPosition,
 			},
 			Metadata: command.Metadata{ConnectionID: string(connection.ConnectionID)},
 		})

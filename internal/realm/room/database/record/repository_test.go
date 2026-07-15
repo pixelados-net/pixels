@@ -179,7 +179,7 @@ func TestListCategoriesWrapsRowsError(t *testing.T) {
 // roomValuesForTest returns scannable room values.
 func roomValuesForTest() []any {
 	now := time.Date(2026, 7, 5, 12, 0, 0, 0, time.UTC)
-	return []any{int64(9), int64(7), "demo", "Test Room", "hello", "model_a", int16(roommodel.DoorModeOpen), pgtype.Text{String: "bcrypt-hash", Valid: true}, 25, 3, pgtype.Int8{}, int16(roommodel.TradeModeDisabled), false, true, false, false, 0, 0, int16(0), int16(1), int16(1), int16(50), int16(2), int16(0), int16(1), int16(2), false, false, false, now, now, pgtype.Timestamptz{}, int64(1)}
+	return []any{int64(9), int64(7), "demo", "Test Room", "hello", "model_a", int16(roommodel.DoorModeOpen), pgtype.Text{String: "bcrypt-hash", Valid: true}, 25, 3, pgtype.Int8{}, int16(roommodel.TradeModeDisabled), 4, false, true, false, false, 0, 0, int16(0), int16(1), int16(1), int16(50), int16(2), int16(0), int16(1), int16(2), false, false, false, "0.0", "0.0", "0.0", now, now, pgtype.Timestamptz{}, int64(1)}
 }
 
 // categoryValuesForTest returns scannable category values.

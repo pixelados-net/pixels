@@ -18,10 +18,12 @@ import (
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
+	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outrefresh "github.com/niflaot/pixels/networking/outbound/inventory/furniture/refresh"
 	outunseen "github.com/niflaot/pixels/networking/outbound/inventory/unseen"
 	outremove "github.com/niflaot/pixels/networking/outbound/room/furniture/remove"
+	outwallremove "github.com/niflaot/pixels/networking/outbound/room/furniture/wallremove"
 	"github.com/niflaot/pixels/pkg/bus"
 	"github.com/niflaot/pixels/pkg/i18n"
 	"go.uber.org/zap"
@@ -118,7 +120,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if err != nil {
 		return err
 	}
-	if err := handler.broadcastRemove(ctx, active, picked.ID, picked.OwnerPlayerID); err != nil {
+	if err := handler.broadcastRemove(ctx, active, picked); err != nil {
 		return err
 	}
 	if err := handler.broadcastStoodUpOccupants(ctx, active, stoodUp); err != nil {
@@ -141,12 +143,20 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 }
 
 // broadcastRemove notifies all room occupants that a floor item was picked up.
-func (handler Handler) broadcastRemove(ctx context.Context, active *roomlive.Room, itemID int64, ownerID int64) error {
+func (handler Handler) broadcastRemove(ctx context.Context, active *roomlive.Room, item furnituremodel.Item) error {
 	if handler.Connections == nil {
 		return nil
 	}
-
-	packet, err := outremove.Encode(itemID, ownerID)
+	definition, found, err := handler.Furniture.FindDefinitionByID(ctx, item.DefinitionID)
+	if err != nil {
+		return err
+	}
+	var packet codec.Packet
+	if found && definition.Kind == furnituremodel.KindWall {
+		packet, err = outwallremove.Encode(item.ID, item.OwnerPlayerID)
+	} else {
+		packet, err = outremove.Encode(item.ID, item.OwnerPlayerID)
+	}
 	if err != nil {
 		return err
 	}

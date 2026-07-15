@@ -14,12 +14,14 @@ import (
 	roomvotes "github.com/niflaot/pixels/internal/realm/room/control/votes"
 	roomwordfilter "github.com/niflaot/pixels/internal/realm/room/control/wordfilter"
 	auditrepo "github.com/niflaot/pixels/internal/realm/room/database/audit"
+	decorationrepo "github.com/niflaot/pixels/internal/realm/room/database/decoration"
 	layoutrepo "github.com/niflaot/pixels/internal/realm/room/database/layout"
 	moderationrepo "github.com/niflaot/pixels/internal/realm/room/database/moderation"
 	"github.com/niflaot/pixels/internal/realm/room/database/record"
 	rightsrepo "github.com/niflaot/pixels/internal/realm/room/database/rights"
 	votesrepo "github.com/niflaot/pixels/internal/realm/room/database/votes"
 	wordrepo "github.com/niflaot/pixels/internal/realm/room/database/wordfilter"
+	roomdecoration "github.com/niflaot/pixels/internal/realm/room/decoration"
 	roombundle "github.com/niflaot/pixels/internal/realm/room/record/bundle"
 	"github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomaction "github.com/niflaot/pixels/internal/realm/room/world/action"
@@ -37,6 +39,9 @@ var Module = fx.Module(
 	fx.Provide(
 		NewLayoutStore,
 		NewStore,
+		decorationrepo.New,
+		NewDecorationStore,
+		roomdecoration.New,
 		roomfloorplan.LoadConfig,
 		layout.NewService,
 		service.New,
@@ -82,6 +87,11 @@ var Module = fx.Module(
 	fx.Invoke(RegisterConnectionHandlers),
 	fx.Invoke(roomaction.RegisterScheduler),
 )
+
+// NewDecorationStore exposes PostgreSQL room decoration persistence through its domain contract.
+func NewDecorationStore(repository *decorationrepo.Repository) roomdecoration.Store {
+	return repository
+}
 
 // NewVoteStore creates room vote persistence.
 func NewVoteStore(pool *postgres.Pool) roomvotes.Store {

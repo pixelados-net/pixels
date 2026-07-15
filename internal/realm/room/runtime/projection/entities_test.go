@@ -88,7 +88,7 @@ func TestMovementStatuses(t *testing.T) {
 			Previous: worldpath.Position{Point: grid.MustPoint(1, 3), Z: 0},
 			Moving:   true,
 		},
-		Step:  worldpath.Step{Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: 1}},
+		Step:  worldpath.Step{Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: grid.HeightFromInt(1)}},
 		Moved: true,
 	}}
 
@@ -103,11 +103,11 @@ func TestMovementStatusesStopsAtFinalPosition(t *testing.T) {
 	movements := []roomlive.Movement{{
 		Unit: roomlive.UnitSnapshot{
 			UnitID:   1,
-			Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: 1},
+			Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: grid.HeightFromInt(1)},
 			Previous: worldpath.Position{Point: grid.MustPoint(1, 3), Z: 0},
 			Moving:   false,
 		},
-		Step:    worldpath.Step{Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: 1}},
+		Step:    worldpath.Step{Position: worldpath.Position{Point: grid.MustPoint(2, 3), Z: grid.HeightFromInt(1)}},
 		Settled: true,
 	}}
 

@@ -26,9 +26,11 @@ import (
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	actionservice "github.com/niflaot/pixels/internal/realm/room/world/action"
 	actioncmd "github.com/niflaot/pixels/internal/realm/room/world/commands/action"
+	handitemcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/handitem"
 	lookcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/look"
 	walkcmd "github.com/niflaot/pixels/internal/realm/room/world/commands/walk"
 	actionhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/action"
+	handitemhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/handitem"
 	movementhandler "github.com/niflaot/pixels/internal/realm/room/world/handlers/movement"
 	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
@@ -130,6 +132,9 @@ func RegisterConnectionHandlers(handlers *realmconn.Handlers, deps HandlerDeps) 
 	actionhandler.Register(handlers.Inbound, actionhandler.New(actioncmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Actions: deps.Actions,
 	}, deps.Log))
+	handitemhandler.Register(handlers.Inbound, handitemcmd.Handler{
+		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime, Connections: deps.Connections,
+	}, deps.Log)
 	entryhandler.RegisterDesktop(handlers.Inbound, entryhandler.NewDesktop(leavecmd.Handler{
 		Players: deps.Players, Bindings: deps.Bindings, Runtime: deps.Runtime,
 		Connections: deps.Connections, Events: deps.Events,

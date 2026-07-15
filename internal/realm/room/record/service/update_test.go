@@ -72,17 +72,18 @@ func TestApplyAndValidateUpdateCoversEditableFields(t *testing.T) {
 	categoryID := int64(4)
 	category := &categoryID
 	maxUsers, wall, floor := 50, 1, -1
+	rollerSpeed := 3
 	door, trade := roommodel.DoorModeOpen, roommodel.TradeModeAllowed
 	allowWalk, allowPets, allowEat, hideWalls := true, false, true, true
 	chatMode, chatWeight, chatSpeed, chatDistance, chatProtection := int16(1), int16(2), int16(1), int16(40), int16(2)
 	moderation := roommodel.ModerationPolicyOwnerAndRights
 	room := roommodel.Room{Name: "Old Room", MaxUsers: 25}
 	applyUpdate(&room, UpdateParams{Name: &name, Description: &description, CategoryID: &category, MaxUsers: &maxUsers,
-		DoorMode: &door, TradeMode: &trade, AllowWalkthrough: &allowWalk, AllowPets: &allowPets,
+		DoorMode: &door, TradeMode: &trade, RollerSpeed: &rollerSpeed, AllowWalkthrough: &allowWalk, AllowPets: &allowPets,
 		AllowPetsEat: &allowEat, HideWalls: &hideWalls, WallThickness: &wall, FloorThickness: &floor,
 		ChatMode: &chatMode, ChatWeight: &chatWeight, ChatSpeed: &chatSpeed, ChatDistance: &chatDistance,
 		ChatProtection: &chatProtection, ModerationMute: &moderation, ModerationKick: &moderation, ModerationBan: &moderation})
-	if room.Name != name || room.CategoryID == nil || room.MaxUsers != 50 || room.TradeMode != trade || !room.AllowWalkthrough || room.AllowPets || !room.AllowPetsEat || !room.HideWalls || room.ChatDistance != 40 || room.ModerationBan != moderation {
+	if room.Name != name || room.CategoryID == nil || room.MaxUsers != 50 || room.TradeMode != trade || room.RollerSpeed != rollerSpeed || !room.AllowWalkthrough || room.AllowPets || !room.AllowPetsEat || !room.HideWalls || room.ChatDistance != 40 || room.ModerationBan != moderation {
 		t.Fatalf("unexpected merged room %#v", room)
 	}
 }
@@ -107,6 +108,7 @@ func TestValidateUpdateRejectsMalformedSettings(t *testing.T) {
 		{func() roommodel.Room { room := valid; room.MaxUsers = 0; return room }(), ErrInvalidMaxUsers},
 		{func() roommodel.Room { room := valid; room.DoorMode = 9; return room }(), ErrInvalidDoorMode},
 		{func() roommodel.Room { room := valid; room.TradeMode = 9; return room }(), ErrInvalidTradeMode},
+		{func() roommodel.Room { room := valid; room.RollerSpeed = 21; return room }(), ErrInvalidRollerSpeed},
 		{func() roommodel.Room { room := valid; room.WallThickness = 2; return room }(), ErrInvalidRoomID},
 		{func() roommodel.Room { room := valid; room.ChatDistance = 101; return room }(), ErrInvalidChatSettings},
 		{func() roommodel.Room { room := valid; room.ModerationMute = 9; return room }(), ErrInvalidModerationSettings},

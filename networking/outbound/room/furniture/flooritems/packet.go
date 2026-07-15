@@ -55,6 +55,9 @@ type FloorItem struct {
 	// ExtraData stores simple protocol-facing visual state.
 	ExtraData string
 
+	// Data stores specialized furniture object data.
+	Data *stuffdata.Data
+
 	// UsagePolicy stores the item interaction usage policy.
 	UsagePolicy int32
 
@@ -132,6 +135,8 @@ func appendFloorItem(dst []byte, item FloorItem) ([]byte, error) {
 	}
 	if item.GiftWrapped {
 		payload, err = appendGiftData(payload, item)
+	} else if item.Data != nil {
+		payload, err = item.Data.Append(payload)
 	} else {
 		payload, err = codec.AppendPayload(payload, regularDataDefinition(),
 			codec.Int32(nonLimitedFlag), codec.String(item.ExtraData))

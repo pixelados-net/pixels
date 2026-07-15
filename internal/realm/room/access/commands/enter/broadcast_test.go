@@ -7,6 +7,7 @@ import (
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/networking/codec"
 	netconn "github.com/niflaot/pixels/networking/connection"
@@ -35,6 +36,18 @@ func TestSendRoomStateWithEmptyRoom(t *testing.T) {
 	}
 	if len(*sent) != 0 {
 		t.Fatalf("expected no packets, got %#v", *sent)
+	}
+}
+
+// TestLoadWorldRejectsInvalidLayout verifies layout validation during loading.
+func TestLoadWorldRejectsInvalidLayout(t *testing.T) {
+	room, err := roomlive.NewRoom(roomlive.Snapshot{ID: 9, MaxUsers: 5})
+	if err != nil {
+		t.Fatalf("create room: %v", err)
+	}
+	err = (Handler{}).loadWorld(context.Background(), room, roommodel.Room{}, layout.Layout{Heightmap: "x", DoorX: 0, DoorY: 0})
+	if err == nil {
+		t.Fatal("expected invalid layout world")
 	}
 }
 

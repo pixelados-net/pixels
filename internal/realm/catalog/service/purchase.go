@@ -156,7 +156,11 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 	for _, product := range products {
 		var granted []furnituremodel.Item
 		var grantErr error
-		grant := furnitureservice.GrantParams{DefinitionID: product.DefinitionID, OwnerPlayerID: recipientID, Quantity: product.Quantity * params.Amount, ExtraData: item.ExtraData, LimitedEditionNumber: result.LimitedUnitNumber}
+		extraData, extraErr := service.purchaseExtraData(ctx, params, item, product.DefinitionID)
+		if extraErr != nil {
+			return extraErr
+		}
+		grant := furnitureservice.GrantParams{DefinitionID: product.DefinitionID, OwnerPlayerID: recipientID, Quantity: product.Quantity * params.Amount, ExtraData: extraData, LimitedEditionNumber: result.LimitedUnitNumber}
 		if params.Gift == nil {
 			granted, grantErr = service.furniture.Grant(ctx, grant)
 		} else if gifts, ok := service.furniture.(furnitureservice.GiftGranter); ok {
@@ -187,18 +191,23 @@ func (service *Service) commitPurchase(ctx context.Context, params PurchaseParam
 	return service.logPurchase(ctx, params, item, result, credits, points)
 }
 
-// logPurchase writes extended commerce history when enabled.
-func (service *Service) logPurchase(ctx context.Context, params PurchaseParams, item catalogmodel.Item, result *PurchaseResult, credits int64, points int64) error {
-	if !params.Free && service.commerce != nil {
-		itemIDs := make([]int64, len(result.GrantedItems))
-		for index, granted := range result.GrantedItems {
-			itemIDs[index] = granted.ID
-		}
-		if err := service.commerce.LogPurchase(ctx, params.PlayerID, item, params.Amount, credits, points, itemIDs); err != nil {
-			return fmt.Errorf("log catalog purchase: %w", err)
-		}
+// purchaseExtraData resolves server-owned initial data for supported product layouts.
+func (service *Service) purchaseExtraData(ctx context.Context, params PurchaseParams, item catalogmodel.Item, definitionID int64) (string, error) {
+	definition, found := service.cache.definition(definitionID)
+	if !found || definition.InteractionType != "trophy" {
+		return item.ExtraData, nil
 	}
-	return nil
+	if service.players == nil || service.trophies == nil {
+		return "", ErrCommerceUnavailable
+	}
+	buyer, found, err := service.players.FindByID(ctx, params.PlayerID)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", ErrInvalidPlayerID
+	}
+	return service.trophies.Format(buyer.Player.Username, params.ExtraData), nil
 }
 
 // DiscountedUnits returns the number of free units for a bulk amount.

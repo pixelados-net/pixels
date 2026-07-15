@@ -143,7 +143,7 @@ func (unit *Unit) Advance() (path.Step, bool, bool) {
 func (unit *Unit) setMoveStatus(position path.Position) {
 	value := strconv.Itoa(int(position.Point.X)) + "," +
 		strconv.Itoa(int(position.Point.Y)) + "," +
-		strconv.Itoa(int(position.Z))
+		position.Z.String()
 	unit.statuses.set(StatusMove, value)
 }
 

@@ -65,6 +65,9 @@ func (statuses statuses) has(key string) bool {
 
 // snapshot returns statuses ordered by key.
 func (statuses statuses) snapshot() []Status {
+	if len(statuses.values) == 0 {
+		return nil
+	}
 	result := make([]Status, 0, len(statuses.values))
 	for key, value := range statuses.values {
 		result = append(result, Status{Key: key, Value: value})

@@ -50,6 +50,9 @@ func applyUpdate(room *roommodel.Room, params UpdateParams) {
 	if params.TradeMode != nil {
 		room.TradeMode = *params.TradeMode
 	}
+	if params.RollerSpeed != nil {
+		room.RollerSpeed = *params.RollerSpeed
+	}
 	if params.AllowWalkthrough != nil {
 		room.AllowWalkthrough = *params.AllowWalkthrough
 	}
@@ -110,6 +113,9 @@ func validateUpdate(room roommodel.Room, params UpdateParams, tags []string) err
 	}
 	if room.TradeMode < roommodel.TradeModeDisabled || room.TradeMode > roommodel.TradeModeAllowed {
 		return ErrInvalidTradeMode
+	}
+	if room.RollerSpeed < -1 || room.RollerSpeed > 20 {
+		return ErrInvalidRollerSpeed
 	}
 	if room.WallThickness < -2 || room.WallThickness > 1 || room.FloorThickness < -2 || room.FloorThickness > 1 {
 		return ErrInvalidRoomID

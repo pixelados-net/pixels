@@ -13,4 +13,6 @@
     <include file="migrations/0006_add_gift_wrap_sprite.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0007_add_trading_fields.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0008_add_effect_fields.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0009_allow_wall_item_placement.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0010_recover_pending_postits.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

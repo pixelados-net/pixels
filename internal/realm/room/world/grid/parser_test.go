@@ -20,8 +20,8 @@ func TestParseDecodesHeightmap(t *testing.T) {
 	}
 
 	assertHeight(t, roomGrid, MustPoint(1, 0), 0)
-	assertHeight(t, roomGrid, MustPoint(2, 1), 35)
-	assertHeight(t, roomGrid, MustPoint(1, 2), 11)
+	assertHeight(t, roomGrid, MustPoint(2, 1), HeightFromInt(35))
+	assertHeight(t, roomGrid, MustPoint(1, 2), HeightFromInt(11))
 	assertInvalid(t, roomGrid, MustPoint(0, 0))
 	assertDoor(t, roomGrid, MustPoint(1, 0))
 }
@@ -36,7 +36,7 @@ func TestParseNormalizesLineEndings(t *testing.T) {
 	if roomGrid.Width() != 2 || roomGrid.Height() != 3 {
 		t.Fatalf("unexpected dimensions %dx%d", roomGrid.Width(), roomGrid.Height())
 	}
-	assertHeight(t, roomGrid, MustPoint(1, 2), 5)
+	assertHeight(t, roomGrid, MustPoint(1, 2), HeightFromInt(5))
 }
 
 // TestParseRejectsInvalidInput verifies malformed heightmaps.

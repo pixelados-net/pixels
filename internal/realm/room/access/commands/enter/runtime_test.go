@@ -13,9 +13,9 @@ import (
 	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
 	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
-	"github.com/niflaot/pixels/internal/realm/room/world/layout"
 	"github.com/niflaot/pixels/internal/realm/session/binding"
 	netconn "github.com/niflaot/pixels/networking/connection"
+	"github.com/niflaot/pixels/pkg/bus"
 	sharedmodel "github.com/niflaot/pixels/pkg/model"
 )
 
@@ -57,6 +57,10 @@ func TestHandleJoinsRoomAndSendsEntryPackets(t *testing.T) {
 		t.Fatalf("bind player: %v", err)
 	}
 	publisher := &publisherForTest{}
+	publishedAfterPackets := -1
+	publisher.onPublish = func(bus.Event) {
+		publishedAfterPackets = len(*sent)
+	}
 	handler := Handler{
 		Players:  players,
 		Bindings: bindings,
@@ -83,6 +87,9 @@ func TestHandleJoinsRoomAndSendsEntryPackets(t *testing.T) {
 	}
 	if len(*sent) != 10 {
 		t.Fatalf("expected entered, model, and height map packets, got %#v", *sent)
+	}
+	if publishedAfterPackets != len(*sent) {
+		t.Fatalf("expected room entry publication after bootstrap packets, published_at=%d packets=%d", publishedAfterPackets, len(*sent))
 	}
 }
 
@@ -167,21 +174,8 @@ func TestJoinLeavesPreviousRoomAndLoadsWorld(t *testing.T) {
 	if !found || !active.WorldLoaded() || len(active.Units()) != 1 {
 		t.Fatalf("expected loaded target room")
 	}
-	if len(publisher.events) != 2 || publisher.events[0].Name != roomleft.Name || publisher.events[1].Name != roomentered.Name {
+	if len(publisher.events) != 1 || publisher.events[0].Name != roomleft.Name {
 		t.Fatalf("unexpected events %#v", publisher.events)
-	}
-}
-
-// TestLoadWorldRejectsInvalidLayout verifies layout validation during loading.
-func TestLoadWorldRejectsInvalidLayout(t *testing.T) {
-	room, err := roomlive.NewRoom(roomlive.Snapshot{ID: 9, MaxUsers: 5})
-	if err != nil {
-		t.Fatalf("create room: %v", err)
-	}
-
-	err = (Handler{}).loadWorld(context.Background(), room, roommodel.Room{}, layout.Layout{Heightmap: "x", DoorX: 0, DoorY: 0})
-	if err == nil {
-		t.Fatal("expected invalid layout world")
 	}
 }
 

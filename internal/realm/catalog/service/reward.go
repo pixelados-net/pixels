@@ -131,7 +131,7 @@ func (service *Service) PurchaseGift(ctx context.Context, params GiftPurchasePar
 	if params.ShowMyFace {
 		senderID = &params.BuyerID
 	}
-	result, err := service.Purchase(ctx, PurchaseParams{PlayerID: params.BuyerID, RecipientPlayerID: receiver.Player.ID, CatalogItemID: params.CatalogItemID, HasClub: params.HasClub, Amount: 1, Gift: &GiftMetadata{SpriteID: params.SpriteID, BoxID: params.BoxID, RibbonID: params.RibbonID, SenderPlayerID: senderID, Message: params.Message}})
+	result, err := service.Purchase(ctx, PurchaseParams{PlayerID: params.BuyerID, RecipientPlayerID: receiver.Player.ID, CatalogItemID: params.CatalogItemID, HasClub: params.HasClub, Amount: 1, ExtraData: params.ExtraData, Gift: &GiftMetadata{SpriteID: params.SpriteID, BoxID: params.BoxID, RibbonID: params.RibbonID, SenderPlayerID: senderID, Message: params.Message}})
 	result.RecipientPlayerID = receiver.Player.ID
 	if err == nil && service.events != nil {
 		_ = service.events.Publish(ctx, bus.Event{Name: cataloggiftevent.Name, Payload: cataloggiftevent.Payload{BuyerID: params.BuyerID, ReceiverID: receiver.Player.ID, CatalogItemID: params.CatalogItemID}})

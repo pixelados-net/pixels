@@ -53,6 +53,15 @@ type Service struct {
 
 	// effects grants catalog effect charges.
 	effects playereffect.Manager
+
+	// trophies formats immutable buyer inscriptions.
+	trophies TrophyFormatter
+}
+
+// WithTrophies configures trophy inscription formatting.
+func (service *Service) WithTrophies(formatter TrophyFormatter) *Service {
+	service.trophies = formatter
+	return service
 }
 
 // WithEffects configures transactional catalog effect grants.

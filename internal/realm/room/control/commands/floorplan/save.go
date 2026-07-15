@@ -180,7 +180,7 @@ func (handler SaveHandler) commit(ctx context.Context, roomID int64, validated d
 		doorZ, _ := validated.Grid.HeightAt(point)
 		saved, err = handler.Layouts.SaveCustom(txCtx, roomlayout.CustomSaveParams{
 			RoomID: roomID, Heightmap: validated.Params.Heightmap,
-			DoorX: validated.Params.DoorX, DoorY: validated.Params.DoorY, DoorZ: int(doorZ),
+			DoorX: validated.Params.DoorX, DoorY: validated.Params.DoorY, DoorZ: int(doorZ / grid.HeightScale),
 			DoorDirection: validated.Params.DoorDirection,
 			WallThickness: validated.Params.WallThickness, FloorThickness: validated.Params.FloorThickness,
 			WallHeight: validated.Params.WallHeight,

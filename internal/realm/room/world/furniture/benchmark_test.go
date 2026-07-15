@@ -7,6 +7,9 @@ import (
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
 
+// benchmarkGateOpenResult prevents the gate-state result from being optimized away.
+var benchmarkGateOpenResult bool
+
 // BenchmarkFixturesManyPlacedItems measures fixture building cost across many placed items.
 func BenchmarkFixturesManyPlacedItems(b *testing.B) {
 	items := make([]Item, 0, 1000)
@@ -33,5 +36,21 @@ func BenchmarkFixturesManyPlacedItems(b *testing.B) {
 				b.Fatalf("build fixtures: %v", err)
 			}
 		}
+	}
+}
+
+// BenchmarkGateOpenReversedState measures the configured gate-state hot path.
+func BenchmarkGateOpenReversedState(b *testing.B) {
+	item := Item{
+		ExtraData: "0",
+		Definition: Definition{
+			InteractionType: "gate",
+			CustomParams:    "open_state=0",
+		},
+	}
+
+	b.ReportAllocs()
+	for index := 0; index < b.N; index++ {
+		benchmarkGateOpenResult = gateOpen(item)
 	}
 }

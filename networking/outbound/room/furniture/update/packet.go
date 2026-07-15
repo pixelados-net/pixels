@@ -1,7 +1,10 @@
 // Package update contains the FLOOR_ITEM_UPDATE outbound packet.
 package update
 
-import "github.com/niflaot/pixels/networking/codec"
+import (
+	"github.com/niflaot/pixels/networking/codec"
+	"github.com/niflaot/pixels/networking/outbound/furniture/stuffdata"
+)
 
 const (
 	// Header is the FLOOR_ITEM_UPDATE packet identifier.
@@ -46,6 +49,9 @@ type FloorItem struct {
 	// ExtraData stores simple protocol-facing visual state.
 	ExtraData string
 
+	// Data stores specialized furniture object data.
+	Data *stuffdata.Data
+
 	// OwnerID stores the durable owner player id.
 	OwnerID int64
 }
@@ -69,7 +75,7 @@ var Definition = codec.Definition{
 
 // Encode creates a FLOOR_ITEM_UPDATE packet.
 func Encode(item FloorItem) (codec.Packet, error) {
-	return codec.NewPacket(Header, Definition,
+	payload, err := codec.AppendPayload(nil, prefixDefinition(),
 		codec.Int32(int32(item.ID)),
 		codec.Int32(int32(item.SpriteID)),
 		codec.Int32(int32(item.X)),
@@ -78,10 +84,35 @@ func Encode(item FloorItem) (codec.Packet, error) {
 		codec.String(item.Z),
 		codec.String(item.ExtraHeight),
 		codec.Int32(updateKind),
-		codec.Int32(nonLimitedFlag),
-		codec.String(item.ExtraData),
+	)
+	if err != nil {
+		return codec.Packet{}, err
+	}
+	if item.Data != nil {
+		payload, err = item.Data.Append(payload)
+	} else {
+		payload, err = codec.AppendPayload(payload, codec.Definition{codec.Int32Field, codec.StringField}, codec.Int32(nonLimitedFlag), codec.String(item.ExtraData))
+	}
+	if err != nil {
+		return codec.Packet{}, err
+	}
+	payload, err = codec.AppendPayload(payload, suffixDefinition(),
 		codec.Int32(unknownExpiration),
 		codec.Int32(updateUsagePolicy),
-		codec.Int32(int32(item.OwnerID)),
-	)
+		codec.Int32(int32(item.OwnerID)))
+	if err != nil {
+		return codec.Packet{}, err
+	}
+
+	return codec.Packet{Header: Header, Payload: payload}, nil
+}
+
+// prefixDefinition returns the fields before object data.
+func prefixDefinition() codec.Definition {
+	return Definition[:8]
+}
+
+// suffixDefinition returns the fields after object data.
+func suffixDefinition() codec.Definition {
+	return Definition[10:]
 }

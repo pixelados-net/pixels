@@ -19,6 +19,7 @@ func roomResponses(rooms []roommodel.Room) []RoomResponse {
 func roomResponse(room roommodel.Room) RoomResponse {
 	return RoomResponse{
 		ID:               room.ID,
+		Version:          room.Version.Version,
 		Name:             room.Name,
 		OwnerPlayerID:    room.OwnerPlayerID,
 		OwnerName:        room.OwnerName,
@@ -27,6 +28,7 @@ func roomResponse(room roommodel.Room) RoomResponse {
 		CategoryID:       room.CategoryID,
 		Score:            room.Score,
 		IsBundleTemplate: room.IsBundleTemplate,
+		RollerSpeed:      room.RollerSpeed,
 	}
 }
 

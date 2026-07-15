@@ -61,7 +61,7 @@ func TestMultiheightRebuildsPhysicalState(t *testing.T) {
 		t.Fatalf("use multiheight: %v", err)
 	}
 	updated, _ := active.FurnitureItem(item.ID)
-	if updated.ExtraData != "1" || updated.Definition.StackHeight != 1 {
+	if updated.ExtraData != "1" || updated.Definition.StackHeight != grid.HeightFromInt(1) {
 		t.Fatalf("unexpected multiheight state=%q height=%d", updated.ExtraData, updated.Definition.StackHeight)
 	}
 }

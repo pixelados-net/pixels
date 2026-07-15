@@ -134,11 +134,16 @@ func layoutForTest() layout.Layout {
 type publisherForTest struct {
 	// events stores published events.
 	events []bus.Event
+	// onPublish observes publication timing when configured.
+	onPublish func(bus.Event)
 }
 
 // Publish captures an event.
 func (publisher *publisherForTest) Publish(_ context.Context, event bus.Event) error {
 	publisher.events = append(publisher.events, event)
+	if publisher.onPublish != nil {
+		publisher.onPublish(event)
+	}
 
 	return nil
 }

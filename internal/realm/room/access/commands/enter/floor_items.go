@@ -15,6 +15,8 @@ import (
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 	netconn "github.com/niflaot/pixels/networking/connection"
 	outflooritems "github.com/niflaot/pixels/networking/outbound/room/furniture/flooritems"
+	outwallitems "github.com/niflaot/pixels/networking/outbound/room/furniture/wallitems"
+	outpaint "github.com/niflaot/pixels/networking/outbound/room/paint"
 )
 
 // sendFloorItems sends the current room floor items snapshot to one connection.
@@ -50,8 +52,40 @@ func (handler Handler) sendFloorItems(ctx context.Context, connection netconn.Co
 	if err != nil {
 		return err
 	}
+	if len(records) > 0 {
+		if err := connection.Send(ctx, packet); err != nil {
+			return err
+		}
+	}
+
+	wallOwners, wallRecords := projection.WallItems(items, definitions, names)
+	if len(wallRecords) == 0 {
+		return nil
+	}
+	packet, err = outwallitems.Encode(wallOwners, wallRecords)
+	if err != nil {
+		return err
+	}
 
 	return connection.Send(ctx, packet)
+}
+
+// sendAppearance projects durable room surfaces before unit rendering.
+func sendAppearance(ctx context.Context, connection netconn.Context, room roommodel.Room) error {
+	for _, surface := range [][2]string{{"floor", room.FloorPaint}, {"wallpaper", room.Wallpaper}, {"landscape", room.Landscape}} {
+		if surface[1] == "" {
+			continue
+		}
+		packet, err := outpaint.Encode(surface[0], surface[1])
+		if err != nil {
+			return err
+		}
+		if err = connection.Send(ctx, packet); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // giftSenders resolves visible sender data for placed gifts.
@@ -138,7 +172,7 @@ func (handler Handler) loadWorld(ctx context.Context, room *roomlive.Room, roomD
 
 	return room.LoadWorld(roomlive.WorldConfig{
 		Grid: roomGrid, Furniture: furnitureItems,
-		Door: worldpath.Position{Point: doorPoint, Z: grid.Height(roomLayout.DoorZ)},
+		Door: worldpath.Position{Point: doorPoint, Z: grid.HeightFromInt(roomLayout.DoorZ)},
 		Body: rotation, Head: rotation, Rules: worldpath.DefaultRules(),
 	})
 }

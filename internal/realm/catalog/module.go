@@ -9,6 +9,8 @@ import (
 	"github.com/niflaot/pixels/internal/realm/catalog/gift"
 	catalogrepo "github.com/niflaot/pixels/internal/realm/catalog/repository"
 	catalogservice "github.com/niflaot/pixels/internal/realm/catalog/service"
+	catalogtrophy "github.com/niflaot/pixels/internal/realm/catalog/trophy"
+	chatfilter "github.com/niflaot/pixels/internal/realm/chat/filter"
 	furnitureservice "github.com/niflaot/pixels/internal/realm/furniture/service"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 	playereffect "github.com/niflaot/pixels/internal/realm/player/effect"
@@ -37,8 +39,8 @@ var Module = fx.Module(
 )
 
 // NewService creates permission-aware catalog behavior.
-func NewService(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, teleportPairs furnitureservice.TeleportPairer, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker, players playerservice.Finder, rooms roombundle.Manager, effects playereffect.Manager) *catalogservice.Service {
-	return catalogservice.New(store, currencies, furniture, events, log, permissions).WithTeleportPairer(teleportPairs).WithPlayers(players).WithRoomBundles(rooms).WithEffects(effects)
+func NewService(store catalogrepo.Store, currencies currencyservice.Granter, furniture furnitureservice.DefinitionGranter, teleportPairs furnitureservice.TeleportPairer, events bus.Publisher, log *zap.Logger, permissions permissionservice.Checker, players playerservice.Finder, rooms roombundle.Manager, effects playereffect.Manager, filter *chatfilter.Service) *catalogservice.Service {
+	return catalogservice.New(store, currencies, furniture, events, log, permissions).WithTeleportPairer(teleportPairs).WithPlayers(players).WithRoomBundles(rooms).WithEffects(effects).WithTrophies(catalogtrophy.New(filter))
 }
 
 // NewVoucherManager exposes voucher administration behavior.

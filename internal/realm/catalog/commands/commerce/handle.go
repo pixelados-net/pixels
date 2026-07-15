@@ -47,7 +47,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		if !valid {
 			return handler.sendGiftError(ctx, envelope.Command, catalogservice.ErrOfferNotGiftable)
 		}
-		result, purchaseErr := handler.Catalog.PurchaseGift(ctx, catalogservice.GiftPurchaseParams{BuyerID: player.ID(), ReceiverName: envelope.Command.ReceiverName, CatalogItemID: envelope.Command.OfferID, HasClub: catalogsession.HasClub(player), SpriteID: envelope.Command.SpriteID, BoxID: boxID, RibbonID: ribbonID, Message: envelope.Command.Message, ShowMyFace: envelope.Command.ShowMyFace})
+		result, purchaseErr := handler.Catalog.PurchaseGift(ctx, catalogservice.GiftPurchaseParams{BuyerID: player.ID(), ReceiverName: envelope.Command.ReceiverName, CatalogItemID: envelope.Command.OfferID, HasClub: catalogsession.HasClub(player), SpriteID: envelope.Command.SpriteID, BoxID: boxID, RibbonID: ribbonID, Message: envelope.Command.Message, ExtraData: envelope.Command.ExtraData, ShowMyFace: envelope.Command.ShowMyFace})
 		if errors.Is(purchaseErr, catalogservice.ErrGiftReceiverNotFound) {
 			packet, encodeErr := outnotfound.Encode(envelope.Command.ReceiverName)
 			return send(ctx, envelope.Command, packet, encodeErr)

@@ -37,11 +37,11 @@ func TestUnitAdvancesPath(t *testing.T) {
 	roomUnit := unitForTest(t)
 	roomUnit.SetPath(path.NewPath([]path.Step{
 		{Position: positionForTest(2, 1, 0)},
-		{Position: positionForTest(2, 2, 1), Diagonal: false},
+		{Position: positionForTest(2, 2, grid.HeightFromInt(1)), Diagonal: false},
 	}))
 
 	goal, ok := roomUnit.Goal()
-	if !ok || goal != positionForTest(2, 2, 1) {
+	if !ok || goal != positionForTest(2, 2, grid.HeightFromInt(1)) {
 		t.Fatalf("unexpected goal %#v found=%v", goal, ok)
 	}
 	if !roomUnit.Moving() || !roomUnit.InMotion() || roomUnit.PendingSteps() != 2 {

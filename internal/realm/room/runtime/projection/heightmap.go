@@ -52,7 +52,7 @@ func heightMapValue(tile roomlive.TileHeight) int16 {
 		return invalidTileValue
 	}
 
-	value := int32(tile.Height) << 8
+	value := int32(tile.Height) * 256 / int32(grid.HeightScale)
 	if tile.StackingBlocked {
 		value |= stackingBlockedBit
 	}

@@ -29,6 +29,8 @@ type Dependencies struct {
 	Votes roomvotes.Manager
 	// Bundles manages room bundle templates.
 	Bundles roombundle.Manager
+	// ConfigRooms updates optimistic room settings.
+	ConfigRooms roomservice.ConfigManager
 }
 
 const (
@@ -47,6 +49,9 @@ func Register(app *fiber.App, rooms roomservice.Manager, runtime *roomlive.Regis
 	app.Delete(roomPath+"/:id/bundle-template", unmarkBundleTemplateHandler(dependencies.Bundles))
 	app.Get(roomPath+"/:id", detailHandler(rooms))
 	app.Get(roomPath+"/:id/occupancy", occupancyHandler(rooms, runtime))
+	if dependencies.ConfigRooms != nil {
+		app.Patch(roomPath+"/:id/roller", rollerSettingsHandler(dependencies.ConfigRooms, runtime))
+	}
 	app.Post(roomPath+"/:id/close", closeHandler(runtime))
 	app.Post(roomPath+"/:id/forward", forwardHandler(runtime, connections))
 	app.Post(roomPath+"/players/:playerId/teleport", teleportHandler(rooms, players, connections, entry))

@@ -95,8 +95,27 @@ func TestPlaceItemUsesInventoryGuardedQuery(t *testing.T) {
 	if !updated || !item.InRoom() {
 		t.Fatalf("unexpected place result item=%#v updated=%v", item, updated)
 	}
-	if !strings.Contains(executor.query, "room_id is null") || len(executor.arguments) != 7 {
+	if !strings.Contains(executor.query, "room_id is null") || !strings.Contains(executor.query, "$4::smallint") || !strings.Contains(executor.query, "$6::numeric(6,2)") || len(executor.arguments) != 9 {
 		t.Fatalf("unexpected query %q arguments=%#v", executor.query, executor.arguments)
+	}
+}
+
+// TestPlaceWallItemUsesTypedNullableCoordinates verifies wall placement avoids PostgreSQL CASE type ambiguity.
+func TestPlaceWallItemUsesTypedNullableCoordinates(t *testing.T) {
+	values := itemValuesForTest(placedRoomID, pgtype.Int2{}, pgtype.Int2{}, pgtype.Float8{})
+	values[8] = pgtype.Text{String: ":w=3,4 l=13,22 l", Valid: true}
+	executor := &fakeExecutor{row: fakeRow{values: values}}
+	item, updated, err := New(executor).PlaceItem(context.Background(), PlaceItemParams{
+		ID: 1, OwnerPlayerID: 7, RoomID: 1, WallPosition: ":w=3,4 l=13,22 l",
+	})
+	if err != nil {
+		t.Fatalf("place wall item: %v", err)
+	}
+	if !updated || !item.InRoom() || item.WallPosition == nil {
+		t.Fatalf("unexpected wall placement item=%#v updated=%v", item, updated)
+	}
+	if !strings.Contains(executor.query, "$8::text") || !strings.Contains(executor.query, "null::smallint") {
+		t.Fatalf("expected explicitly typed wall query %q", executor.query)
 	}
 }
 
@@ -125,7 +144,7 @@ func TestMoveItemUsesPlacedGuardedQuery(t *testing.T) {
 	if !updated || !item.InRoom() {
 		t.Fatalf("unexpected move result item=%#v updated=%v", item, updated)
 	}
-	if !strings.Contains(executor.query, "room_id = $2") || len(executor.arguments) != 6 || executor.arguments[1] != int64(1) {
+	if !strings.Contains(executor.query, "room_id = $2") || !strings.Contains(executor.query, "$3::smallint") || !strings.Contains(executor.query, "$5::numeric(6,2)") || len(executor.arguments) != 7 || executor.arguments[1] != int64(1) {
 		t.Fatalf("unexpected query %q arguments=%#v", executor.query, executor.arguments)
 	}
 }

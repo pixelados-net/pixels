@@ -16,14 +16,14 @@ func TestResolverReplaceFixturesMovesFootprint(t *testing.T) {
 		t.Fatalf("parse grid: %v", err)
 	}
 	resolver, err := NewResolver(wideGrid, []Fixture{
-		fixtureForTest(t, FixtureParams{Point: oldPoint, Z: 6, Top: 6, State: StateBlocked, SourceID: 7}),
+		fixtureForTest(t, FixtureParams{Point: oldPoint, Z: grid.HeightFromInt(6), Top: grid.HeightFromInt(6), State: StateBlocked, SourceID: 7}),
 	})
 	if err != nil {
 		t.Fatalf("create resolver: %v", err)
 	}
 
 	if err := resolver.ReplaceFixtures(7, []Fixture{
-		fixtureForTest(t, FixtureParams{Point: newPoint, Z: 6, Top: 6, State: StateBlocked, SourceID: 7}),
+		fixtureForTest(t, FixtureParams{Point: newPoint, Z: grid.HeightFromInt(6), Top: grid.HeightFromInt(6), State: StateBlocked, SourceID: 7}),
 	}); err != nil {
 		t.Fatalf("replace fixtures: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestResolverReplaceFixturesMovesFootprint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve old column: %v", err)
 	}
-	assertSection(t, oldColumn.Sections()[0], grid.Height(4), StateOpen, SourceBase)
+	assertSection(t, oldColumn.Sections()[0], grid.HeightFromInt(4), StateOpen, SourceBase)
 
 	newColumn, err := resolver.Column(newPoint)
 	if err != nil {
@@ -41,7 +41,7 @@ func TestResolverReplaceFixturesMovesFootprint(t *testing.T) {
 	if len(newColumn.Sections()) != 2 {
 		t.Fatalf("expected fixture moved to new tile, got %d sections", len(newColumn.Sections()))
 	}
-	assertSection(t, newColumn.Sections()[1], grid.Height(6), StateBlocked, SourceFixture)
+	assertSection(t, newColumn.Sections()[1], grid.HeightFromInt(6), StateBlocked, SourceFixture)
 }
 
 // TestResolverReplaceFixturesRejectsInvalidTile verifies replacement validation.

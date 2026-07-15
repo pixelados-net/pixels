@@ -3,6 +3,7 @@ package runtime
 import (
 	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	"github.com/niflaot/pixels/internal/realm/room/world/surface"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
@@ -39,6 +40,25 @@ func (world *World) ResolveFurniturePlacement(sourceID int64, footprint []grid.P
 	}
 
 	return height, nil
+}
+
+// SurfaceColumn returns the resolved vertical column for one tile.
+func (world *World) SurfaceColumn(point grid.Point) (surface.Column, error) {
+	return world.resolver.Column(point)
+}
+
+// nearestWalkableSection resolves a safe anchor near a unit's current height.
+func (world *World) nearestWalkableSection(position worldpath.Position) (surface.Section, error) {
+	column, err := world.resolver.Column(position.Point)
+	if err != nil {
+		return surface.Section{}, err
+	}
+	section, found := column.NearestWalkableSection(position.Z)
+	if !found {
+		return surface.Section{}, worldpath.ErrInvalidStart
+	}
+
+	return section, nil
 }
 
 // unitPositionsExcludingSource returns occupied tiles except the source item's seated unit.

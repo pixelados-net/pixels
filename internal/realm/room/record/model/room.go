@@ -89,6 +89,9 @@ type Room struct {
 	// TradeMode describes trading behavior.
 	TradeMode TradeMode
 
+	// RollerSpeed stores owner-loop cycles between roller steps, or -1 when disabled.
+	RollerSpeed int
+
 	// AllowWalkthrough reports whether users can walk through each other.
 	AllowWalkthrough bool
 
@@ -139,4 +142,13 @@ type Room struct {
 
 	// IsBundleTemplate reports whether the room is an administrative bundle source.
 	IsBundleTemplate bool
+
+	// FloorPaint stores the Nitro floor pattern and color value.
+	FloorPaint string
+
+	// Wallpaper stores the Nitro wall pattern and color value.
+	Wallpaper string
+
+	// Landscape stores the Nitro window landscape value.
+	Landscape string
 }

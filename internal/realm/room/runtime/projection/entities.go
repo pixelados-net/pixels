@@ -172,12 +172,12 @@ func genderValue(value string) string {
 
 // heightValue returns a protocol height value.
 func heightValue(value grid.Height) string {
-	return strconv.Itoa(int(value))
+	return value.String()
 }
 
 // positionValue returns a movement status position value.
 func positionValue(position worldpath.Position) string {
 	return strconv.Itoa(int(position.Point.X)) + "," +
 		strconv.Itoa(int(position.Point.Y)) + "," +
-		strconv.Itoa(int(position.Z))
+		position.Z.String()
 }

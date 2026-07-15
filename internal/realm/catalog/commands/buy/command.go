@@ -100,7 +100,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 	result, err := handler.Catalog.Purchase(ctx, catalogservice.PurchaseParams{
 		PlayerID: player.ID(), CatalogItemID: envelope.Command.OfferID,
-		HasClub: hasClub, Amount: envelope.Command.Amount,
+		HasClub: hasClub, Amount: envelope.Command.Amount, ExtraData: envelope.Command.ExtraData,
 	})
 	if err != nil {
 		return handler.sendError(ctx, envelope.Command.Connection, envelope.Command.OfferID, err)

@@ -1,13 +1,28 @@
 package runtime
 
 import (
+	"sort"
 	"strconv"
 	"time"
 
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
 	"github.com/niflaot/pixels/internal/realm/room/world/grid"
 	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
 	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
 )
+
+// RollUnit repositions one idle unit without taking server movement control.
+func (world *World) RollUnit(entityKey int64, position worldpath.Position) (UnitSnapshot, error) {
+	roomUnit, found := world.units[entityKey]
+	if !found {
+		return UnitSnapshot{}, ErrUnitNotFound
+	}
+	if roomUnit.InMotion() {
+		return UnitSnapshot{}, ErrUnitExiting
+	}
+	roomUnit.Reposition(position, roomUnit.BodyRotation())
+	return unitSnapshot(entityKey, roomUnit), nil
+}
 
 // ApplyControlledInteractionStep moves a unit onto one adjacent interaction tile regardless of normal walkability.
 func (world *World) ApplyControlledInteractionStep(playerID int64, point grid.Point, control worldunit.ControlKind) error {
@@ -154,4 +169,68 @@ func (world *World) SetUnitControl(playerID int64, control worldunit.ControlKind
 	roomUnit.SetControl(control)
 
 	return unitSnapshot(playerID, roomUnit), nil
+}
+
+// FurnitureByInteraction returns stable furniture snapshots for one indexed interaction type.
+func (world *World) FurnitureByInteraction(interactionType string) []worldfurniture.Item {
+	ids := world.interactionTypes[interactionType]
+	if len(ids) == 0 {
+		return nil
+	}
+	items := make([]worldfurniture.Item, 0, len(ids))
+	for _, id := range ids {
+		if item, found := world.furniture[id]; found {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(left int, right int) bool { return items[left].ID < items[right].ID })
+	return items
+}
+
+// addFurnitureIndexes adds one item's footprint and interaction type.
+func (world *World) addFurnitureIndexes(item worldfurniture.Item) {
+	if world.furnitureTiles == nil {
+		world.furnitureTiles = make(map[grid.Point][]int64)
+	}
+	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		world.furnitureTiles[point] = append(world.furnitureTiles[point], item.ID)
+	}
+	if item.Definition.InteractionType == "" {
+		return
+	}
+	if world.interactionTypes == nil {
+		world.interactionTypes = make(map[string][]int64)
+	}
+	world.interactionTypes[item.Definition.InteractionType] = append(world.interactionTypes[item.Definition.InteractionType], item.ID)
+}
+
+// removeFurnitureIndexes removes one item's footprint and interaction type.
+func (world *World) removeFurnitureIndexes(item worldfurniture.Item) {
+	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		world.furnitureTiles[point] = withoutID(world.furnitureTiles[point], item.ID)
+		if len(world.furnitureTiles[point]) == 0 {
+			delete(world.furnitureTiles, point)
+		}
+	}
+	kind := item.Definition.InteractionType
+	world.interactionTypes[kind] = withoutID(world.interactionTypes[kind], item.ID)
+	if len(world.interactionTypes[kind]) == 0 {
+		delete(world.interactionTypes, kind)
+	}
+}
+
+// withoutID removes one id while preserving stable order.
+func withoutID(ids []int64, removed int64) []int64 {
+	for index, id := range ids {
+		if id == removed {
+			return append(ids[:index], ids[index+1:]...)
+		}
+	}
+	return ids
+}
+
+// interactive reports whether an item participates in movement interaction events.
+func interactive(item worldfurniture.Item) bool {
+	return item.Definition.InteractionType != "" &&
+		(item.Definition.InteractionType != "default" || item.Definition.InteractionModesCount > 1)
 }

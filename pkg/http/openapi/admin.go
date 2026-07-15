@@ -22,6 +22,7 @@ func adminOperations() []operation {
 		adminRoomTemplate(http.MethodDelete, "/api/admin/rooms/{id}/bundle-template", "Unmark room bundle template", &RoomIDRequest{}, &RoomResponse{}),
 		adminRoomRead("/api/admin/rooms/{id}", "Read room metadata", &RoomIDRequest{}, &RoomResponse{}),
 		adminRoomRead("/api/admin/rooms/{id}/occupancy", "Read active room occupancy", &RoomIDRequest{}, &RoomOccupancyResponse{}),
+		adminRoomSettings(http.MethodPatch, "/api/admin/rooms/{id}/roller", "Update room roller speed", &RoomRollerSettingsRequest{}, &RoomResponse{}),
 		adminRoomAction("/api/admin/rooms/{id}/close", "Close active room", &RoomIDRequest{}),
 		adminRoomAction("/api/admin/rooms/{id}/forward", "Forward active room occupants", &RoomForwardRequest{}),
 		adminRoomAction("/api/admin/rooms/players/{playerId}/teleport", "Teleport one live player", &RoomTeleportRequest{}),
@@ -89,6 +90,14 @@ func adminOperations() []operation {
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/effective", "List effective player permissions", &permissionapi.PlayerRequest{}, &permissionapi.EffectiveResponse{}, http.StatusOK),
 		adminPermission(http.MethodGet, "/api/admin/permissions/players/{playerId}/check", "Check player permission", &permissionapi.CheckRequest{}, &permissionapi.CheckResponse{}, http.StatusOK),
 	}
+}
+
+// adminRoomSettings creates a protected room settings mutation operation.
+func adminRoomSettings(method string, path string, summary string, request any, body any) operation {
+	return operation{method: method, path: path, tag: "Admin Rooms", summary: summary,
+		description: summary + ".", request: request,
+		responses: append([]response{jsonResponse(http.StatusOK, body, summary+".")},
+			errorResponses(http.StatusBadRequest, http.StatusUnauthorized, http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError)...), secured: true}
 }
 
 // adminRoomTemplate creates a protected room bundle template operation.

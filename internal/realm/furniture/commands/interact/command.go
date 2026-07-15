@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/pixels/internal/command"
 	permissionservice "github.com/niflaot/pixels/internal/permission/service"
 	furnitureaccess "github.com/niflaot/pixels/internal/realm/furniture/access"
+	decorcmd "github.com/niflaot/pixels/internal/realm/furniture/commands/decor"
 	furnituresession "github.com/niflaot/pixels/internal/realm/furniture/commands/session"
 	furnitureused "github.com/niflaot/pixels/internal/realm/furniture/events/used"
 	"github.com/niflaot/pixels/internal/realm/furniture/interactions"
@@ -89,6 +90,8 @@ type Handler struct {
 	Teleports Teleporter
 	// Essentials coordinates specialized furniture interactions.
 	Essentials *essential.Service
+	// Decorator handles mannequin wear and background-toner toggle behavior.
+	Decorator *decorcmd.Handler
 	// Log records malformed durable state and interaction diagnostics.
 	Log *zap.Logger
 }
@@ -124,6 +127,12 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	}
 	if teleportType(item.Definition.InteractionType) {
 		return handler.startTeleport(ctx, player.ID(), active, item.ID)
+	}
+	if handler.Decorator != nil {
+		handled, decorErr := handler.Decorator.Use(ctx, player, active, item)
+		if handled || decorErr != nil {
+			return decorErr
+		}
 	}
 	if handler.Essentials != nil {
 		handled, essentialErr := handler.Essentials.Use(ctx, essential.Request{PlayerID: player.ID(), Room: active, Item: item})

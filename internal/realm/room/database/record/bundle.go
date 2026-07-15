@@ -20,15 +20,15 @@ const (
 	cloneBundleRoomSQL = `
 insert into rooms
     (owner_player_id, owner_name, name, description, model_name, door_mode, password_hash,
-     max_users, score, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat,
+     max_users, score, category_id, trade_mode, roller_speed, allow_walkthrough, allow_pets, allow_pets_eat,
      hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed,
      chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban,
-     staff_picked, public_room, is_bundle_template)
+     staff_picked, public_room, is_bundle_template, floor_paint, wallpaper, landscape)
 select $2, $3, name, description, model_name, door_mode, password_hash,
-       max_users, 0, category_id, trade_mode, allow_walkthrough, allow_pets, allow_pets_eat,
+       max_users, 0, category_id, trade_mode, roller_speed, allow_walkthrough, allow_pets, allow_pets_eat,
        hide_walls, wall_thickness, floor_thickness, chat_mode, chat_weight, chat_speed,
        chat_distance, chat_protection, moderation_mute, moderation_kick, moderation_ban,
-       false, false, false
+       false, false, false, floor_paint, wallpaper, landscape
 from rooms where id=$1 and deleted_at is null and is_bundle_template
 returning ` + roomColumns
 	// recordBundlePurchaseSQL records template provenance.
@@ -74,6 +74,10 @@ func (repository *Repository) CloneBundleRoom(ctx context.Context, templateRoomI
 	}
 	if err != nil {
 		return roommodel.Room{}, fmt.Errorf("clone bundle room: %w", err)
+	}
+	_, err = repository.executorFor(ctx).Exec(ctx, `insert into room_dimmer_presets(room_id,preset_id,background_only,color,brightness,selected,enabled) select $2,preset_id,background_only,color,brightness,selected,enabled from room_dimmer_presets where room_id=$1`, templateRoomID, room.ID)
+	if err != nil {
+		return roommodel.Room{}, fmt.Errorf("clone bundle dimmer presets: %w", err)
 	}
 	return room, nil
 }

@@ -30,6 +30,9 @@ func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnit
 	if !found {
 		return worldfurniture.Item{}, furnituremodel.Definition{}, ErrDefinitionNotFound
 	}
+	if definition.Kind == furnituremodel.KindWall {
+		return worldfurniture.Item{}, furnituremodel.Definition{}, ErrInvalidTarget
+	}
 
 	worldDefinition, err := ToWorldDefinition(definition)
 	if err != nil {
@@ -53,4 +56,19 @@ func ResolveWorldItem(ctx context.Context, active *roomlive.Room, manager furnit
 	}
 
 	return item, definition, nil
+}
+
+// ValidateRollerPlacement rejects rollers supported by any other furniture unless rules are disabled.
+func ValidateRollerPlacement(active *roomlive.Room, item worldfurniture.Item, noRules bool) error {
+	if noRules || item.Definition.InteractionType != "roller" {
+		return nil
+	}
+	for _, point := range worldfurniture.Footprint(item.Point, item.Definition.Width, item.Definition.Length, item.Rotation) {
+		for _, placed := range active.FurnitureAt(point) {
+			if placed.ID != item.ID {
+				return roomlive.ErrCannotStack
+			}
+		}
+	}
+	return nil
 }

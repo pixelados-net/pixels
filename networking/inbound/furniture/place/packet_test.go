@@ -23,6 +23,18 @@ func TestDecode(t *testing.T) {
 	}
 }
 
+// TestDecodeWall verifies the shared placement header accepts Nitro wall notation.
+func TestDecodeWall(t *testing.T) {
+	packet, err := codec.NewPacket(Header, Definition, codec.String("12 :w=3,2 l=1,1 r "))
+	if err != nil {
+		t.Fatalf("new packet: %v", err)
+	}
+	payload, err := Decode(packet)
+	if err != nil || payload.ItemID != 12 || payload.WallPosition != ":w=3,2 l=1,1 r" {
+		t.Fatalf("unexpected payload %#v err=%v", payload, err)
+	}
+}
+
 // TestDecodeRejectsUnexpectedHeader verifies header validation.
 func TestDecodeRejectsUnexpectedHeader(t *testing.T) {
 	_, err := Decode(codec.Packet{Header: Header + 1})

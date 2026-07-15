@@ -31,12 +31,16 @@ func (world *World) Unit(playerID int64) (UnitSnapshot, bool) {
 
 // UnitByID returns one unit by its room-local identifier without allocation.
 func (world *World) UnitByID(unitID int64) (UnitSnapshot, bool) {
-	for playerID, roomUnit := range world.units {
-		if roomUnit.ID() == unitID {
-			return unitSnapshot(playerID, roomUnit), true
-		}
+	entityKey, found := world.unitKeys[unitID]
+	if !found {
+		return UnitSnapshot{}, false
 	}
-	return UnitSnapshot{}, false
+	roomUnit, found := world.units[entityKey]
+	if !found {
+		return UnitSnapshot{}, false
+	}
+
+	return unitSnapshot(entityKey, roomUnit), true
 }
 
 // SetUnitStatus stores one status on a player unit.
@@ -94,6 +98,21 @@ func (world *World) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
 	item, found := world.furniture[itemID]
 
 	return item, found
+}
+
+// FurnitureAt returns stable furniture snapshots whose footprints cover a tile.
+func (world *World) FurnitureAt(point grid.Point) []worldfurniture.Item {
+	ids := world.furnitureTiles[point]
+	if len(ids) == 0 {
+		return nil
+	}
+	items := make([]worldfurniture.Item, 0, len(ids))
+	for _, id := range ids {
+		if item, found := world.furniture[id]; found {
+			items = append(items, item)
+		}
+	}
+	return items
 }
 
 // InteractionAt returns one interactive item on a tile without allocating.

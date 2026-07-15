@@ -53,7 +53,7 @@ func (service *Service) ensureRoom(ctx context.Context, active *roomlive.Room) (
 		if !valid {
 			continue
 		}
-		position := worldpath.Position{Point: point, Z: grid.Height(*bot.Z)}
+		position := worldpath.Position{Point: point, Z: grid.HeightFromUnits(*bot.Z)}
 		if _, addErr := active.AddEntity(EntityKey(bot.ID), bot.OwnerPlayerID, worldunit.KindBot, position, worldunit.Rotation(*bot.Rotation)); addErr != nil {
 			continue
 		}
@@ -151,7 +151,7 @@ func (service *Service) reattach(ctx context.Context, active *roomlive.Room, rec
 	if !valid {
 		return roomlive.UnitSnapshot{}, false
 	}
-	position := worldpath.Position{Point: point, Z: grid.Height(*record.Z)}
+	position := worldpath.Position{Point: point, Z: grid.HeightFromUnits(*record.Z)}
 	unit, err := active.AddEntity(EntityKey(record.ID), record.OwnerPlayerID, worldunit.KindBot, position, worldunit.Rotation(*record.Rotation))
 	if err != nil {
 		return roomlive.UnitSnapshot{}, false

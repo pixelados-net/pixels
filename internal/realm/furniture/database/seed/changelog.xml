@@ -18,6 +18,13 @@
     <include file="development/0011_room_bundle_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0012_effect_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="development/0013_effect_asset_ids.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0014_room_decorators.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0015_room_decorator_examples.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0016_room_dimmer.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0017_misc_wall_items.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0018_misc_floor_classics.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0019_misc_behavior_fixes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0020_roller_chain.sql" relativeToChangelogFile="true" contextFilter="development"/>
     <include file="test/0001_test_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="test"/>
     <include file="test/0002_test_furniture_items.sql" relativeToChangelogFile="true" contextFilter="test"/>
 </databaseChangeLog>

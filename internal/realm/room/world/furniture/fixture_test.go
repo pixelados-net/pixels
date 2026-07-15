@@ -102,6 +102,40 @@ func TestFixturesOpensWalkableItem(t *testing.T) {
 	assertFixture(t, fixtures[0], 0, 0, surface.StateOpen, true, 4)
 }
 
+// TestFixturesResolvesGateOpenStates verifies normal and visually reversed gate definitions.
+func TestFixturesResolvesGateOpenStates(t *testing.T) {
+	tests := []struct {
+		name         string
+		customParams string
+		extraData    string
+		want         surface.State
+	}{
+		{name: "normal gate closed", extraData: "0", want: surface.StateBlocked},
+		{name: "normal gate open", extraData: "1", want: surface.StateOpen},
+		{name: "reversed gate open", customParams: "open_state=0", extraData: "0", want: surface.StateOpen},
+		{name: "reversed gate closed", customParams: "open_state=0", extraData: "1", want: surface.StateBlocked},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			item := Item{
+				ID:        5,
+				Point:     grid.MustPoint(1, 1),
+				ExtraData: test.extraData,
+				Definition: Definition{
+					InteractionType: "gate", CustomParams: test.customParams,
+					Width: 1, Length: 1,
+				},
+			}
+
+			fixtures, err := Fixtures(item)
+			if err != nil {
+				t.Fatalf("build fixtures: %v", err)
+			}
+			assertFixture(t, fixtures[0], 0, 0, test.want, false, 5)
+		})
+	}
+}
+
 // assertFixture verifies a resolved fixture section.
 func assertFixture(t *testing.T, fixture surface.Fixture, z grid.Height, top grid.Height, state surface.State, stacking bool, sourceID int64) {
 	t.Helper()

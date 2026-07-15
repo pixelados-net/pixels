@@ -1,11 +1,11 @@
 package projection
 
 import (
-	"strconv"
-
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
+	roomdecor "github.com/niflaot/pixels/internal/realm/room/decoration"
 	roomfurniture "github.com/niflaot/pixels/internal/realm/room/world/items"
 	outflooritems "github.com/niflaot/pixels/networking/outbound/room/furniture/flooritems"
+	outwallitems "github.com/niflaot/pixels/networking/outbound/room/furniture/wallitems"
 )
 
 // GiftSender stores visible gift sender identity for present tags.
@@ -22,7 +22,7 @@ func FloorItems(items []furnituremodel.Item, definitions map[int64]furnituremode
 	records := make([]outflooritems.FloorItem, 0, len(items))
 	for _, item := range items {
 		definition, ok := definitions[item.DefinitionID]
-		if !ok || item.X == nil || item.Y == nil || item.Z == nil {
+		if !ok || definition.Kind == furnituremodel.KindWall || item.X == nil || item.Y == nil || item.Z == nil {
 			continue
 		}
 		records = append(records, floorItemRecord(item, definition, giftSenders))
@@ -31,10 +31,39 @@ func FloorItems(items []furnituremodel.Item, definitions map[int64]furnituremode
 	return owners, records
 }
 
+// WallItems maps placed wall furniture into Nitro owner and item records.
+func WallItems(items []furnituremodel.Item, definitions map[int64]furnituremodel.Definition, ownerNames map[int64]string) ([]outwallitems.Owner, []outwallitems.Item) {
+	seen := make(map[int64]struct{}, len(items))
+	owners := make([]outwallitems.Owner, 0, len(items))
+	records := make([]outwallitems.Item, 0, len(items))
+	for _, item := range items {
+		definition, found := definitions[item.DefinitionID]
+		if !found || definition.Kind != furnituremodel.KindWall || item.WallPosition == nil {
+			continue
+		}
+		if _, found = seen[item.OwnerPlayerID]; !found {
+			seen[item.OwnerPlayerID] = struct{}{}
+			owners = append(owners, outwallitems.Owner{ID: item.OwnerPlayerID, Name: ownerNames[item.OwnerPlayerID]})
+		}
+		records = append(records, outwallitems.Item{ID: item.ID, SpriteID: definition.SpriteID, WallPosition: *item.WallPosition, ExtraData: WallExtraData(definition, item.ExtraData), UsagePolicy: UsagePolicyValue(definition), OwnerID: item.OwnerPlayerID})
+	}
+
+	return owners, records
+}
+
+// WallExtraData separates post-it visual color from text while preserving other wall-item state.
+func WallExtraData(definition furnituremodel.Definition, extraData string) string {
+	if definition.InteractionType == "postit" {
+		return roomdecor.PostItColor(extraData)
+	}
+
+	return extraData
+}
+
 // floorItemRecord maps one persisted item and its definition to a protocol floor item.
 func floorItemRecord(item furnituremodel.Item, definition furnituremodel.Definition, giftSenders map[int64]GiftSender) outflooritems.FloorItem {
 	sender := giftSenderRecord(item, giftSenders)
-	return outflooritems.FloorItem{
+	record := outflooritems.FloorItem{
 		ID:               item.ID,
 		SpriteID:         FurnitureSpriteID(item, definition),
 		X:                *item.X,
@@ -52,6 +81,9 @@ func floorItemRecord(item furnituremodel.Item, definition furnituremodel.Definit
 		GiftSenderName:   sender.Name,
 		GiftSenderFigure: sender.Figure,
 	}
+	record.Data = SpecializedObjectData(definition.InteractionType, item.ExtraData)
+
+	return record
 }
 
 // giftMessage returns the optional persisted gift message.
@@ -105,9 +137,11 @@ func ownerRecords(items []furnituremodel.Item, ownerNames map[int64]string) []ou
 	return owners
 }
 
-// ExtraHeightValue returns the walkable top height string for walk/sit definitions, matching Arcturus's
-// serializeFloorData rule of only reporting it for allowWalk or allowSit items (not allowLay).
+// ExtraHeightValue returns the protocol extra-height string for a floor definition.
 func ExtraHeightValue(definition furnituremodel.Definition) string {
+	if definition.InteractionType == "trophy" {
+		return "1.0"
+	}
 	if !definition.AllowWalk && !definition.AllowSit {
 		return ""
 	}
@@ -127,5 +161,5 @@ func UsagePolicyValue(definition furnituremodel.Definition) int32 {
 
 // FurnitureHeightValue formats a persisted decimal height using the room world's rounded height.
 func FurnitureHeightValue(value float64) string {
-	return strconv.Itoa(int(roomfurniture.RoundHeight(value)))
+	return roomfurniture.RoundHeight(value).String()
 }

@@ -52,6 +52,9 @@ type Command struct {
 
 	// Rotation stores the destination floor instance rotation.
 	Rotation int
+
+	// WallPosition stores Nitro wall coordinates for a wall item.
+	WallPosition string
 }
 
 // Handler handles furniture move commands.
@@ -82,6 +85,9 @@ type Handler struct {
 
 	// Log records rejected move attempts.
 	Log *zap.Logger
+
+	// RollerNoRules disables roller-on-furniture placement restrictions.
+	RollerNoRules bool
 }
 
 // CommandName returns the stable command name.
@@ -118,10 +124,16 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 	if !found {
 		return nil
 	}
+	if envelope.Command.WallPosition != "" {
+		return handler.moveWall(ctx, envelope.Command, player, active, roomID, item)
+	}
 
 	rotation := furnituremodel.Rotation(envelope.Command.Rotation)
 	worldItem, definition, err := roomfurniture.ResolveWorldItem(ctx, active, handler.Furniture, item, envelope.Command.X, envelope.Command.Y, rotation)
 	if err != nil {
+		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
+	}
+	if err = roomfurniture.ValidateRollerPlacement(active, worldItem, handler.RollerNoRules); err != nil {
 		return handler.handleSoftError(ctx, envelope.Command, roomID, err)
 	}
 	previousWorld, previousFound := active.FurnitureItem(item.ID)
@@ -132,7 +144,7 @@ func (handler Handler) Handle(ctx context.Context, envelope command.Envelope[Com
 		RoomID:        roomID,
 		Placement: furnituremodel.Placement{
 			X: envelope.Command.X, Y: envelope.Command.Y,
-			Z: float64(worldItem.Z), Rotation: rotation,
+			Z: worldItem.Z.Units(), Rotation: rotation,
 		},
 	})
 	if err != nil {

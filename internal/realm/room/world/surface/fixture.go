@@ -10,6 +10,9 @@ type Fixture struct {
 	// z stores the fixture walkable height.
 	z grid.Height
 
+	// bottom stores the occupied volume bottom height.
+	bottom grid.Height
+
 	// top stores the fixture occupied top height.
 	top grid.Height
 
@@ -31,7 +34,11 @@ type Fixture struct {
 
 // NewFixture creates a room surface fixture.
 func NewFixture(params FixtureParams) (Fixture, error) {
-	if params.Top < params.Z || params.State == StateInvalid {
+	bottom := params.Bottom
+	if !params.HasBottom {
+		bottom = params.Z
+	}
+	if bottom > params.Z || params.Top < params.Z || params.State == StateInvalid {
 		return Fixture{}, ErrInvalidFixture
 	}
 	source := params.Source
@@ -42,6 +49,7 @@ func NewFixture(params FixtureParams) (Fixture, error) {
 	return Fixture{
 		point:     params.Point,
 		z:         params.Z,
+		bottom:    bottom,
 		top:       params.Top,
 		clearance: params.Clearance,
 		state:     params.State,
@@ -58,6 +66,12 @@ type FixtureParams struct {
 
 	// Z stores the fixture walkable height.
 	Z grid.Height
+
+	// Bottom stores the occupied volume bottom height.
+	Bottom grid.Height
+
+	// HasBottom reports whether Bottom was explicitly supplied.
+	HasBottom bool
 
 	// Top stores the fixture occupied top height.
 	Top grid.Height
@@ -93,6 +107,7 @@ func (fixture Fixture) Section() Section {
 	return NewSection(SectionParams{
 		Point:     fixture.point,
 		Z:         fixture.z,
+		Bottom:    fixture.bottom,
 		Top:       fixture.top,
 		Clearance: fixture.clearance,
 		State:     fixture.state,

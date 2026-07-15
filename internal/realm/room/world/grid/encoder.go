@@ -45,6 +45,10 @@ func encodeTile(roomGrid Grid, point Point) (byte, error) {
 
 // encodeHeight converts one height value to a heightmap byte.
 func encodeHeight(height Height) (byte, error) {
+	if height%HeightScale != 0 {
+		return 0, fmt.Errorf("%w: %s", ErrInvalidHeight, height.String())
+	}
+	height /= HeightScale
 	if height >= 0 && height <= 9 {
 		return byte('0' + height), nil
 	}

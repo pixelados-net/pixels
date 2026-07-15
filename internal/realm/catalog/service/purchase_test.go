@@ -3,13 +3,33 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/niflaot/pixels/internal/permission"
+	catalogtrophy "github.com/niflaot/pixels/internal/realm/catalog/trophy"
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
 	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
 )
+
+// TestPurchaseTrophyPersistsBuyerInscription verifies client data is filtered into server-owned trophy data.
+func TestPurchaseTrophyPersistsBuyerInscription(t *testing.T) {
+	item := itemForTest()
+	fixture := newServiceFixture(t, item)
+	fixture.furniture.definitions[0].InteractionType = "trophy"
+	fixture.service.WithPlayers(purchasePlayerFinder{}).WithTrophies(catalogtrophy.New(nil))
+	if err := fixture.service.Refresh(context.Background()); err != nil {
+		t.Fatalf("refresh trophy definition: %v", err)
+	}
+	_, err := fixture.service.Purchase(context.Background(), PurchaseParams{PlayerID: 7, CatalogItemID: item.ID, ExtraData: "Winner\tmessage"})
+	if err != nil {
+		t.Fatalf("purchase trophy: %v", err)
+	}
+	if len(fixture.furniture.calls) != 1 || !strings.HasPrefix(fixture.furniture.calls[0].ExtraData, "demo\t") || !strings.HasSuffix(fixture.furniture.calls[0].ExtraData, "\tWinner message") {
+		t.Fatalf("unexpected trophy grant %#v", fixture.furniture.calls)
+	}
+}
 
 // TestPurchaseCreditsChargesAndGrants verifies a regular credits purchase.
 func TestPurchaseCreditsChargesAndGrants(t *testing.T) {

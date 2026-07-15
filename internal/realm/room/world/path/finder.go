@@ -30,14 +30,15 @@ func NewFinderWithOccupancy(world World, rules Rules, occupancy Occupancy) *Find
 // Find calculates a path from start to goal.
 func (finder *Finder) Find(start Position, goal grid.Point) (Path, error) {
 	search := newSearch(finder.world, finder.rules, finder.occupancy, goal)
-	if err := search.validateStart(start); err != nil {
+	resolvedStart, err := search.resolveStart(start)
+	if err != nil {
 		return Path{}, err
 	}
 	if _, err := search.column(goal); err != nil {
 		return Path{}, ErrInvalidGoal
 	}
 
-	return search.run(nodeFromPosition(start))
+	return search.run(nodeFromPosition(resolvedStart))
 }
 
 // search stores one A* search state.
@@ -84,18 +85,21 @@ func newSearch(world World, rules Rules, occupancy Occupancy, goal grid.Point) *
 	}
 }
 
-// validateStart verifies that the start position exists.
-func (search *search) validateStart(start Position) error {
+// resolveStart anchors invalid unit heights to the nearest usable section when possible.
+func (search *search) resolveStart(start Position) (Position, error) {
 	column, err := search.column(start.Point)
 	if err != nil {
-		return ErrInvalidStart
+		return Position{}, ErrInvalidStart
 	}
-	section, ok := column.SectionAt(start.Z)
-	if !ok || !search.rules.AllowsSection(section) {
-		return ErrInvalidStart
+	if section, ok := column.WalkableSectionAt(start.Z); ok {
+		start.Z = section.Z()
+		return start, nil
+	}
+	if section, ok := column.NearestWalkableSection(start.Z); ok {
+		start.Z = section.Z()
 	}
 
-	return nil
+	return start, nil
 }
 
 // run executes A*.
@@ -174,9 +178,16 @@ func isSlotState(state surface.State) bool {
 func (search *search) acceptsSection(current openNode, section surface.Section) bool {
 	next := nodeKey{X: section.Point().X, Y: section.Point().Y, Z: section.Z()}
 
-	return search.rules.AllowsSection(section) &&
+	return search.rules.AllowsSection(section) && columnAccepts(search, section) &&
 		search.rules.AllowsStep(current.key.Z, section.Z()) &&
 		!search.occupancy.blocks(next)
+}
+
+// columnAccepts verifies section clearance from the search's cached world column.
+func columnAccepts(search *search, section surface.Section) bool {
+	column, err := search.column(section.Point())
+
+	return err == nil && column.Accepts(section)
 }
 
 // accept records an accepted neighbor section.
