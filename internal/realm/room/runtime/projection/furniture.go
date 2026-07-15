@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	furnituremodel "github.com/niflaot/pixels/internal/realm/furniture/model"
+	roomdecor "github.com/niflaot/pixels/internal/realm/room/decoration"
 	roomfurniture "github.com/niflaot/pixels/internal/realm/room/world/items"
 	outflooritems "github.com/niflaot/pixels/networking/outbound/room/furniture/flooritems"
 	outwallitems "github.com/niflaot/pixels/networking/outbound/room/furniture/wallitems"
@@ -46,10 +47,19 @@ func WallItems(items []furnituremodel.Item, definitions map[int64]furnituremodel
 			seen[item.OwnerPlayerID] = struct{}{}
 			owners = append(owners, outwallitems.Owner{ID: item.OwnerPlayerID, Name: ownerNames[item.OwnerPlayerID]})
 		}
-		records = append(records, outwallitems.Item{ID: item.ID, SpriteID: definition.SpriteID, WallPosition: *item.WallPosition, ExtraData: item.ExtraData, UsagePolicy: UsagePolicyValue(definition), OwnerID: item.OwnerPlayerID})
+		records = append(records, outwallitems.Item{ID: item.ID, SpriteID: definition.SpriteID, WallPosition: *item.WallPosition, ExtraData: WallExtraData(definition, item.ExtraData), UsagePolicy: UsagePolicyValue(definition), OwnerID: item.OwnerPlayerID})
 	}
 
 	return owners, records
+}
+
+// WallExtraData separates post-it visual color from text while preserving other wall-item state.
+func WallExtraData(definition furnituremodel.Definition, extraData string) string {
+	if definition.InteractionType == "postit" {
+		return roomdecor.PostItColor(extraData)
+	}
+
+	return extraData
 }
 
 // floorItemRecord maps one persisted item and its definition to a protocol floor item.

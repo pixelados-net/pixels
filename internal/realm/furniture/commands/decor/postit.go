@@ -74,7 +74,7 @@ func (handler Handler) placePostIt(ctx context.Context, player *playerlive.Playe
 	if err = command.Handler.Send(ctx, packet); err != nil {
 		return err
 	}
-	packet, err = outwalladd.Encode(outwalladd.Item{ID: item.ID, SpriteID: definition.SpriteID, WallPosition: command.WallPosition, ExtraData: roomdecor.DefaultPostItData, OwnerID: item.OwnerPlayerID, OwnerName: player.Username()})
+	packet, err = outwalladd.Encode(outwalladd.Item{ID: item.ID, SpriteID: definition.SpriteID, WallPosition: command.WallPosition, ExtraData: roomdecor.DefaultPostItColor, OwnerID: item.OwnerPlayerID, OwnerName: player.Username()})
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (handler Handler) savePostIt(ctx context.Context, player *playerlive.Player
 	if err != nil {
 		return err
 	}
-	packet, err := outwallupdate.Encode(updated.ID, definition.SpriteID, *updated.WallPosition, updated.ExtraData, 0, updated.OwnerPlayerID)
+	packet, err := outwallupdate.Encode(updated.ID, definition.SpriteID, *updated.WallPosition, roomdecor.PostItColor(updated.ExtraData), 0, updated.OwnerPlayerID)
 	if err != nil {
 		return err
 	}

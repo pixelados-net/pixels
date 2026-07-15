@@ -8,6 +8,7 @@ import (
 	playerlive "github.com/niflaot/pixels/internal/realm/player/live"
 	"github.com/niflaot/pixels/internal/realm/room/runtime/broadcast"
 	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	"github.com/niflaot/pixels/internal/realm/room/runtime/projection"
 	outwallupdate "github.com/niflaot/pixels/networking/outbound/room/furniture/wallupdate"
 )
 
@@ -26,7 +27,7 @@ func (handler Handler) moveWall(ctx context.Context, command Command, player *pl
 	if err != nil {
 		return handler.handleSoftError(ctx, command, roomID, err)
 	}
-	packet, err := outwallupdate.Encode(moved.ID, definition.SpriteID, command.WallPosition, moved.ExtraData, 0, moved.OwnerPlayerID)
+	packet, err := outwallupdate.Encode(moved.ID, definition.SpriteID, command.WallPosition, projection.WallExtraData(definition, moved.ExtraData), 0, moved.OwnerPlayerID)
 	if err != nil {
 		return err
 	}

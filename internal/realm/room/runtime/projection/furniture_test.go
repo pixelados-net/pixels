@@ -81,3 +81,22 @@ func TestFloorItemsProjectsGiftWrapper(t *testing.T) {
 		t.Fatalf("unexpected gift room record %#v", records)
 	}
 }
+
+// TestWallItemsProjectsOnlyPostItColor verifies room entry does not combine note text with sprite state.
+func TestWallItemsProjectsOnlyPostItColor(t *testing.T) {
+	position := ":w=3,4 l=5,23 r"
+	items := []furnituremodel.Item{
+		{DefinitionID: 20, OwnerPlayerID: 3, WallPosition: &position, ExtraData: "9CFF9C visible text"},
+		{DefinitionID: 21, OwnerPlayerID: 3, WallPosition: &position, ExtraData: "2,1,1,#000000,255"},
+	}
+	items[0].ID = 1
+	items[1].ID = 2
+	definitions := map[int64]furnituremodel.Definition{
+		20: {Kind: furnituremodel.KindWall, SpriteID: 1, InteractionType: "postit"},
+		21: {Kind: furnituremodel.KindWall, SpriteID: 2, InteractionType: "dimmer"},
+	}
+	_, records := WallItems(items, definitions, map[int64]string{3: "bob"})
+	if len(records) != 2 || records[0].ExtraData != "9CFF9C" || records[1].ExtraData != items[1].ExtraData {
+		t.Fatalf("unexpected wall extra data %#v", records)
+	}
+}

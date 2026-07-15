@@ -54,7 +54,7 @@ func TestHandlePostItConsecutivePlacementsRenderWithoutSave(t *testing.T) {
 			continue
 		}
 		wallAdds++
-		if !bytes.Contains(packet.Payload, []byte(roomdecor.DefaultPostItData)) {
+		if !bytes.Contains(packet.Payload, []byte(roomdecor.DefaultPostItColor)) {
 			t.Fatalf("wall add lacks renderable state: %q", packet.Payload)
 		}
 	}
@@ -114,6 +114,9 @@ func TestHandlePostItReadsSavesAndEditsData(t *testing.T) {
 	}
 	if len(*sent) != 1 || (*sent)[0].Header != outwallupdate.Header {
 		t.Fatalf("unexpected save packets %#v", *sent)
+	}
+	if !bytes.Contains((*sent)[0].Payload, []byte("9CCEFF")) || bytes.Contains((*sent)[0].Payload, []byte("hello")) {
+		t.Fatalf("post-it wall update must contain color without text: %q", (*sent)[0].Payload)
 	}
 	*sent = (*sent)[:0]
 	edit := Command{Handler: connection, Kind: KindPostItSet, ItemID: 1, Color: "FF9CFF", Text: "changed"}

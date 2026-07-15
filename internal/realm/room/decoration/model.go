@@ -71,3 +71,16 @@ type DimmerState struct {
 	// Presets stores the three ordered mood-light presets.
 	Presets []Preset
 }
+
+// PostItColor returns the supported six-character sprite color from durable note data.
+func PostItColor(value string) string {
+	if len(value) >= 6 {
+		color := value[:6]
+		switch color {
+		case "9CCEFF", "FF9CFF", "9CFF9C", DefaultPostItColor:
+			return color
+		}
+	}
+
+	return DefaultPostItColor
+}
