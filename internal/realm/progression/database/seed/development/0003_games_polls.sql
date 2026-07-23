@@ -1,6 +1,7 @@
 --liquibase formatted sql
 
 --changeset pixels:progression-seed-games-polls-0003 context:development
+--validCheckSum:ANY
 update achievement_definitions set enabled=true,updated_at=now()
 where name in ('BattleBallPlayer','FreezePlayer','FootballPlayer','TagPlayer');
 
@@ -36,7 +37,7 @@ on conflict(definition_id,level) do update set progress_needed=excluded.progress
 
 insert into polls(id,title,headline,summary,start_message,thanks_message,room_id,reward_badge,enabled)
 overriding system value values
- (9501,'Pixels Games QA','Games QA','Ayúdanos a validar los juegos de sala.','Responde las tres preguntas.','¡Gracias por ayudarnos!',153,'ACH_GamesPoll1',true)
+ (9501,'Room Games Feedback','Tell us what you think','Cuéntanos qué te parecieron los juegos de sala.','Solo tres preguntas rápidas.','¡Gracias por tu opinión!',153,'ACH_GamesPoll1',true)
 on conflict(id) do update set title=excluded.title,headline=excluded.headline,summary=excluded.summary,
  start_message=excluded.start_message,thanks_message=excluded.thanks_message,room_id=153,reward_badge=excluded.reward_badge,enabled=true,updated_at=now();
 

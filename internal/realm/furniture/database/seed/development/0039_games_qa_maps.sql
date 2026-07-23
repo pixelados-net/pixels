@@ -1,9 +1,10 @@
 --liquibase formatted sql
 
 --changeset pixels:furniture-seed-games-qa-maps-0039 context:development
+--validCheckSum:ANY
 insert into furniture_definitions(id,sprite_id,name,public_name,kind,width,length,stack_height,allow_stack,allow_walk,allow_sit,allow_lay,allow_inventory_stack,interaction_type,interaction_modes_count,multiheight,custom_params,metadata)
 overriding system value values
- (950030,3741,'es_rollerskate_tagging','Rollerskate Pole','floor',1,1,3.00,true,false,false,false,true,'rollerskate_pole',2,'','','{"game":"tag","qa":"games"}')
+ (950030,3741,'es_rollerskate_tagging','Rollerskate Pole','floor',1,1,3.00,true,false,false,false,true,'rollerskate_pole',2,'','','{"game":"tag","seed":"games-showcase"}')
 on conflict(id) do update set sprite_id=excluded.sprite_id,name=excluded.name,public_name=excluded.public_name,
  interaction_type=excluded.interaction_type,interaction_modes_count=excluded.interaction_modes_count,
  metadata=excluded.metadata,deleted_at=null,updated_at=now();

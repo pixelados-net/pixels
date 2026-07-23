@@ -1,8 +1,9 @@
 --liquibase formatted sql
 
 --changeset pixels:room-seed-games-layouts-0017 context:development
+--validCheckSum:ANY
 update rooms set
- name=case id when 150 then 'QA · Battle Banzai' when 151 then 'QA · Freeze' when 152 then 'QA · Football' else 'QA · Tag y Polls' end,
+ name=case id when 150 then 'Battle Banzai' when 151 then 'Freeze' when 152 then 'Cancha de Fútbol' else 'IceTag y Rollerskate' end,
  description=case id
   when 150 then 'Tablero 8x8: elige un gate, inicia el contador y pisa tres veces cada tile.'
   when 151 then 'Laberinto 9x7: elige equipo, inicia el contador y usa doble clic en tile o bloque.'

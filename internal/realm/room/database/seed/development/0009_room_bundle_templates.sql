@@ -1,11 +1,12 @@
 --liquibase formatted sql
 
 --changeset pixels:pixels-room-seed-development-0009-room-bundle-templates context:development
+--validCheckSum:ANY
 insert into rooms (id,owner_player_id,owner_name,name,description,model_name,max_users,category_id,trade_mode,is_bundle_template)
 overriding system value values
-    (100,1,'demo','Starter Loft','A complete social loft room bundle.','model_a',25,3,2,true),
-    (101,1,'demo','Interactive Lounge','A custom-layout games room bundle.','model_b',25,2,2,true),
-    (102,1,'demo','Cozy Bedroom','A furnished bedroom room bundle.','model_c',15,3,0,true)
+    (100,1,'milo','Starter Loft','A complete social loft room bundle.','model_a',25,3,2,true),
+    (101,1,'milo','Interactive Lounge','A custom-layout games room bundle.','model_b',25,2,2,true),
+    (102,1,'milo','Cozy Bedroom','A furnished bedroom room bundle.','model_c',15,3,0,true)
 on conflict (id) do update set
     name=excluded.name,description=excluded.description,model_name=excluded.model_name,
     max_users=excluded.max_users,category_id=excluded.category_id,trade_mode=excluded.trade_mode,
