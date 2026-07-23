@@ -1,0 +1,358 @@
+package live
+
+import (
+	worldfurniture "github.com/niflaot/pixels/internal/realm/room/world/furniture"
+	"github.com/niflaot/pixels/internal/realm/room/world/grid"
+	worldpath "github.com/niflaot/pixels/internal/realm/room/world/path"
+	worldruntime "github.com/niflaot/pixels/internal/realm/room/world/runtime"
+	"github.com/niflaot/pixels/internal/realm/room/world/surface"
+	worldunit "github.com/niflaot/pixels/internal/realm/room/world/unit"
+)
+
+// AddEntity adds a non-player unit to the loaded room world.
+func (room *Room) AddEntity(entityKey int64, ownerID int64, kind worldunit.Kind, position worldpath.Position, rotation worldunit.Rotation) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+	return room.world.AddEntity(entityKey, ownerID, kind, position, rotation)
+}
+
+// RemoveEntity removes a non-player unit from the loaded room world.
+func (room *Room) RemoveEntity(entityKey int64) (UnitSnapshot, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.RemoveEntity(entityKey)
+}
+
+// RandomWalkablePoint selects one nearby unoccupied tile without allocating a candidate list.
+func (room *Room) RandomWalkablePoint(entityKey int64, radius int, random uint64) (grid.Point, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return grid.Point{}, false
+	}
+	return room.world.RandomWalkablePoint(entityKey, radius, random)
+}
+
+// LoadWorld loads or replaces room world behavior.
+func (room *Room) LoadWorld(config WorldConfig) error {
+	loaded, err := worldruntime.New(config)
+	if err != nil {
+		return err
+	}
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	room.world = loaded
+	for playerID := range room.occupants {
+		room.world.AddUnit(playerID)
+	}
+
+	return nil
+}
+
+// ReloadFixtures replaces one source's fixtures without resetting units.
+func (room *Room) ReloadFixtures(sourceID int64, fixtures []surface.Fixture) error {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return ErrWorldNotLoaded
+	}
+
+	return room.world.ReloadFixtures(sourceID, fixtures)
+}
+
+// ReloadFurniture replaces one furniture item and returns affected units.
+func (room *Room) ReloadFurniture(sourceID int64, item *worldfurniture.Item) ([]UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return nil, ErrWorldNotLoaded
+	}
+
+	return room.world.ReloadFurniture(sourceID, item)
+}
+
+// UnloadWorld unloads room world behavior.
+func (room *Room) UnloadWorld() {
+	room.mutex.Lock()
+	room.world = nil
+	clear(room.interactionLocks)
+	room.mutex.Unlock()
+	room.tasks.Clear()
+}
+
+// WorldLoaded reports whether world behavior is loaded.
+func (room *Room) WorldLoaded() bool {
+	room.mutex.RLock()
+	loaded := room.world != nil
+	room.mutex.RUnlock()
+
+	return loaded
+}
+
+// Units returns stable world unit snapshots.
+func (room *Room) Units() []UnitSnapshot {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+
+	return room.world.Units()
+}
+
+// Presences returns occupant and unit snapshots with one allocation and one lock.
+func (room *Room) Presences() []Presence {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	presences := make([]Presence, 0, len(room.occupants))
+	for playerID, occupant := range room.occupants {
+		unit, found := room.world.Unit(playerID)
+		if found {
+			presences = append(presences, Presence{Occupant: occupant, Unit: unit})
+		}
+	}
+
+	return presences
+}
+
+// Unit returns one unit snapshot without allocating an audience slice.
+func (room *Room) Unit(playerID int64) (UnitSnapshot, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+
+	return room.world.Unit(playerID)
+}
+
+// UnitByID returns one unit by its room-local identifier without allocation.
+func (room *Room) UnitByID(unitID int64) (UnitSnapshot, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+	return room.world.UnitByID(unitID)
+}
+
+// SetUnitStatus stores one status on a player unit when its world is loaded.
+func (room *Room) SetUnitStatus(playerID int64, key string, value string) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return false
+	}
+
+	return room.world.SetUnitStatus(playerID, key, value)
+}
+
+// ClearUnitStatus removes one status from a player unit when its world is loaded.
+func (room *Room) ClearUnitStatus(playerID int64, key string) bool {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return false
+	}
+	return room.world.ClearUnitStatus(playerID, key)
+}
+
+// FurnitureItems returns stable placed furniture item snapshots.
+func (room *Room) FurnitureItems() []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+
+	return room.world.FurnitureItems()
+}
+
+// FurnitureItem returns one placed furniture snapshot without allocating.
+func (room *Room) FurnitureItem(itemID int64) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.FurnitureItem(itemID)
+}
+
+// FurnitureByInteraction returns indexed furniture for one behavior type.
+func (room *Room) FurnitureByInteraction(interactionType string) []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	return room.world.FurnitureByInteraction(interactionType)
+}
+
+// NearestFurnitureByInteraction returns one closest indexed item without allocating.
+func (room *Room) NearestFurnitureByInteraction(interactionType string, origin grid.Point, radius int) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+	return room.world.NearestFurnitureByInteraction(interactionType, origin, radius)
+}
+
+// FurnitureAt returns furniture whose footprints cover one tile.
+func (room *Room) FurnitureAt(point grid.Point) []worldfurniture.Item {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return nil
+	}
+	return room.world.FurnitureAt(point)
+}
+
+// SurfaceColumn returns the resolved vertical surface column for one tile.
+func (room *Room) SurfaceColumn(point grid.Point) (surface.Column, error) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return surface.Column{}, ErrWorldNotLoaded
+	}
+	return room.world.SurfaceColumn(point)
+}
+
+// RollUnit repositions one idle unit without reserving player control.
+func (room *Room) RollUnit(entityKey int64, position worldpath.Position) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+	return room.world.RollUnit(entityKey, position)
+}
+
+// InteractionAt returns one interactive furniture item on a tile without allocating.
+func (room *Room) InteractionAt(point grid.Point) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.InteractionAt(point)
+}
+
+// FurnitureIDsAt appends furniture identifiers on one tile to caller-owned storage.
+func (room *Room) FurnitureIDsAt(point grid.Point, dst []int64) []int64 {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return dst
+	}
+	return room.world.FurnitureIDsAt(point, dst)
+}
+
+// OtherInteractionAt returns another interactive item sharing a tile without allocating.
+func (room *Room) OtherInteractionAt(point grid.Point, excludedID int64) (worldfurniture.Item, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.OtherInteractionAt(point, excludedID)
+}
+
+// SetFurnitureExtraData changes one furniture visual state without rebuilding fixtures.
+func (room *Room) SetFurnitureExtraData(itemID int64, value string) (worldfurniture.Item, bool) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, false
+	}
+
+	return room.world.SetFurnitureExtraData(itemID, value)
+}
+
+// UpdateFurnitureState atomically changes one item snapshot and its optional fixtures.
+func (room *Room) UpdateFurnitureState(itemID int64, value string, rebuild bool) (worldfurniture.Item, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return worldfurniture.Item{}, ErrWorldNotLoaded
+	}
+
+	return room.world.UpdateFurnitureState(itemID, value, rebuild)
+}
+
+// UnitInFurnitureFootprint returns the stable lowest-key unit occupying an item's footprint.
+func (room *Room) UnitInFurnitureFootprint(item worldfurniture.Item) (UnitSnapshot, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return UnitSnapshot{}, false
+	}
+
+	return room.world.UnitInFurnitureFootprint(item)
+}
+
+// HasUnitInFurnitureFootprint reports whether a unit occupies an item's rotated footprint.
+func (room *Room) HasUnitInFurnitureFootprint(item worldfurniture.Item) bool {
+	_, found := room.UnitInFurnitureFootprint(item)
+
+	return found
+}
+
+// TeleportUnit repositions one unit authoritatively.
+func (room *Room) TeleportUnit(playerID int64, point grid.Point, rotation worldunit.Rotation, controlled bool, policies ...worldruntime.TeleportPolicy) (UnitSnapshot, error) {
+	room.mutex.Lock()
+	defer room.mutex.Unlock()
+	if room.world == nil {
+		return UnitSnapshot{}, ErrWorldNotLoaded
+	}
+
+	return room.world.TeleportUnit(playerID, point, rotation, controlled, policies...)
+}
+
+// TeleportNear requests safe target-or-neighbor resolution for direct movement.
+const TeleportNear = worldruntime.TeleportNear
+
+// SurfaceHeights returns current per-tile walkable heights in row-major order.
+func (room *Room) SurfaceHeights() (uint16, uint16, []TileHeight) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return 0, 0, nil
+	}
+
+	return room.world.SurfaceHeights()
+}
+
+// SlotOccupant returns a player occupying a sit or lay slot of an item.
+func (room *Room) SlotOccupant(itemID int64) (int64, bool) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return 0, false
+	}
+
+	return room.world.SlotOccupant(itemID)
+}
+
+// ResolveFurniturePlacement validates a footprint against occupancy and stacking rules.
+func (room *Room) ResolveFurniturePlacement(sourceID int64, footprint []grid.Point) (grid.Height, error) {
+	room.mutex.RLock()
+	defer room.mutex.RUnlock()
+	if room.world == nil {
+		return 0, ErrWorldNotLoaded
+	}
+
+	return room.world.ResolveFurniturePlacement(sourceID, footprint)
+}

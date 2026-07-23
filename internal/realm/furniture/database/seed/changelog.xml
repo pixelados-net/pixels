@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="development/0001_default_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0002_default_furniture_items.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0003_interaction_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0004_teleport_pairs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0005_pair_orphan_teleports.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0006_generic_interaction_examples.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0007_essential_interactions.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0008_essential_animation_variants.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0009_color_wheel_random_state.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_redeemable_credit_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0011_room_bundle_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0012_effect_furniture.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0013_effect_asset_ids.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0014_room_decorators.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0015_room_decorator_examples.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0016_room_dimmer.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0017_misc_wall_items.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0018_misc_floor_classics.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0019_misc_behavior_fixes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0020_roller_chain.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0021_wired_definitions.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0022_wired_labs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0023_wired_compatibility.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0024_wired_full_matrix.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0025_wired_selector_labs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0026_rebuild_wired_labs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0027_fix_wired_lab_say_commands.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0028_use_visible_wired_badge.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0029_clarify_wired_snapshot_lab.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0030_regenerate_wired_movement_lab.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0031_wired_lab_extras.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0032_pet_products.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0033_group_products.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0034_crafting_lab.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0035_monsterplant_mappings.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0036_clothing_products.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0037_group_furniture_collection.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0038_room_games.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0039_games_qa_maps.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0040_freeze_qa_usability.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0041_football_qa_usability.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0042_football_goal_orientation.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0043_football_gate_kit.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0044_rooms_finals_lab.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="test/0001_test_furniture_definitions.sql" relativeToChangelogFile="true" contextFilter="test"/>
+    <include file="test/0002_test_furniture_items.sql" relativeToChangelogFile="true" contextFilter="test"/>
+</databaseChangeLog>

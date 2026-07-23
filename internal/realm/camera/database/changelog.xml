@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <include file="migrations/0001_captures.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_publish_cooldowns.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_publications.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_settings.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_audit.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_capture_lifecycle.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_drop_legacy_pending_index.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

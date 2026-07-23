@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="../../internal/realm/player/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/group/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/permission/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/room/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/furniture/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/progression/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/gamecenter/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/crafting/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/room/database/post_furniture_changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/pet/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/navigator/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/inventory/currency/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/camera/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/catalog/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/subscription/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/chat/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/messenger/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/marketplace/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/trade/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/bot/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/sanction/database/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/moderation/database/changelog.xml" relativeToChangelogFile="true"/>
+</databaseChangeLog>

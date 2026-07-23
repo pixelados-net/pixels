@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="migrations/0001_create_players.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_create_player_profiles.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_create_player_sessions.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_add_player_club.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_add_profile_bubble_style.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_add_allow_trade.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_create_player_effects.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_add_badges_respect.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0009_add_badge_projection.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0010_user_remaining.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

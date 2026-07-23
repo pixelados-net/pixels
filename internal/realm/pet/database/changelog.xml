@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <include file="migrations/0001_reference_data.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_create_pets.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_pet_operations.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_behavior_reference.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_training_reference.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_contextual_training.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_stationary_plants.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_monsterplant_appearance.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

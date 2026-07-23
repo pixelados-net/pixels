@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+legacy
+plan
+docs
+database
+coverage.out
+coverage.log
+path.test
+*.md

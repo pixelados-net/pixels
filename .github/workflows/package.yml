@@ -1,0 +1,236 @@
+name: Package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.release.outputs.version }}
+      release-commit: ${{ steps.release.outputs.commit }}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: pixels
+          POSTGRES_USER: pixels
+          POSTGRES_PASSWORD: pixels
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pixels -d pixels"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate semantic tag and main ancestry
+        id: release
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag ${tag} is not a semantic version with a v prefix."
+            exit 1
+          fi
+
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          commit="$(git rev-list -n 1 "$tag")"
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "Tag ${tag} does not point to a commit contained in main."
+            exit 1
+          fi
+
+          source_version="$(sed -nE 's/^[[:space:]]*Version = "(v[^"]+)"/\1/p' pkg/build/info.go)"
+          if [ "$source_version" != "$tag" ]; then
+            echo "Tag ${tag} does not match pkg/build.Version ${source_version}."
+            exit 1
+          fi
+
+          echo "version=${tag}" >> "$GITHUB_OUTPUT"
+          echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Validate database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties validate
+
+      - name: Apply database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties update
+
+      - name: Test
+        run: go test ./...
+
+      - name: Compile
+        run: go build -trimpath -ldflags="-X github.com/niflaot/pixels/pkg/build.Version=${{ steps.release.outputs.version }} -X github.com/niflaot/pixels/pkg/build.CommitHash=${{ steps.release.outputs.commit }}" -o /tmp/pixels ./cmd
+
+  package:
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+    needs: validate
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+          RELEASE_VERSION: ${{ needs.validate.outputs.release-version }}
+          RELEASE_COMMIT: ${{ needs.validate.outputs.release-commit }}
+        run: |
+          mkdir -p dist
+          name="pixels-${GOOS}-${GOARCH}"
+          go build -trimpath -ldflags="-s -w -X github.com/niflaot/pixels/pkg/build.Version=${RELEASE_VERSION} -X github.com/niflaot/pixels/pkg/build.CommitHash=${RELEASE_COMMIT}" -o "dist/${name}" ./cmd
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixels-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          if-no-files-found: error
+
+  ghcr:
+    name: Publish GHCR Image
+    needs:
+      - validate
+      - package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.validate.outputs.release-version }}
+            COMMIT=${{ needs.validate.outputs.release-commit }}
+
+  notify:
+    name: Notify Discord
+    needs:
+      - validate
+      - package
+      - ghcr
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TAG_NAME: ${{ needs.validate.outputs.release-version }}
+          COMMIT_SHA: ${{ needs.validate.outputs.release-commit }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured. Skipping notification."
+            exit 0
+          fi
+
+          short_sha="${COMMIT_SHA:0:7}"
+          commit_url="${SERVER_URL}/${REPO}/commit/${COMMIT_SHA}"
+          commit_message="$(git log -1 --format=%B "$COMMIT_SHA")"
+          commit_author="$(git log -1 --format=%an "$COMMIT_SHA")"
+          payload=$(jq -n \
+            --arg tag "$TAG_NAME" \
+            --arg repo "$REPO" \
+            --arg sha "$short_sha" \
+            --arg url "$commit_url" \
+            --arg message "$commit_message" \
+            --arg author "$commit_author" \
+            '{
+              embeds: [{
+                title: ("Pixels | " + $tag + " built and published"),
+                url: $url,
+                description: $message,
+                color: 5814783,
+                fields: [
+                  { name: "Repository", value: $repo, inline: true },
+                  { name: "Commit", value: $sha, inline: true },
+                  { name: "Author", value: $author, inline: true }
+                ]
+              }]
+            }')
+          curl --silent --show-error --fail --retry 3 \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            "$DISCORD_WEBHOOK_URL"

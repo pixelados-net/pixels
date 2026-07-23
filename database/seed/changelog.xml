@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="../../internal/realm/player/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+	<include file="../../internal/realm/messenger/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/permission/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/room/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/group/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/furniture/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/progression/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/crafting/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/camera/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/catalog/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/pet/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/subscription/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/navigator/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/bot/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+    <include file="../../internal/realm/moderation/database/seed/changelog.xml" relativeToChangelogFile="true"/>
+</databaseChangeLog>

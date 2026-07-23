@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <include file="migrations/0001_create_memberships.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_create_payday_log.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_create_gift_claims.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_create_targeted_offers.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_create_calendar.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_add_accrual_boundaries.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

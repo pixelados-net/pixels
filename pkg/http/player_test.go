@@ -1,0 +1,207 @@
+package http
+
+import (
+	"context"
+
+	catalogadmin "github.com/niflaot/pixels/internal/realm/catalog/admin"
+	currencymodel "github.com/niflaot/pixels/internal/realm/inventory/currency/model"
+	currencyservice "github.com/niflaot/pixels/internal/realm/inventory/currency/service"
+	playermodel "github.com/niflaot/pixels/internal/realm/player/model"
+	playerservice "github.com/niflaot/pixels/internal/realm/player/service"
+	roommodel "github.com/niflaot/pixels/internal/realm/room/record/model"
+	roomservice "github.com/niflaot/pixels/internal/realm/room/record/service"
+	roomlive "github.com/niflaot/pixels/internal/realm/room/runtime/live"
+	netconn "github.com/niflaot/pixels/networking/connection"
+	catalogroutes "github.com/niflaot/pixels/pkg/http/catalog/routes"
+	currencyroutes "github.com/niflaot/pixels/pkg/http/currency/routes"
+	sharedmodel "github.com/niflaot/pixels/pkg/model"
+	"go.uber.org/zap"
+)
+
+// testCurrencyDependencies composes HTTP currency route test dependencies.
+func testCurrencyDependencies(registry *netconn.Registry, log *zap.Logger) currencyroutes.Dependencies {
+	return currencyroutes.Dependencies{
+		Finder: testFinder{}, Players: testPlayers(), Connections: registry,
+		Currencies: testCurrencies(), Translations: testTranslations(), Log: log,
+	}
+}
+
+// testCatalogDependencies composes HTTP catalog route test dependencies.
+func testCatalogDependencies(registry *netconn.Registry, log *zap.Logger) catalogroutes.Dependencies {
+	return catalogroutes.Dependencies{Catalog: testCatalogAdmin{}, Connections: registry, Log: log}
+}
+
+// testCatalogAdmin supplies unused catalog administration behavior.
+type testCatalogAdmin struct {
+	// Manager supplies catalog methods outside existing HTTP route tests.
+	catalogadmin.Manager
+}
+
+// testCurrencies returns public client currency definitions.
+func testCurrencies() testCurrencyReader {
+	return testCurrencyReader{}
+}
+
+// testCurrencyReader returns HTTP test currency data.
+type testCurrencyReader struct{}
+
+// Wallet returns no HTTP test balances.
+func (testCurrencyReader) Wallet(context.Context, int64) ([]currencymodel.Balance, error) {
+	return nil, nil
+}
+
+// Balance returns a zero HTTP test balance.
+func (testCurrencyReader) Balance(context.Context, int64, int32) (int64, error) {
+	return 0, nil
+}
+
+// Types returns HTTP test currency definitions.
+func (testCurrencyReader) Types(context.Context) ([]currencymodel.Definition, error) {
+	return []currencymodel.Definition{{Type: -1, Key: "credits"}, {Type: 5, Key: "diamonds"}}, nil
+}
+
+// Grant returns a fake committed balance.
+func (testCurrencyReader) Grant(_ context.Context, params currencyservice.GrantParams) (int64, error) {
+	return params.Amount, nil
+}
+
+// Set returns a fake absolute balance.
+func (testCurrencyReader) Set(_ context.Context, params currencyservice.SetParams) (int64, error) {
+	return params.Amount, nil
+}
+
+// testFinder returns persistent test player records.
+type testFinder struct{}
+
+// FindByID finds a test player by id.
+func (finder testFinder) FindByID(ctx context.Context, id int64) (playerservice.Record, bool, error) {
+	if id != 2 {
+		return playerservice.Record{}, false, nil
+	}
+
+	return testRecord(id), true, nil
+}
+
+// testPlayerManager supplies administrative player route behavior.
+type testPlayerManager struct {
+	testFinder
+}
+
+// Create creates a deterministic test player.
+func (testPlayerManager) Create(_ context.Context, params playerservice.CreateParams) (playerservice.Record, error) {
+	record := testRecord(2)
+	record.Player.Username = params.Username
+	record.Profile.Look = params.Profile.Look
+	record.Profile.Gender = params.Profile.Gender
+	record.Profile.Motto = params.Profile.Motto
+	record.Profile.HomeRoomID = params.Profile.HomeRoomID
+
+	return record, nil
+}
+
+// Update returns the deterministic test player.
+func (testPlayerManager) Update(context.Context, int64, playerservice.UpdateParams) (playerservice.Record, error) {
+	return testRecord(2), nil
+}
+
+// SoftDelete accepts deterministic player deletion.
+func (testPlayerManager) SoftDelete(context.Context, int64) error {
+	return nil
+}
+
+// UpdatePrivacy returns the deterministic test player.
+func (testPlayerManager) UpdatePrivacy(context.Context, int64, playerservice.PrivacyParams) (playerservice.Record, error) {
+	return testRecord(2), nil
+}
+
+// FindByUsername finds a test player by username.
+func (finder testFinder) FindByUsername(context.Context, string) (playerservice.Record, bool, error) {
+	return testRecord(2), true, nil
+}
+
+// testRecord returns a persistent test player record.
+func testRecord(id int64) playerservice.Record {
+	return playerservice.Record{
+		Player: playermodel.Player{
+			Base:     sharedmodel.Base{Identity: sharedmodel.Identity{ID: id}},
+			Username: "test_player",
+		},
+		Profile: playermodel.Profile{
+			PlayerID:        id,
+			Look:            "hd-180-1",
+			Gender:          playermodel.GenderMale,
+			Motto:           "Test fixture.",
+			AllowNameChange: true,
+		},
+	}
+}
+
+// testRooms returns an HTTP test room manager.
+func testRooms() roomservice.Manager {
+	return testRoomManager{}
+}
+
+// testRoomRuntime returns an HTTP test room runtime.
+func testRoomRuntime() *roomlive.Registry {
+	return roomlive.NewRegistry(nil)
+}
+
+// testRoomManager provides room data for HTTP tests.
+type testRoomManager struct{}
+
+// Create creates a test room.
+func (manager testRoomManager) Create(context.Context, roomservice.CreateParams) (roommodel.Room, error) {
+	return roommodel.Room{}, nil
+}
+
+// FindByID finds a test room by id.
+func (manager testRoomManager) FindByID(context.Context, int64) (roommodel.Room, bool, error) {
+	return testRoom(), true, nil
+}
+
+// ListByOwner lists test rooms by owner.
+func (manager testRoomManager) ListByOwner(context.Context, int64) ([]roommodel.Room, error) {
+	return []roommodel.Room{testRoom()}, nil
+}
+
+// ListPopular lists test rooms.
+func (manager testRoomManager) ListPopular(context.Context, int) ([]roommodel.Room, error) {
+	return []roommodel.Room{testRoom()}, nil
+}
+
+// ListHighestScore lists highest score test rooms.
+func (manager testRoomManager) ListHighestScore(context.Context, int) ([]roommodel.Room, error) {
+	return []roommodel.Room{testRoom()}, nil
+}
+
+// Search searches test rooms.
+func (manager testRoomManager) Search(context.Context, string, int) ([]roommodel.Room, error) {
+	return []roommodel.Room{testRoom()}, nil
+}
+
+// ListTags lists test room tags.
+func (manager testRoomManager) ListTags(context.Context, int64) ([]roommodel.Tag, error) {
+	return nil, nil
+}
+
+// SoftDelete soft deletes a test room.
+func (manager testRoomManager) SoftDelete(context.Context, int64) error {
+	return nil
+}
+
+// ListCategories lists test room categories.
+func (manager testRoomManager) ListCategories(context.Context) ([]roommodel.Category, error) {
+	return []roommodel.Category{{Base: sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}}, Caption: "Social", Visible: true}}, nil
+}
+
+// testRoom returns a test room.
+func testRoom() roommodel.Room {
+	return roommodel.Room{
+		Base:          sharedmodel.Base{Identity: sharedmodel.Identity{ID: 1}},
+		OwnerPlayerID: 2,
+		OwnerName:     "test_player",
+		Name:          "Test Room",
+		ModelName:     "model_test",
+		MaxUsers:      25,
+	}
+}

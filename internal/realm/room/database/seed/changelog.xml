@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="development/0001_default_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0002_default_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0003_refresh_default_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0004_refresh_default_room_doors.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0005_closed_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0006_reconcile_room_vote_scores.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0007_nitro_room_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0008_enable_lobby_trading.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0009_room_bundle_templates.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_room_decorations.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0011_wired_labs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0012_rebuild_wired_labs.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0013_wired_lab_extras_room.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0014_pet_qa_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0015_group_qa_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0016_games_qa_rooms.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0017_games_qa_layouts.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0018_football_qa_entrance.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0019_rooms_finals_lab.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="test/0001_test_room_layouts.sql" relativeToChangelogFile="true" contextFilter="test"/>
+    <include file="test/0002_test_rooms.sql" relativeToChangelogFile="true" contextFilter="test"/>
+    <include file="test/0003_reconcile_room_vote_scores.sql" relativeToChangelogFile="true" contextFilter="test"/>
+</databaseChangeLog>

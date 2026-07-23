@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="migrations/0001_create_catalog_pages.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_create_catalog_items.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_create_catalog_item_limited_units.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_add_catalog_page_permission.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_bundle_support.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_create_item_products.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_add_giftable.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_create_vouchers.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0009_add_new_additions.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0010_add_freshness.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0011_link_purchase_items.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0012_room_bundles.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0013_room_bundle_audit_name.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0014_add_effect_grants.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0015_room_bundle_bot_audit.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0016_pet_rewards.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0017_service_rewards.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

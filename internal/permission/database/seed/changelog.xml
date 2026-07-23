@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="development/0001_default_permission_groups.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0002_demo_roles.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0003_room_control_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0004_room_settings_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0005_room_moderation_policy_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0006_room_floorplan_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0007_trade_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0008_room_bundle_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0009_player_effect_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0010_moderation_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0011_wired_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0012_pet_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="test/0001_test_permission_groups.sql" relativeToChangelogFile="true" contextFilter="test"/>
+    <include file="development/0013_group_nodes.sql" relativeToChangelogFile="true"/>
+    <include file="development/0014_crafting_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0015_camera_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0016_progression_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+    <include file="development/0017_games_nodes.sql" relativeToChangelogFile="true" contextFilter="development"/>
+</databaseChangeLog>

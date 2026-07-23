@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: pixels
+          POSTGRES_USER: pixels
+          POSTGRES_PASSWORD: pixels
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pixels -d pixels"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: true
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Validate database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties validate
+
+      - name: Apply database migrations
+        run: docker run --rm --network host -v "$PWD:/workspace" -w /workspace liquibase/liquibase:4.31 --defaults-file=database/liquibase.ci.properties update
+
+      - name: Test
+        run: |
+          set -o pipefail
+          go test -race -covermode=atomic -coverprofile=coverage.out ./... | tee coverage.log
+
+      - name: Check coverage
+        # The repository predates a usable coverage gate and currently measures
+        # 49.9% overall. Ratchet the aggregate instead of rejecting declarative
+        # packet packages individually; raise this baseline as coverage grows.
+        env:
+          COVERAGE_BASELINE: "49.5"
+        run: |
+          coverage="$(go tool cover -func=coverage.out | awk '/^total:/ {print substr($3, 1, length($3)-1)}')"
+          echo "Total coverage: ${coverage}% (ratchet baseline: ${COVERAGE_BASELINE}%)"
+          awk -v coverage="$coverage" -v baseline="$COVERAGE_BASELINE" 'BEGIN { exit !(coverage >= baseline) }'

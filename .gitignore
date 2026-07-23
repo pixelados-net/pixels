@@ -1,0 +1,41 @@
+/legacy/
+
+# Local environment.
+.env
+.env.local
+.env.*.local
+
+# AI assistants.
+.codex/
+.claude/
+.cursor/
+.windsurf/
+.continue/
+.aider*
+
+# Local planning drafts and internal tooling, not part of the public repository.
+/plan/
+
+# IDEs and editors.
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Go build and test output.
+/bin/
+/build/
+/dist/
+/out/
+/tmp/
+*.test
+*.prof
+*.cover
+coverage.out
+coverage.log
+
+# Logs and runtime output.
+*.log
+logs/

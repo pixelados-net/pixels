@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="migrations/0001_create_furniture_definitions.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_create_furniture_items.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_allow_wall_definitions.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_create_teleport_pairs.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_add_gift_wrap.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_add_gift_wrap_sprite.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_add_trading_fields.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_add_effect_fields.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0009_allow_wall_item_placement.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0010_recover_pending_postits.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0011_social_group_links.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0012_allow_recycle.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0013_add_description.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0014_clothing_products.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0015_add_room_final_interactions.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

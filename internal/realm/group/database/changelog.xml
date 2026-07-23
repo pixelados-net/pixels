@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <include file="migrations/0001_create_social_groups.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_extend_social_groups.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_membership_badges.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_forums_audit.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_membership_invariants.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_create_idempotency.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_favorite_membership.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

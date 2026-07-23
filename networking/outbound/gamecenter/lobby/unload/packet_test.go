@@ -1,0 +1,28 @@
+package unload
+
+import (
+	"testing"
+
+	"github.com/niflaot/pixels/networking/codec"
+)
+
+// TestEncode verifies the renderer wire shape.
+func TestEncode(t *testing.T) {
+	packet, err := Encode(11, "value1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if packet.Header != Header {
+		t.Fatalf("unexpected header: %d", packet.Header)
+	}
+	values, err := codec.DecodePacketExact(packet, codec.Definition{codec.Int32Field, codec.StringField})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if values[0].Int32 != 11 {
+		t.Fatalf("unexpected field 0: %v", values[0].Int32)
+	}
+	if values[1].String != "value1" {
+		t.Fatalf("unexpected field 1: %v", values[1].String)
+	}
+}

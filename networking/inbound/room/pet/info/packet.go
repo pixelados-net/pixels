@@ -1,0 +1,19 @@
+// Package info decodes PET_INFO requests.
+package info
+
+import "github.com/niflaot/pixels/networking/codec"
+
+// Header identifies PET_INFO.
+const Header uint16 = 2934
+
+// Decode decodes the requested pet identifier.
+func Decode(packet codec.Packet) (int64, error) {
+	if packet.Header != Header {
+		return 0, codec.ErrUnexpectedHeader
+	}
+	values, err := codec.DecodePacketExact(packet, codec.Definition{codec.Int32Field})
+	if err != nil {
+		return 0, err
+	}
+	return int64(values[0].Int32), nil
+}

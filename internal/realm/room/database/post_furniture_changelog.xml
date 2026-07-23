@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="migrations/0011_room_wired.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0012_room_hide_wired.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0013_social_group_binding.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0014_social_group_home_consistency.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0015_room_game_scores.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>

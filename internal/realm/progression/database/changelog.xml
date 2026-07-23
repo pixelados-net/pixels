@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <include file="migrations/0001_achievements.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0002_player_progress.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_talents.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0004_quests.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0005_quizzes_promos.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0006_audit.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0007_daily_rejections.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0008_polls.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>
