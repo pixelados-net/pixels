@@ -3,7 +3,7 @@
 [![CI](https://github.com/pixelados-net/pixels/actions/workflows/ci.yml/badge.svg)](https://github.com/pixelados-net/pixels/actions/workflows/ci.yml)
 [![Package](https://github.com/pixelados-net/pixels/actions/workflows/package.yml/badge.svg?branch=v0.0.1&event=push)](https://github.com/pixelados-net/pixels/actions/workflows/package.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/pixelados-net/pixels)](go.mod)
-[![Version](https://img.shields.io/badge/version-v0.0.1-blue)](https://github.com/pixelados-net/pixels/releases)
+[![Version](https://img.shields.io/badge/version-v0.0.2-blue)](https://github.com/pixelados-net/pixels/releases)
 [![License](https://img.shields.io/github/license/pixelados-net/pixels)](LICENSE)
 
 Pixels is a server implementation of the [Pixel Protocol](https://pixelados-net.github.io/pixel-protocol), written in Go. The Pixel Protocol is an open specification for the network protocol, room engine, and catalog model spoken by [Nitro](https://github.com/billsonnn/nitro-react) and the wider family of Nitro-based clients: HTML5 clients that render entirely in the browser over native WebSockets, instead of a Flash client with a bridge sitting in front of it.
