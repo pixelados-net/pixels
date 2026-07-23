@@ -135,7 +135,10 @@ Durations use Go duration syntax such as `250ms`, `5m`, `24h`, and `168h`. Empty
 | `PIXELS_PLAYER_WARDROBE_MAX_SLOT` | `10` | Last valid wardrobe slot |
 | `PIXELS_PLAYER_SETTINGS_FLUSH_INTERVAL` | `250ms` | Deferred settings write cadence |
 | `PIXELS_PLAYER_SETTINGS_PENDING_LIMIT` | `4096` | Maximum pending settings writes |
-| `PIXELS_FIGURE_DATA_PATH` | `legacy/Comet-KeyServers-Edition/config/figuredata.xml` | Avatar entitlement catalog path |
+| `PIXELS_FIGURE_DATA_URL` | `https://storageapi.pixelados.net/assets-prod/gamedata/FigureData.json` | Nitro-compatible avatar entitlement catalog URL |
+| `PIXELS_FIGURE_DATA_PATH` | empty | Optional local JSON or XML override for the catalog URL |
+| `PIXELS_FIGURE_DATA_TIMEOUT` | `15s` | Remote figure-data request timeout |
+| `PIXELS_FIGURE_DATA_MAX_BYTES` | `16777216` | Maximum remote or local figure-data document size |
 | `PIXELS_NAVIGATOR_SEARCH_LIMIT` | `50` | Maximum room search results |
 | `PIXELS_NAVIGATOR_HISTORY_LIMIT` | `25` | Visit history size |
 | `PIXELS_NAVIGATOR_FAVORITE_LIMIT` | `30` | Favorite room limit |

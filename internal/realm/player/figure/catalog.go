@@ -1,10 +1,10 @@
 package figure
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -60,19 +60,18 @@ type colorRule struct {
 
 // NewCatalog loads and validates the configured figuredata JSON or XML once.
 func NewCatalog(config Config) (*Catalog, error) {
-	file, err := os.Open(config.Path)
+	data, name, err := loadFigureData(config)
 	if err != nil {
-		return nil, fmt.Errorf("open figure data: %w", err)
+		return nil, fmt.Errorf("load figure data: %w", err)
 	}
-	defer file.Close()
 	catalog := &Catalog{sets: make(map[setKey]setRule), colors: make(map[colorKey]colorRule)}
-	switch strings.ToLower(filepath.Ext(config.Path)) {
+	switch strings.ToLower(filepath.Ext(name)) {
 	case ".json":
-		err = catalog.decodeJSON(json.NewDecoder(file))
+		err = catalog.decodeJSON(json.NewDecoder(bytes.NewReader(data)))
 	case ".xml":
-		err = catalog.decode(xml.NewDecoder(file))
+		err = catalog.decode(xml.NewDecoder(bytes.NewReader(data)))
 	default:
-		err = fmt.Errorf("unsupported figure data extension %q", filepath.Ext(config.Path))
+		err = fmt.Errorf("unsupported figure data extension %q", filepath.Ext(name))
 	}
 	if err != nil {
 		return nil, fmt.Errorf("decode figure data: %w", err)

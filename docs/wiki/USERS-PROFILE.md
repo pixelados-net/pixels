@@ -12,7 +12,7 @@ The social surface: motto, current figure string and gender, achievement score, 
 
 ## Figure validation
 
-`player/figure` parses and validates avatar figure strings against the hotel's figure data catalog (the file behind `PIXELS_FIGURE_DATA_PATH`). A look change is validated part by part server-side: set types, part IDs, color indexes, and gender compatibility all have to check out against the catalog before the look is accepted and broadcast. Clients don't get to invent clothing they don't own; parts gated behind club membership or clothing redemption (see [[INVENTORY-COLLECTIONS]]) are checked against the player's actual entitlements.
+`player/figure` parses and validates avatar figure strings against the hotel's figure data catalog. Pixels downloads the Nitro-compatible JSON configured by `PIXELS_FIGURE_DATA_URL` once during startup, while `PIXELS_FIGURE_DATA_PATH` can override it with a local JSON or legacy XML file. A look change is validated part by part server-side: set types, part IDs, color indexes, and gender compatibility all have to check out against the catalog before the look is accepted and broadcast. Clients don't get to invent clothing they don't own; parts gated behind club membership or clothing redemption (see [[INVENTORY-COLLECTIONS]]) are checked against the player's actual entitlements.
 
 The parser is also careful about *partial* acceptance: an invalid part rejects the change wholesale rather than silently stripping pieces, so what you see in the client is always exactly what the server stored.
 
