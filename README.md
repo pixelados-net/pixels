@@ -1,7 +1,7 @@
 # Pixels
 
 [![CI](https://github.com/pixelados-net/pixels/actions/workflows/ci.yml/badge.svg)](https://github.com/pixelados-net/pixels/actions/workflows/ci.yml)
-[![Package](https://github.com/pixelados-net/pixels/actions/workflows/package.yml/badge.svg)](https://github.com/pixelados-net/pixels/actions/workflows/package.yml)
+[![Package](https://github.com/pixelados-net/pixels/actions/workflows/package.yml/badge.svg?branch=v0.0.1&event=push)](https://github.com/pixelados-net/pixels/actions/workflows/package.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/pixelados-net/pixels)](go.mod)
 [![Version](https://img.shields.io/badge/version-v0.0.1-blue)](https://github.com/pixelados-net/pixels/releases)
 [![License](https://img.shields.io/github/license/pixelados-net/pixels)](LICENSE)
