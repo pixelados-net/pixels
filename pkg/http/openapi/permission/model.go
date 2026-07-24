@@ -15,6 +15,8 @@ type NodeResponse struct {
 	PerkName string `json:"perkName,omitempty" example:"HEIGHTMAP_EDITOR_BETA"`
 	// Package stores the declaring domain package.
 	Package string `json:"package" required:"true"`
+	// Description explains runtime plugin capabilities.
+	Description string `json:"description,omitempty"`
 }
 
 // NodesResponse contains registered permission nodes.
@@ -31,6 +33,8 @@ type GroupCreateRequest struct {
 	Prefix string `json:"prefix,omitempty"`
 	// PrefixColor stores the future chat prefix color.
 	PrefixColor string `json:"prefixColor,omitempty" example:"#ff0000"`
+	// BadgeURL stores the optional public group badge image URL.
+	BadgeURL string `json:"badgeUrl,omitempty" format:"uri"`
 	// RoomEffectID stores the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId,omitempty" minimum:"1"`
 	// ParentGroupID identifies the optional inherited group.
@@ -50,6 +54,8 @@ type GroupPatchRequest struct {
 	Prefix *string `json:"prefix,omitempty"`
 	// PrefixColor replaces the future chat prefix color.
 	PrefixColor *string `json:"prefixColor,omitempty"`
+	// BadgeURL replaces or clears the public group badge image URL.
+	BadgeURL *string `json:"badgeUrl,omitempty" format:"uri"`
 	// RoomEffectID replaces the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId,omitempty" minimum:"1"`
 	// ClearRoomEffect removes the synthetic room effect.
@@ -135,6 +141,8 @@ type GroupResponse struct {
 	Prefix string `json:"prefix" required:"true"`
 	// PrefixColor stores the future prefix color.
 	PrefixColor string `json:"prefixColor" required:"true"`
+	// BadgeURL stores the optional public group badge image URL.
+	BadgeURL string `json:"badgeUrl" required:"true" format:"uri"`
 	// RoomEffectID stores the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId,omitempty"`
 	// ParentGroupID identifies the optional inherited group.

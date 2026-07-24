@@ -71,8 +71,9 @@ func TestGroupCreationUpdateAndCycleValidation(t *testing.T) {
 	service := newTestService(store, nil)
 	parentID := int64(1)
 
-	created, err := service.CreateGroup(context.Background(), CreateGroupParams{Name: " moderator ", Weight: 50, ParentGroupID: &parentID})
-	if err != nil || created.Name != "moderator" {
+	created, err := service.CreateGroup(context.Background(), CreateGroupParams{Name: " moderator ", Weight: 50,
+		BadgeURL: " https://cdn.example/moderator.png ", ParentGroupID: &parentID})
+	if err != nil || created.Name != "moderator" || created.BadgeURL != "https://cdn.example/moderator.png" {
 		t.Fatalf("unexpected created group %#v err=%v", created, err)
 	}
 	self := created.ID
@@ -80,6 +81,15 @@ func TestGroupCreationUpdateAndCycleValidation(t *testing.T) {
 	_, err = service.UpdateGroup(context.Background(), created.ID, UpdateGroupParams{ParentGroupID: &selfPointer})
 	if err != ErrInheritanceCycle {
 		t.Fatalf("expected cycle error, got %v", err)
+	}
+}
+
+// TestGroupMutationRejectsInvalidBadgeURL verifies badge images use public web URLs.
+func TestGroupMutationRejectsInvalidBadgeURL(t *testing.T) {
+	service := newTestService(newFakeStore(), nil)
+	_, err := service.CreateGroup(context.Background(), CreateGroupParams{Name: "moderator", BadgeURL: "file:///badge.png"})
+	if !errors.Is(err, ErrInvalidGroup) {
+		t.Fatalf("expected invalid group, got %v", err)
 	}
 }
 

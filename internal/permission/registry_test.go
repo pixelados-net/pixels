@@ -5,6 +5,24 @@ import (
 	"testing"
 )
 
+// TestCMSPermissionNodesAreRegistered verifies website capabilities can be assigned through the API.
+func TestCMSPermissionNodesAreRegistered(t *testing.T) {
+	nodes := []Node{
+		CMSNewsManage,
+		CMSMaintenanceManage,
+		CMSMaintenanceEarlyAccessManage,
+		CMSPermissionGroupsView,
+		CMSPermissionGroupsCreate,
+		CMSPermissionGroupsUpdate,
+		CMSPermissionGroupNodesManage,
+	}
+	for _, node := range nodes {
+		if !Registered(node) {
+			t.Fatalf("expected CMS node %q to be registered", node)
+		}
+	}
+}
+
 // TestRegisterPluginNodeAddsDescribedDynamicNode verifies runtime permission declarations.
 func TestRegisterPluginNodeAddsDescribedDynamicNode(t *testing.T) {
 	node := Node("plugin.registry-test.hello.use")

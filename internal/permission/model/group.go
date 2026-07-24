@@ -18,6 +18,8 @@ type Group struct {
 	Prefix string
 	// PrefixColor stores a future chat prefix color.
 	PrefixColor string
+	// BadgeURL stores the public image used to represent this group.
+	BadgeURL string
 	// RoomEffectID stores the synthetic room effect inherited from this group.
 	RoomEffectID *int32
 	// ParentGroupID identifies the optional inherited group.

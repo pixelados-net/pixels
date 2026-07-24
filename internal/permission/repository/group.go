@@ -12,9 +12,9 @@ import (
 
 const (
 	// groupColumns stores the shared permission group projection.
-	groupColumns = `id, name, weight, prefix, prefix_color, room_effect_id, parent_group_id, created_at, updated_at, deleted_at, version`
+	groupColumns = `id, name, weight, prefix, prefix_color, badge_url, room_effect_id, parent_group_id, created_at, updated_at, deleted_at, version`
 	// qualifiedGroupColumns stores the permission group projection for joined queries.
-	qualifiedGroupColumns = `g.id, g.name, g.weight, g.prefix, g.prefix_color, g.room_effect_id, g.parent_group_id, g.created_at, g.updated_at, g.deleted_at, g.version`
+	qualifiedGroupColumns = `g.id, g.name, g.weight, g.prefix, g.prefix_color, g.badge_url, g.room_effect_id, g.parent_group_id, g.created_at, g.updated_at, g.deleted_at, g.version`
 	// listGroupsSQL lists active permission groups by priority.
 	listGroupsSQL = `select ` + groupColumns + ` from permission_groups where deleted_at is null order by weight desc, id`
 	// listPlayerGroupsSQL lists one player's active permission groups.
@@ -24,9 +24,9 @@ const (
 	// findGroupByNameSQL finds one active permission group by name.
 	findGroupByNameSQL = `select ` + groupColumns + ` from permission_groups where name=$1 and deleted_at is null`
 	// createGroupSQL creates one permission group.
-	createGroupSQL = `insert into permission_groups (name, weight, prefix, prefix_color, room_effect_id, parent_group_id) values ($1,$2,$3,$4,$5,$6) returning ` + groupColumns
+	createGroupSQL = `insert into permission_groups (name, weight, prefix, prefix_color, badge_url, room_effect_id, parent_group_id) values ($1,$2,$3,$4,$5,$6,$7) returning ` + groupColumns
 	// updateGroupSQL updates one permission group with optimistic locking.
-	updateGroupSQL = `update permission_groups set name=$2, weight=$3, prefix=$4, prefix_color=$5, room_effect_id=$6, parent_group_id=$7, updated_at=now(), version=version+1 where id=$1 and version=$8 and deleted_at is null returning ` + groupColumns
+	updateGroupSQL = `update permission_groups set name=$2, weight=$3, prefix=$4, prefix_color=$5, badge_url=$6, room_effect_id=$7, parent_group_id=$8, updated_at=now(), version=version+1 where id=$1 and version=$9 and deleted_at is null returning ` + groupColumns
 )
 
 // ListGroups lists every active permission group.
@@ -51,7 +51,8 @@ func (repository *Repository) FindGroupByName(ctx context.Context, name string) 
 
 // CreateGroup creates one permission group.
 func (repository *Repository) CreateGroup(ctx context.Context, group permissionmodel.Group) (permissionmodel.Group, error) {
-	created, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, createGroupSQL, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.RoomEffectID, group.ParentGroupID))
+	created, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, createGroupSQL,
+		group.Name, group.Weight, group.Prefix, group.PrefixColor, group.BadgeURL, group.RoomEffectID, group.ParentGroupID))
 	if err != nil {
 		return permissionmodel.Group{}, fmt.Errorf("create permission group %q: %w", group.Name, err)
 	}
@@ -62,7 +63,8 @@ func (repository *Repository) CreateGroup(ctx context.Context, group permissionm
 // UpdateGroup updates one permission group using optimistic locking.
 func (repository *Repository) UpdateGroup(ctx context.Context, group permissionmodel.Group) (permissionmodel.Group, bool, error) {
 	updated, err := scanGroup(postgres.ExecutorFor(ctx, repository.executor).QueryRow(ctx, updateGroupSQL,
-		group.ID, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.RoomEffectID, group.ParentGroupID, group.Version.Version))
+		group.ID, group.Name, group.Weight, group.Prefix, group.PrefixColor, group.BadgeURL,
+		group.RoomEffectID, group.ParentGroupID, group.Version.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return permissionmodel.Group{}, false, nil
 	}

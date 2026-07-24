@@ -32,6 +32,8 @@ type GroupResponse struct {
 	Prefix string `json:"prefix"`
 	// PrefixColor stores a future chat prefix color.
 	PrefixColor string `json:"prefixColor"`
+	// BadgeURL stores the public group badge image URL.
+	BadgeURL string `json:"badgeUrl"`
 	// RoomEffectID stores the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId,omitempty"`
 	// ParentGroupID identifies the optional inherited group.
@@ -71,7 +73,8 @@ type MutationResponse struct {
 // groupResponse maps one persistent group into HTTP output.
 func groupResponse(group permissionmodel.Group) GroupResponse {
 	return GroupResponse{ID: group.ID, Name: group.Name, Weight: group.Weight, Prefix: group.Prefix,
-		PrefixColor: group.PrefixColor, RoomEffectID: group.RoomEffectID, ParentGroupID: group.ParentGroupID,
+		PrefixColor: group.PrefixColor, BadgeURL: group.BadgeURL,
+		RoomEffectID: group.RoomEffectID, ParentGroupID: group.ParentGroupID,
 		Version: group.Version.Version, UpdatedAt: group.UpdatedAt}
 }
 

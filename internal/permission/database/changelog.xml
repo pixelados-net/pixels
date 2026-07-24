@@ -7,4 +7,5 @@
 
     <include file="migrations/0001_create_permissions.sql" relativeToChangelogFile="true"/>
     <include file="migrations/0002_add_room_effect.sql" relativeToChangelogFile="true"/>
+    <include file="migrations/0003_add_badge_url.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>
