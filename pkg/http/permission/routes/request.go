@@ -19,6 +19,8 @@ type GroupRequest struct {
 	Prefix string `json:"prefix"`
 	// PrefixColor stores a future chat prefix color.
 	PrefixColor string `json:"prefixColor"`
+	// BadgeURL stores the public group badge image URL.
+	BadgeURL string `json:"badgeUrl"`
 	// RoomEffectID stores the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId"`
 	// ParentGroupID identifies the optional inherited group.
@@ -35,6 +37,8 @@ type GroupPatchRequest struct {
 	Prefix *string `json:"prefix"`
 	// PrefixColor replaces the future chat prefix color.
 	PrefixColor *string `json:"prefixColor"`
+	// BadgeURL replaces the public group badge image URL.
+	BadgeURL *string `json:"badgeUrl"`
 	// RoomEffectID replaces the synthetic room effect.
 	RoomEffectID *int32 `json:"roomEffectId"`
 	// ClearRoomEffect removes the synthetic room effect.
@@ -56,13 +60,14 @@ type NodeRequest struct {
 // groupParams maps a group request into service input.
 func groupParams(request GroupRequest) permissionservice.CreateGroupParams {
 	return permissionservice.CreateGroupParams{Name: request.Name, Weight: request.Weight, Prefix: request.Prefix,
-		PrefixColor: request.PrefixColor, RoomEffectID: request.RoomEffectID, ParentGroupID: request.ParentGroupID}
+		PrefixColor: request.PrefixColor, BadgeURL: request.BadgeURL,
+		RoomEffectID: request.RoomEffectID, ParentGroupID: request.ParentGroupID}
 }
 
 // groupPatch maps a group patch request into service input.
 func groupPatch(request GroupPatchRequest) permissionservice.UpdateGroupParams {
 	params := permissionservice.UpdateGroupParams{Name: request.Name, Weight: request.Weight,
-		Prefix: request.Prefix, PrefixColor: request.PrefixColor}
+		Prefix: request.Prefix, PrefixColor: request.PrefixColor, BadgeURL: request.BadgeURL}
 	if request.ClearRoomEffect {
 		var effect *int32
 		params.RoomEffectID = &effect

@@ -13,7 +13,7 @@ func scanGroup(row pgx.Row) (permissionmodel.Group, error) {
 	var roomEffectID pgtype.Int4
 	var parentID pgtype.Int8
 	var deletedAt pgtype.Timestamptz
-	err := row.Scan(&group.ID, &group.Name, &group.Weight, &group.Prefix, &group.PrefixColor, &roomEffectID, &parentID,
+	err := row.Scan(&group.ID, &group.Name, &group.Weight, &group.Prefix, &group.PrefixColor, &group.BadgeURL, &roomEffectID, &parentID,
 		&group.CreatedAt, &group.UpdatedAt, &deletedAt, &group.Version.Version)
 	if roomEffectID.Valid {
 		group.RoomEffectID = &roomEffectID.Int32

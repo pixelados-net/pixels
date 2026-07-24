@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
 	"github.com/niflaot/pixels/internal/permission"
@@ -10,7 +11,8 @@ import (
 
 // validateGroup validates fields, parent existence, and inheritance acyclicity.
 func (service *Service) validateGroup(ctx context.Context, group permissionmodel.Group, groupID int64) error {
-	if len(group.Name) < 1 || len(group.Name) > 40 || len(group.Prefix) > 80 || len(group.PrefixColor) > 32 || group.RoomEffectID != nil && *group.RoomEffectID <= 0 {
+	if len(group.Name) < 1 || len(group.Name) > 40 || len(group.Prefix) > 80 || len(group.PrefixColor) > 32 ||
+		len(group.BadgeURL) > 2048 || !validBadgeURL(group.BadgeURL) || group.RoomEffectID != nil && *group.RoomEffectID <= 0 {
 		return ErrInvalidGroup
 	}
 	existing, found, err := service.store.FindGroupByName(ctx, group.Name)
@@ -131,10 +133,22 @@ func applyGroupUpdate(group *permissionmodel.Group, params UpdateGroupParams) {
 	if params.PrefixColor != nil {
 		group.PrefixColor = strings.TrimSpace(*params.PrefixColor)
 	}
+	if params.BadgeURL != nil {
+		group.BadgeURL = strings.TrimSpace(*params.BadgeURL)
+	}
 	if params.RoomEffectID != nil {
 		group.RoomEffectID = *params.RoomEffectID
 	}
 	if params.ParentGroupID != nil {
 		group.ParentGroupID = *params.ParentGroupID
 	}
+}
+
+// validBadgeURL reports whether an optional badge URL uses a public web scheme.
+func validBadgeURL(value string) bool {
+	if value == "" {
+		return true
+	}
+	parsed, err := url.ParseRequestURI(value)
+	return err == nil && parsed.Host != "" && (parsed.Scheme == "http" || parsed.Scheme == "https")
 }

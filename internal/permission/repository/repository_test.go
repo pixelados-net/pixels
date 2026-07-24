@@ -134,5 +134,6 @@ func assignValues(destinations []any, values []any) {
 // groupValues returns one scannable permission group row.
 func groupValues() []any {
 	now := time.Date(2026, 7, 10, 12, 0, 0, 0, time.UTC)
-	return []any{int64(2), "admin", int32(100), "ADMIN", "#ff0000", pgtype.Int4{Int32: 42, Valid: true}, pgtype.Int8{Int64: 1, Valid: true}, now, now, pgtype.Timestamptz{}, int64(3)}
+	return []any{int64(2), "admin", int32(100), "ADMIN", "#ff0000", "https://cdn.example/admin.png",
+		pgtype.Int4{Int32: 42, Valid: true}, pgtype.Int8{Int64: 1, Valid: true}, now, now, pgtype.Timestamptz{}, int64(3)}
 }

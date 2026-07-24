@@ -62,6 +62,8 @@ type CreateGroupParams struct {
 	Prefix string
 	// PrefixColor stores a future chat prefix color.
 	PrefixColor string
+	// BadgeURL stores the public group badge image URL.
+	BadgeURL string
 	// RoomEffectID stores the synthetic room effect.
 	RoomEffectID *int32
 	// ParentGroupID identifies the optional inherited group.
@@ -78,6 +80,8 @@ type UpdateGroupParams struct {
 	Prefix *string
 	// PrefixColor replaces the prefix color when present.
 	PrefixColor *string
+	// BadgeURL replaces the public group badge image URL when present.
+	BadgeURL *string
 	// RoomEffectID replaces or clears the synthetic room effect when present.
 	RoomEffectID **int32
 	// ParentGroupID replaces or clears the parent when present.
